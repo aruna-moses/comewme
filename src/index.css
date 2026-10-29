@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Never let a long word break the card layout on a 360px screen. */
+  p,
+  h1,
+  h2,
+  h3,
+  span {
+    @apply break-words;
+  }
+
+  ::selection {
+    @apply bg-sun text-ink;
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply mx-auto w-full max-w-[480px] min-h-full bg-canvas pb-24;
+  }
+
+  .card {
+    @apply rounded-card bg-white shadow-card border border-line;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 font-semibold
+           min-h-[48px] transition active:scale-[0.98] disabled:opacity-50
+           disabled:active:scale-100 disabled:cursor-not-allowed;
+  }
+
+  /* Yellow is a fill, never text. Text on yellow is always ink. */
+  .btn-primary {
+    @apply btn bg-sun text-ink shadow-card hover:brightness-105;
+    background-image: linear-gradient(135deg, #ffd93d, #ff9f1c);
+  }
+
+  .btn-ghost {
+    @apply btn bg-white text-ink border border-line hover:bg-canvas;
+  }
+
+  .btn-dark {
+    @apply btn bg-ink text-white;
+  }
+
+  .btn-sm {
+    @apply min-h-[38px] px-4 text-sm;
+  }
+
+  .chip {
+    @apply shrink-0 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink
+           transition whitespace-nowrap;
+  }
+
+  .chip-active {
+    @apply border-transparent text-ink;
+    background-image: linear-gradient(135deg, #ffd93d, #ff9f1c);
+  }
+
+  .field {
+    @apply w-full rounded-2xl border border-line bg-white px-4 py-3 text-[15px] text-ink
+           placeholder:text-muted/70 outline-none transition
+           focus:border-amber focus:ring-2 focus:ring-sun/50;
+  }
+
+  .label {
+    @apply mb-1.5 block text-[13px] font-semibold text-ink;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold;
+  }
+
+  .skeleton {
+    @apply animate-pulseSoft rounded-xl bg-line;
+  }
+}
+
+/* Hide scrollbars on the horizontal filter rail but keep it scrollable. */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
