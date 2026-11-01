@@ -79,7 +79,7 @@ export default function Feedback() {
             <p className="mt-1 text-[13px] text-muted">
               We’ve received your feedback. A human reviews every message.
             </p>
-            <Link to="/settings" className="btn-primary mt-6">
+            <Link to="/app/settings" className="btn-primary mt-6">
               Back to Settings
             </Link>
           </div>

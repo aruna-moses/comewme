@@ -56,7 +56,7 @@ export default function PostTask() {
         },
         profile,
       )
-      navigate(`/task/${task.id}`, { replace: true })
+      navigate(`/app/task/${task.id}`, { replace: true })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not post this activity')
     } finally {

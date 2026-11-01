@@ -21,7 +21,7 @@ export default function TaskCard({ task }: { task: Task }) {
 
   return (
     <Link
-      to={`/task/${task.id}`}
+      to={`/app/task/${task.id}`}
       className="card block p-4 transition hover:shadow-lift active:scale-[0.995]"
     >
       <div className="mb-3 flex items-start justify-between gap-2">

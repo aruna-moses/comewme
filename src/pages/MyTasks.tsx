@@ -105,7 +105,7 @@ export default function MyTasks() {
           {list.map((t) => (
             <Link
               key={t.id}
-              to={`/task/${t.id}`}
+              to={`/app/task/${t.id}`}
               className="card flex gap-3 p-4"
             >
               <Avatar src={t.host_avatar_url} name={t.host_name} size={44} />

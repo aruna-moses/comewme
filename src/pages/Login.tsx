@@ -35,7 +35,7 @@ export default function Login() {
           setNotice('Check your email to confirm your account, then come back and sign in.')
           setMode('in')
         } else {
-          navigate('/onboarding', { replace: true })
+          navigate('/app/onboarding', { replace: true })
         }
       }
     } catch (e) {

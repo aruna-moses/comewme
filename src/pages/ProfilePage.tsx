@@ -92,7 +92,7 @@ export default function ProfilePage() {
           </svg>
         </button>
         {isMe && (
-          <Link to="/settings" className="btn-ghost btn-sm">
+          <Link to="/app/settings" className="btn-ghost btn-sm">
             Edit profile
           </Link>
         )}
@@ -138,7 +138,7 @@ export default function ProfilePage() {
 
         {profile.verification_status !== 'verified' && isMe && (
           <Link
-            to="/settings"
+            to="/app/settings"
             className="card mt-3 flex items-center justify-between p-4"
           >
             <div>

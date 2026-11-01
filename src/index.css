@@ -34,7 +34,7 @@
 
 @layer components {
   .app-shell {
-    @apply mx-auto w-full max-w-[480px] min-h-full bg-canvas pb-24;
+    @apply min-h-full bg-canvas pb-24;
   }
 
   .card {
