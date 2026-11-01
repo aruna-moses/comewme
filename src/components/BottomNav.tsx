@@ -1,6 +1,5 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
 
 function IconDiscover({ active }: { active: boolean }) {
   return (
@@ -11,11 +10,20 @@ function IconDiscover({ active }: { active: boolean }) {
   )
 }
 
-function IconPost({ active }: { active: boolean }) {
+function IconMyTasks({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="3.5" y="3.5" width="17" height="17" rx="6" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} />
-      <path d="M12 8.5v7M8.5 12h7" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" />
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} />
+      <path d="M3 9h18M7 13h10" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconChat({ active }: { active: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -30,8 +38,9 @@ function IconProfile({ active }: { active: boolean }) {
 }
 
 export default function BottomNav() {
-  const { profile, session } = useAuth()
+  const { profile } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
 
   // Hide on the auth screens so the tab bar doesn't fight the keyboard.
   if (location.pathname === '/login' || location.pathname === '/onboarding') return null
@@ -57,20 +66,27 @@ export default function BottomNav() {
   )
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t border-line bg-white/95 backdrop-blur">
-      <div className="flex items-stretch px-2 pb-[env(safe-area-inset-bottom)]">
-        {item('/', 'Discover', (a) => <IconDiscover active={a} />)}
-        {item('/post', 'Post', (a) => <IconPost active={a} />)}
-        {item(profileTo, 'Profile', (a) => <IconProfile active={a} />)}
-      </div>
-      {!session && (
-        <button
-          onClick={() => (window.location.href = '/login')}
-          className="sr-only"
-          aria-hidden
-          tabIndex={-1}
-        />
-      )}
-    </nav>
+    <>
+      <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t border-line bg-white/95 backdrop-blur">
+        <div className="flex items-stretch px-2 pb-[env(safe-area-inset-bottom)] pt-1">
+          {item('/', 'Discover', (a) => <IconDiscover active={a} />)}
+          {item('/mytasks', 'My Tasks', (a) => <IconMyTasks active={a} />)}
+          {item('/chats', 'Chat', (a) => <IconChat active={a} />)}
+          {item(profileTo, 'Profile', (a) => <IconProfile active={a} />)}
+        </div>
+      </nav>
+
+      {/* Floating Post button — centered above the nav */}
+      <button
+        onClick={() => navigate('/post')}
+        className="fixed bottom-[88px] left-1/2 -translate-x-1/2 z-50 w-14 h-14 rounded-full shadow-lift"
+        style={{ backgroundImage: 'linear-gradient(135deg,#FFD93D,#FF9F1C)' }}
+        aria-label="Post an activity"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M12 5v14M5 12h14" stroke="#0B0B0F" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    </>
   )
 }

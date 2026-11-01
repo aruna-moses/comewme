@@ -4,6 +4,8 @@ import { useAuth } from './context/AuthContext'
 import BottomNav from './components/BottomNav'
 import Discover from './pages/Discover'
 import TaskDetail from './pages/TaskDetail'
+import MyTasks from './pages/MyTasks'
+import ChatList from './pages/ChatList'
 import PostTask from './pages/PostTask'
 import ProfilePage from './pages/ProfilePage'
 import Login from './pages/Login'
@@ -25,7 +27,6 @@ export default function App() {
 
   if (loading) return <Spinner full />
 
-  // Signed in but no profile row yet — finish onboarding first.
   if (needsOnboarding && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />
   }
@@ -35,6 +36,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Discover />} />
         <Route path="/task/:id" element={<TaskDetail />} />
+        <Route path="/mytasks" element={<MyTasks />} />
+        <Route path="/chats" element={<ChatList />} />
         <Route path="/profile/:id" element={<ProfilePage />} />
         <Route path="/login" element={<Login />} />
         <Route
