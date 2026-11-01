@@ -37,6 +37,18 @@ export function isPast(iso: string): boolean {
   return new Date(iso).getTime() < Date.now()
 }
 
+/** Short clock time for chat bubbles, e.g. "8:42 PM". */
+export function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+/** Same-day check for chat date separators. */
+export function isSameDay(a: string, b: string): boolean {
+  const x = new Date(a)
+  const y = new Date(b)
+  return x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate()
+}
+
 export function isWithin24h(iso: string): boolean {
   const t = new Date(iso).getTime()
   return t > Date.now() && t < Date.now() + 86_400_000

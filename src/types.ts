@@ -95,6 +95,9 @@ export interface Message {
   sender_name: string
   sender_avatar_url: string | null
   body: string
+  type: 'text' | 'image' | 'audio'
+  url: string | null
+  duration: number | null
   created_at: string
 }
 

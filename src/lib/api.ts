@@ -209,13 +209,34 @@ export async function fetchMessages(taskId: string): Promise<Message[]> {
   return (data ?? []) as Message[]
 }
 
-export async function sendMessage(taskId: string, profile: Profile, body: string) {
+/** Upload an image or audio file to the private chat-media bucket and return a signed URL. */
+export async function uploadChatMedia(taskId: string, file: File): Promise<{ path: string; signedUrl: string }> {
+  const safeName = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '')
+  const path = `tasks/${taskId}/${Date.now()}-${safeName}`
+  const { error } = await supabase.storage.from('chat-media').upload(path, file)
+  if (error) throw error
+  const { data, error: signedError } = await supabase.storage.from('chat-media').createSignedUrl(path, 3600)
+  if (signedError || !data?.signedUrl) throw signedError ?? new Error('Could not create media URL')
+  return { path, signedUrl: data.signedUrl }
+}
+
+export async function sendMessage(
+  taskId: string,
+  profile: Profile,
+  body: string,
+  type: 'text' | 'image' | 'audio' = 'text',
+  url: string | null = null,
+  duration: number | null = null,
+) {
   const { error } = await supabase.from('messages').insert({
     task_id: taskId,
     sender_id: profile.id,
     sender_name: profile.display_name,
     sender_avatar_url: profile.avatar_url,
     body: body.trim(),
+    type,
+    url,
+    duration,
   })
   if (error) throw error
 }
