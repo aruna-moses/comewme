@@ -184,6 +184,17 @@ export default function Settings() {
         {verifyError && <p className="mt-2 text-[12px] font-medium text-alert">{verifyError}</p>}
       </div>
 
+      {/* feedback */}
+      <div className="card mt-3 p-4">
+        <p className="text-[14px] font-semibold">Feedback &amp; help</p>
+        <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
+          Report a bug, complain about a member, or send a suggestion. A human reads every message.
+        </p>
+        <Link to="/feedback" className="btn-ghost btn-sm mt-3">
+          Send feedback
+        </Link>
+      </div>
+
       {/* details */}
       <div className="mt-6 space-y-4">
         <div>

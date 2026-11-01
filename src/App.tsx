@@ -6,6 +6,7 @@ import Discover from './pages/Discover'
 import TaskDetail from './pages/TaskDetail'
 import MyTasks from './pages/MyTasks'
 import ChatList from './pages/ChatList'
+import Feedback from './pages/Feedback'
 import PostTask from './pages/PostTask'
 import ProfilePage from './pages/ProfilePage'
 import Login from './pages/Login'
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/task/:id" element={<TaskDetail />} />
         <Route path="/mytasks" element={<MyTasks />} />
         <Route path="/chats" element={<ChatList />} />
+        <Route path="/feedback" element={<Feedback />} />
         <Route path="/profile/:id" element={<ProfilePage />} />
         <Route path="/login" element={<Login />} />
         <Route
