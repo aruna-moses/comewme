@@ -18,6 +18,7 @@ export default function Discover() {
   const [category, setCategory] = useState<Category | 'all'>('all')
   const [area, setArea] = useState<string>('all')
   const [forYou, setForYou] = useState(false)
+  const [search, setSearch] = useState('')
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,6 +45,7 @@ export default function Discover() {
           category,
           area,
           forYou: forYou && interests.length > 0 ? interests : null,
+          search: search.trim() || undefined,
           limit: PAGE,
           offset,
         })
@@ -57,7 +59,7 @@ export default function Discover() {
         setLoadingMore(false)
       }
     },
-    [category, area, forYou, interests.join(',')],
+    [category, area, forYou, interests.join(','), search],
   )
 
   useEffect(() => {
@@ -128,6 +130,22 @@ export default function Discover() {
           </select>
         </div>
 
+        <div className="mt-3 flex items-center gap-2">
+          <div className="relative flex-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21l-4.35-4.35" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search activities…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="field pl-10 pr-4 py-2 text-[13px]"
+            />
+          </div>
+        </div>
+
         <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
           {session && interests.length > 0 && (
             <button
@@ -149,7 +167,7 @@ export default function Discover() {
               onClick={() => setCategory(c.value)}
               className={`chip ${category === c.value ? 'chip-active' : ''}`}
             >
-              {c.label}
+              {c.emoji} {c.label}
             </button>
           ))}
         </div>

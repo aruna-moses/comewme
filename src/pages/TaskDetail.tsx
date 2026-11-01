@@ -17,6 +17,7 @@ import {
   submitReport,
   subscribeToMessages,
   uploadChatMedia,
+  claimSpot,
 } from '../lib/api'
 import type { JoinRequest, Message, Profile, ReportCategory, Task } from '../types'
 import { REPORT_CATEGORIES, categoryLabel, trustLevel } from '../types'
@@ -410,7 +411,20 @@ export default function TaskDetail() {
           {session && isHost && task.status === 'open' && <button className="btn-ghost mt-2 w-full" disabled={busy} onClick={handleCancel}>Cancel activity</button>}
 
           {session && !isHost && task.status === 'open' && !myRequest && (
-            <button className="btn-primary w-full" disabled={isFull} onClick={() => setJoinOpen(true)}>{isFull ? "This one's full" : 'Request to join'}</button>
+            <button
+              className="btn-primary w-full"
+              disabled={isFull}
+              onClick={async () => {
+                if (task.fill_mode === 'first_come') {
+                  await claimSpot(task.id, profile!)
+                  await load()
+                } else {
+                  setJoinOpen(true)
+                }
+              }}
+            >
+              {isFull ? "This one's full" : task.fill_mode === 'first_come' ? 'Claim spot' : 'Request to join'}
+            </button>
           )}
           {session && !isHost && myRequest?.status === 'pending' && <button className="btn-ghost w-full" disabled>Request sent — waiting for the host</button>}
           {session && !isHost && isAccepted && (

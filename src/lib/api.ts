@@ -26,6 +26,7 @@ export interface FeedParams {
   category?: Category | 'all'
   area?: string | 'all'
   forYou?: Category[] | null
+  search?: string | null
   limit?: number
   offset?: number
 }
@@ -38,6 +39,7 @@ export async function fetchFeed({
   category = 'all',
   area = 'all',
   forYou = null,
+  search = null,
   limit = 20,
   offset = 0,
 }: FeedParams): Promise<Task[]> {
@@ -52,6 +54,9 @@ export async function fetchFeed({
   if (category !== 'all') q = q.eq('category', category)
   if (area !== 'all') q = q.eq('area', area)
   if (forYou && forYou.length > 0) q = q.in('category', forYou)
+  if (search && search.trim().length > 0) {
+    q = q.or(`title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%,area.ilike.%${search.trim()}%`)
+  }
 
   const { data, error } = await q
   if (error) throw error
@@ -104,6 +109,7 @@ export async function createTask(
     meeting_point: string
     date_time: string
     spots_needed: number
+    fill_mode: 'review' | 'first_come'
   },
   profile: Profile,
 ): Promise<Task> {
@@ -168,7 +174,29 @@ export async function requestJoin(task: Task, profile: Profile, message: string)
     requester_name: profile.display_name,
     requester_avatar_url: profile.avatar_url,
     message: message.trim() || null,
-    status: 'pending',
+    status: task.fill_mode === 'first_come' ? 'accepted' : 'pending',
+  })
+  if (error) throw error
+}
+
+/** Claim a spot immediately in First Come, First Served mode. */
+export async function claimSpot(taskId: string, profile: Profile) {
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('fill_mode, status, spots_needed, spots_filled')
+    .eq('id', taskId)
+    .single()
+  if (!task || task.fill_mode !== 'first_come' || task.status !== 'open') {
+    throw new Error('This spot is no longer available.')
+  }
+
+  const { error } = await supabase.from('join_requests').insert({
+    task_id: taskId,
+    requester_id: profile.id,
+    requester_name: profile.display_name,
+    requester_avatar_url: profile.avatar_url,
+    message: null,
+    status: 'accepted',
   })
   if (error) throw error
 }

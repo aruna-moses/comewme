@@ -17,6 +17,7 @@ export default function PostTask() {
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [spots, setSpots] = useState(2)
+  const [fillMode, setFillMode] = useState<'review' | 'first_come'>('review')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -51,6 +52,7 @@ export default function PostTask() {
           meeting_point: meetingPoint.trim(),
           date_time: when.toISOString(),
           spots_needed: spots,
+          fill_mode: fillMode,
         },
         profile,
       )
@@ -95,7 +97,7 @@ export default function PostTask() {
                 onClick={() => setCategory(c.value)}
                 className={`chip ${category === c.value ? 'chip-active' : ''}`}
               >
-                {c.label}
+                {c.emoji} {c.label}
               </button>
             ))}
           </div>

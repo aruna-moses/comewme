@@ -8,15 +8,15 @@ export type Category =
   | 'errands'
   | 'other'
 
-export const CATEGORIES: { value: Category; label: string }[] = [
-  { value: 'market_run', label: 'Market run' },
-  { value: 'ride', label: 'Ride' },
-  { value: 'food', label: 'Food' },
-  { value: 'study', label: 'Study' },
-  { value: 'dev', label: 'Dev' },
-  { value: 'event', label: 'Event' },
-  { value: 'errands', label: 'Errands' },
-  { value: 'other', label: 'Other' },
+export const CATEGORIES: { value: Category; label: string; emoji: string }[] = [
+  { value: 'market_run', label: 'Errands', emoji: '🛒' },
+  { value: 'ride', label: 'Rides', emoji: '🚗' },
+  { value: 'food', label: 'Food', emoji: '🍽️' },
+  { value: 'study', label: 'Study', emoji: '📚' },
+  { value: 'dev', label: 'Skill Meetups', emoji: '💻' },
+  { value: 'event', label: 'Events', emoji: '🎉' },
+  { value: 'errands', label: 'Errands', emoji: '📦' },
+  { value: 'other', label: 'Other', emoji: '➕' },
 ]
 
 export const categoryLabel = (c: Category) =>
@@ -71,6 +71,7 @@ export interface Task {
   spots_needed: number
   spots_filled: number
   status: TaskStatus
+  fill_mode: 'review' | 'first_come'
   is_sponsored: boolean
   sponsor_name: string | null
   sponsored_until: string | null

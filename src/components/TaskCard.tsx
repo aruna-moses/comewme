@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Task } from '../types'
-import { categoryLabel } from '../types'
+import { categoryLabel, CATEGORIES } from '../types'
 import { relativeDay, timeOfDay } from '../lib/format'
 import Avatar from './Avatar'
 
@@ -8,6 +8,10 @@ function liveSponsor(t: Task) {
   if (!t.is_sponsored) return false
   if (!t.sponsored_until) return true
   return new Date(t.sponsored_until) >= new Date(new Date().toDateString())
+}
+
+function categoryEmoji(cat: string): string {
+  return CATEGORIES.find((c) => c.value === cat)?.emoji ?? '➕'
 }
 
 export default function TaskCard({ task }: { task: Task }) {
@@ -21,7 +25,7 @@ export default function TaskCard({ task }: { task: Task }) {
       className="card block p-4 transition hover:shadow-lift active:scale-[0.995]"
     >
       <div className="mb-3 flex items-start justify-between gap-2">
-        <span className="pill bg-sun/25 text-ink">{categoryLabel(task.category)}</span>
+        <span className="pill bg-sun/25 text-ink">{categoryEmoji(task.category)} {categoryLabel(task.category)}</span>
         {sponsored && (
           <span className="pill" style={{ background: '#FEF3C7', color: '#92400E' }}>
             {task.sponsor_name ? `Sponsored · ${task.sponsor_name}` : 'Sponsored'}
