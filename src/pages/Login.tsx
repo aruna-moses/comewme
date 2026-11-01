@@ -89,29 +89,31 @@ export default function Login() {
             <label className="label" htmlFor="password">
               Password
             </label>
-            <input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete={mode === 'in' ? 'current-password' : 'new-password'}
-              className="field pr-12"
-              placeholder={mode === 'in' ? 'Your password' : 'At least 6 characters'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((s) => !s)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-ink focus:outline-none"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? (
-                <EyeOff className="w-5 h-5" />
-              ) : (
-                <Eye className="w-5 h-5" />
-              )}
-            </button>
+            <div className="relative w-full">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete={mode === 'in' ? 'current-password' : 'new-password'}
+                className="field pr-12 block w-full"
+                placeholder={mode === 'in' ? 'Your password' : 'At least 6 characters'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-ink focus:outline-none z-10"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
           {error && (
             <p className="rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>
