@@ -42,12 +42,7 @@ export default function App() {
     <div className="app-shell">
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/app" element={
-          <>
-            <Discover />
-            <TaskDetail />
-          </>
-        } />
+        <Route path="/app" element={<Discover />} />
         <Route path="/app/task/:id" element={<TaskDetail />} />
         <Route path="/app/mytasks" element={<MyTasks />} />
         <Route path="/app/chats" element={<ChatList />} />
