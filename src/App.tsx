@@ -24,13 +24,13 @@ function RequireAuth({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-  const { loading, needsOnboarding } = useAuth()
+  const { loading, needsOnboarding, session } = useAuth()
   const location = useLocation()
 
   if (loading) return <Spinner full />
 
   // Already signed in? Go straight to the app.
-  if (location.pathname === '/' && needsOnboarding === false) {
+  if (location.pathname === '/' && session) {
     return <Navigate to="/app" replace />
   }
 
