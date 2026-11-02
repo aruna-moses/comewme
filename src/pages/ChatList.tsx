@@ -138,7 +138,7 @@ export default function ChatList() {
             {chats.map((c) => (
               <Link
                 key={c.task.id}
-                to={`/app/task/${c.task.id}`}
+                to={`/task/${c.task.id}`}
                 className="card flex gap-3 p-4"
               >
                 <Avatar

@@ -116,7 +116,7 @@ export default function Settings() {
   return (
     <div className="px-4 pb-10 pt-4">
       <div className="flex items-center justify-between">
-        <Link to={`/app/profile/${profile.id}`} className="p-1" aria-label="Back to profile">
+        <Link to={`/profile/${profile.id}`} className="p-1" aria-label="Back to profile">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -190,7 +190,7 @@ export default function Settings() {
         <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
           Report a bug, complain about a member, or send a suggestion. A human reads every message.
         </p>
-        <Link to="/app/feedback" className="btn-ghost btn-sm mt-3">
+        <Link to="/feedback" className="btn-ghost btn-sm mt-3">
           Send feedback
         </Link>
       </div>

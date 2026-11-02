@@ -92,7 +92,7 @@ export default function Discover() {
           </div>
 
           {session && profile ? (
-            <Link to={`/app/profile/${profile.id}`} aria-label="Your profile">
+            <Link to={`/profile/${profile.id}`} aria-label="Your profile">
               <Avatar src={profile.avatar_url} name={profile.display_name} size={38} />
             </Link>
           ) : (

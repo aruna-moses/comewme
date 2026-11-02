@@ -355,7 +355,7 @@ export default function TaskDetail() {
         )}
 
         {/* host */}
-        <Link to={`/app/profile/${task.host_id}`} className="card mt-5 flex items-center gap-3 p-4">
+        <Link to={`/profile/${task.host_id}`} className="card mt-5 flex items-center gap-3 p-4">
           <Avatar src={task.host_avatar_url} name={task.host_name} size={48} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
@@ -450,7 +450,7 @@ export default function TaskDetail() {
                 <div key={r.id} className="card p-4">
                   <div className="flex items-center gap-3">
                     <Avatar src={r.requester_avatar_url} name={r.requester_name} size={38} />
-                    <Link to={`/app/profile/${r.requester_id}`} className="min-w-0 flex-1 truncate font-semibold">{r.requester_name}</Link>
+                    <Link to={`/profile/${r.requester_id}`} className="min-w-0 flex-1 truncate font-semibold">{r.requester_name}</Link>
                   </div>
                   {r.message && <p className="mt-2 rounded-xl bg-canvas p-3 text-[13px] text-ink/80">{r.message}</p>}
                   <div className="mt-3 flex gap-2">

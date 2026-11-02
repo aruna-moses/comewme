@@ -38,14 +38,13 @@ function IconProfile({ active }: { active: boolean }) {
 }
 
 export default function BottomNav() {
-  const { profile } = useAuth()
+  const { profile, session } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 
-  // Hide on the auth screens so the tab bar doesn't fight the keyboard.
-  if (location.pathname === '/login' || location.pathname === '/app/onboarding') return null
+  if (location.pathname === '/login' || location.pathname === '/onboarding') return null
 
-  const profileTo = profile ? `/app/profile/${profile.id}` : '/login'
+  const profileTo = profile ? `/profile/${profile.id}` : '/login'
 
   const item = (to: string, label: string, icon: (a: boolean) => JSX.Element) => (
     <NavLink
@@ -67,18 +66,18 @@ export default function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-white/95 backdrop-blur">
-        <div className="flex items-stretch px-2 pb-[env(safe-area-inset-bottom)] pt-1 max-w-[480px] mx-auto">
-          {item('/app', 'Discover', (a) => <IconDiscover active={a} />)}
-          {item('/app/mytasks', 'My Tasks', (a) => <IconMyTasks active={a} />)}
-          {item('/app/chats', 'Chat', (a) => <IconChat active={a} />)}
+      <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t border-line bg-white/95 backdrop-blur">
+        <div className="flex items-stretch px-2 pb-[env(safe-area-inset-bottom)] pt-1">
+          {item('/', 'Discover', (a) => <IconDiscover active={a} />)}
+          {item('/mytasks', 'My Tasks', (a) => <IconMyTasks active={a} />)}
+          {item('/chats', 'Chat', (a) => <IconChat active={a} />)}
           {item(profileTo, 'Profile', (a) => <IconProfile active={a} />)}
         </div>
       </nav>
 
-      {/* Floating Post button — centered above the nav */}
+      {/* Floating Post button */}
       <button
-        onClick={() => navigate('/app/post')}
+        onClick={() => (session ? navigate('/post') : (window.location.href = '/login'))}
         className="fixed bottom-[88px] left-1/2 -translate-x-1/2 z-50 w-14 h-14 rounded-full shadow-lift"
         style={{ backgroundImage: 'linear-gradient(135deg,#FFD93D,#FF9F1C)' }}
         aria-label="Post an activity"
