@@ -1,7 +1,9 @@
 # Database
 
-`schema.sql` is the whole backend. Paste it into the Supabase SQL editor on a fresh
-project and it creates tables, indexes, triggers, storage buckets and every RLS policy.
+`schema.sql` creates the base backend. Paste it into the Supabase SQL editor on a
+fresh project, then apply `migrations/012_community_guidelines_and_violations.sql`
+to add current guidelines acceptance and moderation. Existing projects should apply
+any unapplied migrations in order.
 
 Run it **once**. Re-running it is safe for the tables and policies (they use
 `if not exists` / `drop policy if exists`), but any data you already have is left alone.
@@ -15,17 +17,68 @@ Run it **once**. Re-running it is safe for the tables and policies (they use
 | `join_requests` | Requester + that task's host | Requester creates, host decides | Nobody else can see who asked for what |
 | `messages` | Host + accepted participants | Participants only | The whole point of this rebuild |
 | `reviews` | Anyone | Participants, after completion | Reputation has to be public to be worth anything |
+| `profile_media` | Anyone | Profile owner adds/removes | Only intentionally shared profile photos/videos are public |
 | `reports` | Service role only | Anyone may file one | Reporters must not be exposed |
 | `verifications` | Owner only | Owner inserts, admin decides | A selfie is the most sensitive thing here |
+| `guideline_acceptances` | Owner only | Accepted through a guarded RPC | Each guideline version is recorded once |
+| `violations` | Reported user only | Authenticated reports; moderator RPCs review | Report and enforcement history stays private |
+| `violation_appeals` | Appealing user only | User submits; moderator RPCs decide | Appeals cannot be edited by the user |
+| `moderators` | Moderator sees own membership | Project owner configures directly | No moderator is seeded by default |
 
 ## Triggers you should not remove
 
 | Trigger | Job |
 |---|---|
 | `trg_sync_task_spots` | Keeps `spots_filled` and `status` correct when a join is accepted, declined or removed |
+| `trg_guard_join_status` | Forces new applications to pending and serializes host acceptances against each task's spot limit |
 | `trg_guard_profile_fields` | Stops a user editing their own `verification_status`, `trust_score`, `tasks_completed` or `no_shows` |
 | `trg_on_task_completed` | Credits everyone who actually turned up |
 | `trg_on_review_created` | Recomputes the trust score from real ratings, and never lets it drop |
+
+The profile growth journey uses the database-maintained `tasks_completed` count.
+Character appearance is stored on the profile; apply
+`migrations/007_profile_growth_character.sql` to an existing project before enabling
+the character editor.
+
+The public profile gallery stores media in the public `profile-media` bucket and
+metadata in `profile_media`. Apply `migrations/008_public_profile_media.sql` to an
+existing project. Owners can manage only their own uploads; each profile is limited
+to six media items.
+
+Apply `migrations/009_group_member_profiles.sql` to allow activity hosts and accepted
+participants to see accepted group members for profile discovery. Pending requests
+remain visible only to their requester and the activity host.
+
+Apply `migrations/010_host_reviewed_join_capacity.sql` to require host review for
+every application, add waitlisted status, enforce accepted-member capacity, and
+reopen an activity when an accepted member withdraws. Existing accepted members
+are preserved even if an old first-come activity exceeds its posted capacity; new
+acceptances remain blocked until the count is below capacity.
+
+Apply `migrations/011_chat_replies_and_message_deletion.sql` to support quoted
+replies and realtime soft deletion of a member's own group messages.
+
+Apply `migrations/012_community_guidelines_and_violations.sql` to require acceptance
+of guideline version 1.0, add private violation and appeal records, and enforce
+guideline acceptance, warnings, and active bans for community write actions. It also
+adds `/accept-guidelines`, `/violations`, and `/admin/moderation` workflows.
+
+Apply `migrations/013_notification_badges.sql` after migration 012 to enable pending
+application and unread-message badges. It adds private per-user chat read cursors,
+RPCs for badge counts, and realtime publication for messages and join-request changes.
+
+Moderator access is intentionally unconfigured until the project owner chooses the
+moderators. Add only trusted authenticated account IDs through the Supabase SQL
+editor, for example:
+
+```sql
+insert into public.moderators (user_id)
+values ('<trusted-auth-user-uuid>');
+```
+
+Moderation actions use restricted database functions. The browser never receives a
+service-role key. Removing an account from `public.moderators` immediately removes
+its moderation access.
 
 ## Things that will bite you later if you forget them
 

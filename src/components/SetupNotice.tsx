@@ -27,12 +27,12 @@ export default function SetupNotice() {
       <div className="mx-auto w-full max-w-[440px]">
         <div
           className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
-          style={{ backgroundImage: 'linear-gradient(135deg,#FFD93D,#FF9F1C)' }}
+          style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)' }}
         >
           <svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden>
-            <circle cx="9" cy="12" r="4.6" stroke="#0B0B0F" strokeWidth="2.6" />
-            <circle cx="23" cy="12" r="4.6" stroke="#0B0B0F" strokeWidth="2.6" />
-            <path d="M10 25c2-3.4 4-5 6-5s4 1.6 6 5" stroke="#0B0B0F" strokeWidth="2.6" strokeLinecap="round" />
+            <circle cx="9" cy="12" r="4.6" stroke="#1F2430" strokeWidth="2.6" />
+            <circle cx="23" cy="12" r="4.6" stroke="#1F2430" strokeWidth="2.6" />
+            <path d="M10 25c2-3.4 4-5 6-5s4 1.6 6 5" stroke="#1F2430" strokeWidth="2.6" strokeLinecap="round" />
           </svg>
         </div>
 
@@ -48,7 +48,7 @@ export default function SetupNotice() {
             <div key={s.n} className="card flex gap-3 p-4">
               <span
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[13px] font-bold"
-                style={{ backgroundImage: 'linear-gradient(135deg,#FFD93D,#FF9F1C)' }}
+                style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)' }}
               >
                 {s.n}
               </span>

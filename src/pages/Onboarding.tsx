@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { Camera, UserRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { isUsernameTaken } from '../lib/api'
@@ -10,11 +11,18 @@ const STEPS = ['Name', 'Area', 'Interests', 'Rules'] as const
 
 export default function Onboarding() {
   const { session, profile, completeOnboarding } = useAuth()
+  const location = useLocation()
   const navigate = useNavigate()
+  const requestedReturnTo = new URLSearchParams(location.search).get('returnTo')
+  const returnTo = requestedReturnTo?.startsWith('/') && !requestedReturnTo.startsWith('//')
+    ? requestedReturnTo
+    : '/'
 
   const [step, setStep] = useState(0)
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '')
   const [username, setUsername] = useState(profile?.username ?? '')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatar_url ?? null)
   const [area, setArea] = useState(profile?.area ?? 'Yaba')
   const [bio, setBio] = useState(profile?.bio ?? '')
   const [interests, setInterests] = useState<Category[]>(profile?.interests ?? [])
@@ -23,8 +31,12 @@ export default function Onboarding() {
 
   // Already onboarded? Nothing to do here.
   useEffect(() => {
-    if (profile) navigate('/', { replace: true })
-  }, [profile, navigate])
+    if (profile) navigate(returnTo, { replace: true })
+  }, [profile, navigate, returnTo])
+
+  useEffect(() => () => {
+    if (avatarPreview?.startsWith('blob:')) URL.revokeObjectURL(avatarPreview)
+  }, [avatarPreview])
 
   function toggleInterest(c: Category) {
     setInterests((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
@@ -44,14 +56,26 @@ export default function Onboarding() {
         throw new Error('That username is taken. Try another.')
       }
 
+      let avatarUrl = profile?.avatar_url ?? null
+      if (avatarFile) {
+        const path = `${session.user.id}/avatar-${Date.now()}.jpg`
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type })
+        if (uploadError) throw uploadError
+        avatarUrl = supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl
+      }
+
       const { data, error: insertError } = await supabase
         .from('profiles')
         .insert({
           id: session.user.id,
           display_name: displayName.trim(),
           username: handle,
+          avatar_url: avatarUrl,
           area,
           city: 'Lagos',
+          phone: session.user.phone ?? null,
           bio: bio.trim() || null,
           interests,
         })
@@ -60,7 +84,7 @@ export default function Onboarding() {
 
       if (insertError) throw insertError
       completeOnboarding(data as Profile)
-      navigate('/', { replace: true })
+      navigate(`/community-check?returnTo=${encodeURIComponent(returnTo)}`, { replace: true })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save your profile')
     } finally {
@@ -79,7 +103,7 @@ export default function Onboarding() {
               className="h-1.5 flex-1 rounded-full"
               style={{
                 backgroundImage:
-                  i <= step ? 'linear-gradient(135deg,#FFD93D,#FF9F1C)' : undefined,
+                  i <= step ? 'linear-gradient(180deg,#F7A233,#EE7B1E)' : undefined,
                 backgroundColor: i <= step ? undefined : '#EDEDE8',
               }}
             />
@@ -94,6 +118,38 @@ export default function Onboarding() {
             <p className="mt-1.5 text-[14px] text-muted">
               Your real name builds trust. Your username keeps it human.
             </p>
+
+            <div className="mt-6 flex flex-col items-center">
+              <span className="flex h-[104px] w-[104px] items-center justify-center overflow-hidden rounded-full bg-[#ece9e2] text-muted">
+                {avatarPreview
+                  ? <img src={avatarPreview} alt="Profile preview" className="h-full w-full object-cover" />
+                  : <UserRound size={44} aria-hidden />}
+              </span>
+              <label className="mt-3 inline-flex cursor-pointer items-center gap-1.5 text-[14px] font-semibold text-amber">
+                <Camera size={17} aria-hidden />
+                {avatarPreview ? 'Change photo' : 'Add a profile photo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    if (!file.type.startsWith('image/')) {
+                      setError('Choose an image file for your profile photo.')
+                      return
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                      setError('Choose an image smaller than 5 MB.')
+                      return
+                    }
+                    setError(null)
+                    setAvatarFile(file)
+                    setAvatarPreview(URL.createObjectURL(file))
+                  }}
+                />
+              </label>
+            </div>
 
             <div className="mt-6 space-y-4">
               <div>
@@ -228,7 +284,7 @@ export default function Onboarding() {
                 <div key={r.n} className="card flex gap-3 p-4">
                   <span
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[13px] font-bold"
-                    style={{ backgroundImage: 'linear-gradient(135deg,#FFD93D,#FF9F1C)' }}
+                    style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)' }}
                   >
                     {r.n}
                   </span>

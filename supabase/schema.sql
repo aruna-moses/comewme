@@ -3,6 +3,8 @@
 -- Postgres / Supabase
 --
 -- Run this in Supabase Studio -> SQL Editor -> New query -> Run.
+-- Then apply migrations/012_community_guidelines_and_violations.sql for
+-- mandatory guidelines acceptance and the moderation system.
 -- It is idempotent-ish: drop-first, so only run on a fresh project.
 -- ============================================================
 
@@ -22,6 +24,17 @@ create table if not exists public.profiles (
   city                text not null default 'Lagos',
   bio                 text,
   phone               text,
+  community_check_passed_at timestamptz,
+  character_style     text not null default 'feminine'
+                      check (character_style in ('feminine','masculine')),
+  character_skin      text not null default 'cocoa'
+                      check (character_skin in ('deep','cocoa','warm','golden','peach','fair')),
+  character_shirt     text not null default 'sunset'
+                      check (character_shirt in ('sunset','lagoon','sky','violet','midnight')),
+  character_bottom    text not null default 'trousers-denim'
+                      check (character_bottom in ('trousers-denim','trousers-sand','skirt-coral','skirt-lilac')),
+  character_shoes     text not null default 'sneakers-cream'
+                      check (character_shoes in ('sneakers-cream','sneakers-coral')),
   interests           text[] not null default '{}',
   trust_score         int not null default 0,
   tasks_completed     int not null default 0,
@@ -44,10 +57,12 @@ create table if not exists public.tasks (
   city              text not null default 'Lagos',
   meeting_point     text not null,
   date_time         timestamptz not null,
-  spots_needed      int not null check (spots_needed between 1 and 50),
+  spots_needed      int not null check (spots_needed >= 1),
   spots_filled      int not null default 0 check (spots_filled >= 0),
   status            text not null default 'open'
                     check (status in ('open','full','completed','cancelled')),
+  fill_mode         text not null default 'review'
+                    check (fill_mode = 'review'),
   is_sponsored      boolean not null default false,
   sponsor_name      text,
   sponsored_until   date,
@@ -62,7 +77,7 @@ create table if not exists public.join_requests (
   requester_avatar_url  text,
   message               text,
   status                text not null default 'pending'
-                        check (status in ('pending','accepted','declined','withdrawn')),
+                        check (status in ('pending','accepted','declined','withdrawn','waitlisted')),
   created_at            timestamptz not null default now(),
   unique (task_id, requester_id)
 );
@@ -73,9 +88,79 @@ create table if not exists public.messages (
   sender_id          uuid not null references public.profiles(id) on delete cascade,
   sender_name        text not null,
   sender_avatar_url  text,
-  body               text not null check (char_length(body) between 1 and 2000),
+  body               text not null,
+  type               text not null default 'text' check (type in ('text','image','audio')),
+  url                text,
+  duration           int,
+  reply_to_message_id uuid,
+  reply_to_sender_name text,
+  reply_to_preview    text,
+  deleted_at         timestamptz,
+  constraint messages_reply_snapshot_check check (
+    (reply_to_message_id is null and reply_to_sender_name is null and reply_to_preview is null)
+    or (reply_to_message_id is not null and reply_to_sender_name is not null and reply_to_preview is not null)
+  ),
+  constraint messages_body_check check (
+    (type = 'text' and char_length(body) between 1 and 2000)
+    or (type in ('image','audio') and char_length(body) = 0)
+  ),
   created_at         timestamptz not null default now()
 );
+
+alter table public.messages
+  add column if not exists reply_to_message_id uuid,
+  add column if not exists reply_to_sender_name text,
+  add column if not exists reply_to_preview text,
+  add column if not exists deleted_at timestamptz;
+
+alter table public.messages
+  drop constraint if exists messages_reply_snapshot_check,
+  add constraint messages_reply_snapshot_check check (
+    (reply_to_message_id is null and reply_to_sender_name is null and reply_to_preview is null)
+    or (reply_to_message_id is not null and reply_to_sender_name is not null and reply_to_preview is not null)
+  );
+
+create or replace function public.guard_message_soft_delete()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    return new;
+  end if;
+
+  if auth.uid() <> old.sender_id or not public.is_task_participant(old.task_id) then
+    raise exception 'You can only delete your own messages while you are a group member';
+  end if;
+
+  if old.deleted_at is not null
+    or new.deleted_at is null
+    or new.body <> 'This message was deleted'
+    or new.type <> 'text'
+    or new.url is not null
+    or new.duration is not null
+    or new.id is distinct from old.id
+    or new.task_id is distinct from old.task_id
+    or new.sender_id is distinct from old.sender_id
+    or new.sender_name is distinct from old.sender_name
+    or new.sender_avatar_url is distinct from old.sender_avatar_url
+    or new.reply_to_message_id is distinct from old.reply_to_message_id
+    or new.reply_to_sender_name is distinct from old.reply_to_sender_name
+    or new.reply_to_preview is distinct from old.reply_to_preview
+    or new.created_at is distinct from old.created_at
+  then
+    raise exception 'Messages can only be deleted';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_guard_message_soft_delete on public.messages;
+create trigger trg_guard_message_soft_delete
+before update on public.messages
+for each row execute function public.guard_message_soft_delete();
 
 create table if not exists public.reviews (
   id           uuid primary key default gen_random_uuid(),
@@ -89,6 +174,15 @@ create table if not exists public.reviews (
   check (reviewer_id <> reviewee_id)
 );
 
+create table if not exists public.profile_media (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles(id) on delete cascade,
+  storage_path text not null unique,
+  media_type text not null check (media_type in ('image', 'video')),
+  created_at timestamptz not null default now(),
+  constraint profile_media_path_owner check (storage_path like profile_id::text || '/%')
+);
+
 create table if not exists public.reports (
   id                uuid primary key default gen_random_uuid(),
   reporter_id       uuid references public.profiles(id) on delete set null,
@@ -100,6 +194,15 @@ create table if not exists public.reports (
   status            text not null default 'open'
                     check (status in ('open','reviewing','resolved')),
   created_at        timestamptz not null default now()
+);
+
+create table if not exists public.account_posting_controls (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  distinct_reporter_count integer not null default 0 check (distinct_reporter_count >= 0),
+  review_required boolean not null default false,
+  suspended_at timestamptz,
+  suspension_reason text,
+  updated_at timestamptz not null default now()
 );
 
 -- Private. Selfies are only ever visible to the owner and to the service role.
@@ -123,10 +226,14 @@ create index if not exists tasks_host_idx        on public.tasks (host_id);
 create index if not exists tasks_sponsored_idx   on public.tasks (is_sponsored, created_at desc);
 create index if not exists tasks_area_idx        on public.tasks (area);
 create index if not exists tasks_category_idx    on public.tasks (category);
+create index if not exists tasks_fill_mode_idx   on public.tasks (fill_mode);
 create index if not exists join_task_idx         on public.join_requests (task_id, status);
 create index if not exists join_requester_idx    on public.join_requests (requester_id);
 create index if not exists messages_task_idx     on public.messages (task_id, created_at);
+create index if not exists messages_task_type_idx on public.messages (task_id, type, created_at);
 create index if not exists reviews_reviewee_idx  on public.reviews (reviewee_id);
+create index if not exists profile_media_profile_created_idx
+  on public.profile_media (profile_id, created_at desc);
 
 -- ============================================================
 -- HELPERS
@@ -312,6 +419,7 @@ begin
     new.is_sponsored    := old.is_sponsored;
     new.sponsor_name    := old.sponsor_name;
     new.sponsored_until := old.sponsored_until;
+    new.fill_mode       := old.fill_mode;
   end if;
 
   return new;
@@ -333,21 +441,67 @@ set search_path = public
 as $$
 declare
   v_host uuid;
+  v_needed int;
+  v_task_status text;
+  v_accepted int;
 begin
-  select host_id into v_host from public.tasks where id = old.task_id;
+  if tg_op = 'INSERT' then
+    select host_id, spots_needed, status
+      into v_host, v_needed, v_task_status
+      from public.tasks
+     where id = new.task_id
+     for update;
+
+    if not found then
+      raise exception 'Activity not found';
+    end if;
+
+    if auth.uid() is not null then
+      if auth.uid() <> new.requester_id or auth.uid() = v_host then
+        raise exception 'You can only request to join as yourself';
+      end if;
+      if v_task_status <> 'open' then
+        raise exception 'This activity is no longer accepting requests';
+      end if;
+      new.status := 'pending';
+    end if;
+    return new;
+  end if;
+
+  select host_id, spots_needed, status
+    into v_host, v_needed, v_task_status
+    from public.tasks
+   where id = old.task_id
+   for update;
 
   new.task_id      := old.task_id;
   new.requester_id := old.requester_id;
   new.created_at   := old.created_at;
 
   if auth.uid() = v_host then
-    -- The host decides. Anything that is not an accept/decline is ignored.
-    if new.status not in ('accepted', 'declined', 'pending') then
+    if new.status not in ('accepted', 'declined', 'pending', 'waitlisted') then
       new.status := old.status;
+    elsif new.status = 'accepted' and old.status <> 'accepted' then
+      if old.status = 'withdrawn' or v_task_status not in ('open', 'full') then
+        raise exception 'This application can no longer be accepted';
+      end if;
+
+      select count(*) into v_accepted
+        from public.join_requests
+       where task_id = old.task_id
+         and status = 'accepted';
+      if v_accepted >= v_needed then
+        raise exception 'No spots are available for this activity';
+      end if;
     end if;
   elsif auth.uid() = old.requester_id then
-    -- A requester may only pull out, never accept themselves.
-    if new.status not in ('withdrawn', 'pending') then
+    if new.status = 'withdrawn' and old.status in ('pending', 'waitlisted', 'accepted') then
+      null;
+    elsif new.status = 'pending'
+      and old.status in ('declined', 'withdrawn')
+      and v_task_status = 'open' then
+      null;
+    else
       new.status := old.status;
     end if;
   else
@@ -360,7 +514,7 @@ $$;
 
 drop trigger if exists trg_guard_join_status on public.join_requests;
 create trigger trg_guard_join_status
-before update on public.join_requests
+before insert or update on public.join_requests
 for each row execute function public.guard_join_status();
 
 -- Recompute a user's trust score from reviews + history.
@@ -409,6 +563,52 @@ create trigger trg_on_review_created
 after insert on public.reviews
 for each row execute function public.on_review_created();
 
+create or replace function public.guard_profile_media_insert()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_item_count integer;
+begin
+  if auth.uid() is not null and auth.uid() <> new.profile_id then
+    raise exception 'You can only publish media on your own profile';
+  end if;
+
+  if new.media_type = 'image' and new.storage_path !~ (
+    '^' || new.profile_id::text || '/[0-9a-fA-F-]{36}\.(jpg|jpeg|png|webp)$'
+  ) then
+    raise exception 'Invalid profile image storage path';
+  end if;
+  if new.media_type = 'video' and new.storage_path !~ (
+    '^' || new.profile_id::text || '/[0-9a-fA-F-]{36}\.(mp4|webm|mov)$'
+  ) then
+    raise exception 'Invalid profile media storage path';
+  end if;
+
+  perform 1
+    from public.profiles
+   where id = new.profile_id
+   for update;
+
+  select count(*) into v_item_count
+    from public.profile_media
+   where profile_id = new.profile_id;
+
+  if v_item_count >= 6 then
+    raise exception 'A profile can have up to 6 public media items';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_guard_profile_media_insert on public.profile_media;
+create trigger trg_guard_profile_media_insert
+before insert on public.profile_media
+for each row execute function public.guard_profile_media_insert();
+
 -- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
@@ -419,7 +619,9 @@ alter table public.join_requests  enable row level security;
 alter table public.messages       enable row level security;
 alter table public.reviews        enable row level security;
 alter table public.reports        enable row level security;
+alter table public.account_posting_controls enable row level security;
 alter table public.verifications  enable row level security;
+alter table public.profile_media  enable row level security;
 
 -- ---------- profiles ----------
 drop policy if exists profiles_read on public.profiles;
@@ -434,6 +636,24 @@ drop policy if exists profiles_update_self on public.profiles;
 create policy profiles_update_self on public.profiles
   for update using (auth.uid() = id) with check (auth.uid() = id);
 
+-- Only items deliberately added to the public profile gallery are exposed.
+drop policy if exists profile_media_public_read on public.profile_media;
+create policy profile_media_public_read on public.profile_media
+  for select using (true);
+
+drop policy if exists profile_media_insert_own on public.profile_media;
+create policy profile_media_insert_own on public.profile_media
+  for insert to authenticated
+  with check (auth.uid() = profile_id);
+
+drop policy if exists profile_media_delete_own on public.profile_media;
+create policy profile_media_delete_own on public.profile_media
+  for delete to authenticated
+  using (auth.uid() = profile_id);
+grant select on public.profile_media to anon, authenticated;
+grant insert, delete on public.profile_media to authenticated;
+revoke update on public.profile_media from anon, authenticated;
+
 -- ---------- tasks ----------
 drop policy if exists tasks_read on public.tasks;
 create policy tasks_read on public.tasks
@@ -441,7 +661,15 @@ create policy tasks_read on public.tasks
 
 drop policy if exists tasks_insert_own on public.tasks;
 create policy tasks_insert_own on public.tasks
-  for insert with check (auth.uid() = host_id);
+  for insert with check (
+    auth.uid() = host_id
+    and not exists (
+      select 1
+      from public.account_posting_controls controls
+      where controls.user_id = auth.uid()
+        and controls.suspended_at is not null
+    )
+  );
 
 drop policy if exists tasks_update_own on public.tasks;
 create policy tasks_update_own on public.tasks
@@ -458,7 +686,16 @@ drop policy if exists join_read on public.join_requests;
 create policy join_read on public.join_requests
   for select using (
     auth.uid() = requester_id
-    or exists (select 1 from public.tasks t where t.id = task_id and t.host_id = auth.uid())
+    or exists (
+      select 1
+      from public.tasks t
+      where t.id = task_id
+        and t.host_id = auth.uid()
+    )
+    or (
+      status = 'accepted'
+      and public.is_task_participant(task_id)
+    )
   );
 
 drop policy if exists join_insert_own on public.join_requests;
@@ -502,8 +739,12 @@ create policy messages_insert_participants on public.messages
   );
 
 drop policy if exists messages_delete_own on public.messages;
-create policy messages_delete_own on public.messages
-  for delete using (auth.uid() = sender_id);
+
+drop policy if exists messages_update_own on public.messages;
+create policy messages_update_own on public.messages
+  for update
+  using (auth.uid() = sender_id and public.is_task_participant(task_id))
+  with check (auth.uid() = sender_id and public.is_task_participant(task_id));
 
 -- ---------- reviews ----------
 drop policy if exists reviews_read on public.reviews;
@@ -535,6 +776,101 @@ create policy reports_insert_own on public.reports
 
 -- No select policy: only the service role (admin dashboard) can read reports.
 
+revoke all on public.account_posting_controls from anon;
+revoke insert, update, delete on public.account_posting_controls from anon, authenticated;
+grant select on public.account_posting_controls to authenticated;
+
+drop policy if exists account_posting_controls_read_own on public.account_posting_controls;
+create policy account_posting_controls_read_own on public.account_posting_controls
+  for select to authenticated
+  using (auth.uid() = user_id);
+
+create or replace function public.refresh_posting_review_for_user(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_reporter_count integer;
+begin
+  if p_user_id is null then
+    return;
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(p_user_id::text, 0));
+
+  select count(distinct reporter_id)::integer
+    into v_reporter_count
+  from public.reports
+  where reported_user_id = p_user_id
+    and reporter_id is not null
+    and reporter_id <> p_user_id
+    and status in ('open', 'reviewing');
+
+  insert into public.account_posting_controls (
+    user_id,
+    distinct_reporter_count,
+    review_required,
+    updated_at
+  )
+  values (
+    p_user_id,
+    v_reporter_count,
+    v_reporter_count >= 3,
+    now()
+  )
+  on conflict (user_id) do update
+    set distinct_reporter_count = excluded.distinct_reporter_count,
+        review_required = excluded.review_required,
+        updated_at = excluded.updated_at;
+end;
+$$;
+
+revoke all on function public.refresh_posting_review_for_user(uuid) from public, anon, authenticated;
+
+create or replace function public.refresh_posting_review_after_report()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'UPDATE' and old.reported_user_id is distinct from new.reported_user_id then
+    perform public.refresh_posting_review_for_user(old.reported_user_id);
+  end if;
+  perform public.refresh_posting_review_for_user(new.reported_user_id);
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_refresh_posting_review_after_report on public.reports;
+create trigger trg_refresh_posting_review_after_report
+after insert or update of status, reported_user_id, reporter_id on public.reports
+for each row execute function public.refresh_posting_review_after_report();
+
+insert into public.account_posting_controls (
+  user_id,
+  distinct_reporter_count,
+  review_required,
+  updated_at
+)
+select
+  reported_user_id,
+  count(distinct reporter_id)::integer,
+  count(distinct reporter_id) >= 3,
+  now()
+from public.reports
+where reported_user_id is not null
+  and reporter_id is not null
+  and reporter_id <> reported_user_id
+  and status in ('open', 'reviewing')
+group by reported_user_id
+on conflict (user_id) do update
+  set distinct_reporter_count = excluded.distinct_reporter_count,
+      review_required = excluded.review_required,
+      updated_at = excluded.updated_at;
+
 -- ---------- verifications ----------
 drop policy if exists verifications_read_own on public.verifications;
 create policy verifications_read_own on public.verifications
@@ -558,6 +894,53 @@ insert into storage.buckets (id, name, public)
 values ('verifications', 'verifications', false)
 on conflict (id) do nothing;
 
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'profile-media',
+  'profile-media',
+  true,
+  31457280,
+  array['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime']
+)
+on conflict (id) do update
+  set public = true,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists profile_media_storage_public_read on storage.objects;
+create policy profile_media_storage_public_read on storage.objects
+  for select using (bucket_id = 'profile-media');
+
+drop policy if exists profile_media_storage_insert_own on storage.objects;
+create policy profile_media_storage_insert_own on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'profile-media'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists profile_media_storage_delete_own on storage.objects;
+create policy profile_media_storage_delete_own on storage.objects
+  for delete to authenticated
+  using (
+    bucket_id = 'profile-media'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'chat-media',
+  'chat-media',
+  false,
+  15728640,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif',
+        'audio/webm', 'audio/mp4', 'audio/ogg', 'audio/mpeg', 'audio/wav', 'audio/aac', 'audio/x-m4a']
+)
+on conflict (id) do update
+  set public = false,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
 drop policy if exists avatars_public_read on storage.objects;
 create policy avatars_public_read on storage.objects
   for select using (bucket_id = 'avatars');
@@ -577,3 +960,72 @@ drop policy if exists verifications_own_write on storage.objects;
 create policy verifications_own_write on storage.objects
   for insert to authenticated
   with check (bucket_id = 'verifications' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists chat_media_insert on storage.objects;
+create policy chat_media_insert on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'chat-media'
+    and case
+      when split_part(name, '/', 1) = 'tasks'
+        and split_part(name, '/', 2) ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+        and split_part(name, '/', 3) <> ''
+      then public.is_task_participant(split_part(name, '/', 2)::uuid)
+      else false
+    end
+  );
+
+drop policy if exists chat_media_select on storage.objects;
+create policy chat_media_select on storage.objects
+  for select to authenticated
+  using (
+    bucket_id = 'chat-media'
+    and case
+      when split_part(name, '/', 1) = 'tasks'
+        and split_part(name, '/', 2) ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+        and split_part(name, '/', 3) <> ''
+      then public.is_task_participant(split_part(name, '/', 2)::uuid)
+      else false
+    end
+  );
+
+drop policy if exists chat_media_delete on storage.objects;
+create policy chat_media_delete on storage.objects
+  for delete to authenticated
+  using (
+    bucket_id = 'chat-media'
+    and case
+      when split_part(name, '/', 1) = 'tasks'
+        and split_part(name, '/', 2) ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+        and split_part(name, '/', 3) <> ''
+      then public.is_task_participant(split_part(name, '/', 2)::uuid)
+      else false
+    end
+  );
+
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+    and not exists (
+      select 1
+      from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = 'messages'
+    )
+  then
+    execute 'alter publication supabase_realtime add table public.messages';
+  end if;
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+    and not exists (
+      select 1
+      from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = 'profiles'
+    )
+  then
+    execute 'alter publication supabase_realtime add table public.profiles';
+  end if;
+end
+$$;

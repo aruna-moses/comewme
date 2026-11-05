@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { createTask } from '../lib/api'
+import { supabase } from '../lib/supabase'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category } from '../types'
 
@@ -17,14 +18,46 @@ export default function PostTask() {
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [spots, setSpots] = useState(2)
-  const [fillMode, setFillMode] = useState<'review' | 'first_come'>('review')
   const [busy, setBusy] = useState(false)
+  const [postingControlLoading, setPostingControlLoading] = useState(true)
+  const [postingControlReady, setPostingControlReady] = useState(false)
+  const [postingSuspended, setPostingSuspended] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let active = true
+    async function checkPostingPermission() {
+      if (!profile) return
+      setPostingControlLoading(true)
+      setPostingControlReady(false)
+      const { data, error: controlError } = await supabase
+        .from('account_posting_controls')
+        .select('suspended_at')
+        .eq('user_id', profile.id)
+        .maybeSingle()
+      if (!active) return
+      if (controlError) {
+        setError('Could not check posting eligibility. Please refresh and try again.')
+      } else {
+        setPostingSuspended(Boolean(data?.suspended_at))
+        setPostingControlReady(true)
+      }
+      setPostingControlLoading(false)
+    }
+    void checkPostingPermission()
+    return () => { active = false }
+  }, [profile?.id])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!profile) return
     setError(null)
+
+    if (postingControlLoading || !postingControlReady) return
+    if (postingSuspended) {
+      setError('This account is currently unable to post activities. Contact support if you think this is a mistake.')
+      return
+    }
 
     if (!date || !time) {
       setError('Pick a date and a time.')
@@ -52,13 +85,22 @@ export default function PostTask() {
           meeting_point: meetingPoint.trim(),
           date_time: when.toISOString(),
           spots_needed: spots,
-          fill_mode: fillMode,
+          fill_mode: 'review',
         },
         profile,
       )
       navigate(`/task/${task.id}`, { replace: true })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not post this activity')
+      const message = e instanceof Error
+        ? e.message
+        : typeof e === 'object' && e !== null && 'message' in e && typeof e.message === 'string'
+          ? e.message
+          : null
+      setError(
+        message?.includes('fill_mode')
+          ? 'Activity posting needs a database update. Please apply supabase/migrations/003_fill_mode.sql in your Supabase SQL Editor, then try again.'
+          : message ?? 'Could not post this activity.',
+      )
     } finally {
       setBusy(false)
     }
@@ -143,10 +185,14 @@ export default function PostTask() {
               id="spots"
               type="number"
               min={1}
-              max={50}
               className="field"
               value={spots}
-              onChange={(e) => setSpots(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
+              onChange={(e) => {
+                const value = Number(e.target.value)
+                if (Number.isSafeInteger(value) && value >= 1 && value <= 2147483647) {
+                  setSpots(value)
+                }
+              }}
             />
           </div>
         </div>
@@ -199,6 +245,11 @@ export default function PostTask() {
         </div>
       </div>
 
+      {postingSuspended && (
+        <p role="status" className="mt-4 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">
+          This account is currently unable to post activities. Contact support if you think this is a mistake.
+        </p>
+      )}
       {error && (
         <p className="mt-4 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>
       )}
@@ -206,9 +257,9 @@ export default function PostTask() {
       <button
         type="submit"
         className="btn-primary mt-6 w-full"
-        disabled={busy || !title.trim() || !meetingPoint.trim()}
+        disabled={busy || postingControlLoading || !postingControlReady || postingSuspended || !title.trim() || !meetingPoint.trim()}
       >
-        {busy ? 'Posting…' : 'Post activity'}
+        {postingControlLoading ? 'Checking…' : busy ? 'Posting…' : 'Post activity'}
       </button>
     </form>
   )

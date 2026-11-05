@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ArrowRight, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { fetchFeed, fetchUpcomingForUser } from '../lib/api'
+import { supabase } from '../lib/supabase'
 import { AREAS, CATEGORIES } from '../types'
-import type { Category, Task } from '../types'
+import type { Category, JoinStatus, Task } from '../types'
 import { formatDateTime } from '../lib/format'
 import TaskCard from '../components/TaskCard'
 import SkeletonCard from '../components/SkeletonCard'
@@ -19,15 +21,17 @@ export default function Discover() {
   const [area, setArea] = useState<string>('all')
   const [forYou, setForYou] = useState(false)
   const [search, setSearch] = useState('')
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   const [tasks, setTasks] = useState<Task[]>([])
+  const [applicationStatuses, setApplicationStatuses] = useState<Record<string, JoinStatus>>({})
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const [upcoming, setUpcoming] = useState<Task[]>([])
-  const [dismissed, setDismissed] = useState(false)
+  const [upcomingError, setUpcomingError] = useState<string | null>(null)
 
   const interests = profile?.interests ?? []
 
@@ -50,7 +54,22 @@ export default function Discover() {
           offset,
         })
 
+        let statuses: Record<string, JoinStatus> = {}
+        if (profile && rows.length > 0) {
+          const { data, error: statusError } = await supabase
+            .from('join_requests')
+            .select('task_id, status')
+            .eq('requester_id', profile.id)
+            .in('task_id', rows.map((row) => row.id))
+            .neq('status', 'withdrawn')
+          if (statusError) throw statusError
+          statuses = Object.fromEntries(
+            (data ?? []).map((request) => [request.task_id, request.status as JoinStatus]),
+          )
+        }
+
         setTasks((prev) => (offset === 0 ? rows : [...prev, ...rows]))
+        setApplicationStatuses((prev) => (offset === 0 ? statuses : { ...prev, ...statuses }))
         setHasMore(rows.length === PAGE)
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not load activities')
@@ -59,94 +78,128 @@ export default function Discover() {
         setLoadingMore(false)
       }
     },
-    [category, area, forYou, interests.join(','), search],
+    [category, area, forYou, interests.join(','), search, profile?.id],
   )
 
   useEffect(() => {
     void load(0)
-    setDismissed(false)
   }, [load])
 
   useEffect(() => {
     if (!profile?.id) {
       setUpcoming([])
+      setUpcomingError(null)
       return
     }
-    fetchUpcomingForUser(profile.id)
-      .then(setUpcoming)
-      .catch(() => setUpcoming([]))
-  }, [profile?.id])
 
-  const nextUp = upcoming[0]
+    let active = true
+    const refreshUpcoming = async () => {
+      try {
+        const tasks = await fetchUpcomingForUser(profile.id)
+        if (active) {
+          setUpcoming(tasks)
+          setUpcomingError(null)
+        }
+      } catch (e) {
+        if (active) setUpcomingError(e instanceof Error ? e.message : 'Could not load tomorrow’s activity reminders.')
+      }
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void refreshUpcoming()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    let midnightRefresh = 0
+    const scheduleMidnightRefresh = () => {
+      const lagosOffsetMs = 60 * 60_000
+      const lagosNow = new Date(Date.now() + lagosOffsetMs)
+      const nextLagosMidnight = Date.UTC(
+        lagosNow.getUTCFullYear(),
+        lagosNow.getUTCMonth(),
+        lagosNow.getUTCDate() + 1,
+      ) - lagosOffsetMs
+      midnightRefresh = window.setTimeout(() => {
+        void refreshUpcoming()
+        if (active) scheduleMidnightRefresh()
+      }, Math.max(1000, nextLagosMidnight - Date.now() + 1000))
+    }
+
+    void refreshUpcoming()
+    scheduleMidnightRefresh()
+    return () => {
+      active = false
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.clearTimeout(midnightRefresh)
+    }
+  }, [profile?.id])
 
   return (
     <div className="pb-6">
-      {/* header */}
-      <div className="sticky top-0 z-30 border-b border-line bg-canvas/95 px-4 pb-3 pt-4 backdrop-blur">
+      <header className="px-5 pb-2 pt-8">
         <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="font-display text-[26px] font-bold leading-none tracking-tight">
-              Come w' me
+          <div>
+            <p className="text-[11px] font-bold tracking-[0.18em] text-amber">COME W' ME</p>
+            <h1 className="mt-1 font-display text-[24px] font-bold leading-tight tracking-tight">
+              Find your people.
             </h1>
-            <p className="mt-1 text-[12px] text-muted">Find people. Do the thing.</p>
           </div>
-
           {session && profile ? (
             <Link to={`/profile/${profile.id}`} aria-label="Your profile">
-              <Avatar src={profile.avatar_url} name={profile.display_name} size={38} />
+              <Avatar src={profile.avatar_url} name={profile.display_name} size={42} />
             </Link>
           ) : (
-            <Link to="/login" className="btn-primary btn-sm">
-              Sign in
-            </Link>
+            <Link to="/login" className="text-[13px] font-semibold text-amber">Sign in</Link>
           )}
         </div>
 
-        <div className="mt-3 flex items-center gap-2">
-          <span className="pill bg-white text-muted ring-1 ring-line">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
-              <circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="2" />
-            </svg>
-            Lagos
-          </span>
-
-          <select
-            value={area}
-            onChange={(e) => setArea(e.target.value)}
-            className="min-h-[32px] rounded-full border border-line bg-white px-3 text-[12px] font-semibold text-ink outline-none"
-            aria-label="Filter by area"
-          >
-            <option value="all">All areas</option>
-            {AREAS.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="mt-3 flex items-center gap-2">
-          <div className="relative flex-1">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21l-4.35-4.35" />
-            </svg>
+        <div className="mt-5 flex items-center gap-2 rounded-[16px] bg-[#f0f1f3] px-3.5">
+          <Search size={19} className="shrink-0 text-muted" aria-hidden />
+          <div className="relative min-w-0 flex-1">
             <input
               type="text"
-              placeholder="Search activities…"
+              placeholder="Search tasks, areas..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="field pl-10 pr-4 py-2 text-[13px]"
+              className="min-h-[48px] w-full border-0 bg-transparent text-[14px] text-ink outline-none placeholder:text-[#98a0ae]"
+              aria-label="Search tasks and areas"
             />
           </div>
+          <button
+            type="button"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-muted"
+            aria-label={filtersOpen ? 'Hide filters' : 'Show filters'}
+            aria-expanded={filtersOpen}
+            onClick={() => setFiltersOpen((open) => !open)}
+          >
+            <SlidersHorizontal size={19} aria-hidden />
+          </button>
         </div>
 
-        <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
+        {filtersOpen && (
+          <div className="mt-2">
+            <label htmlFor="discover-area" className="sr-only">Filter by area</label>
+            <select
+              id="discover-area"
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+              className="field py-2.5 text-[13px]"
+            >
+              <option value="all">All areas in Lagos</option>
+              {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
+        )}
+      </header>
+
+      <div className="mx-5 mt-3 flex items-start gap-2.5 rounded-[13px] border border-[#edd996] bg-[#fff4d1] p-3 text-[#7a622f]">
+        <ShieldCheck size={20} className="mt-0.5 shrink-0 text-amber" aria-hidden />
+        <p className="text-[12px] leading-[1.45]">
+          Meet in public, keep personal details private, and check each poster&apos;s reputation before you join.
+        </p>
+      </div>
+
+      <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto px-5 pb-1">
           {session && interests.length > 0 && (
             <button
               onClick={() => setForYou((v) => !v)}
@@ -170,33 +223,50 @@ export default function Discover() {
               {c.emoji} {c.label}
             </button>
           ))}
-        </div>
       </div>
 
-      {/* reminder */}
-      {session && nextUp && !dismissed && (
-        <div className="mx-4 mt-4 flex items-start gap-3 rounded-card border border-amber/30 bg-sun/15 p-4">
-          <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-amber" />
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-bold text-ink">You have an activity coming up</p>
-            <p className="mt-0.5 truncate text-[13px] text-muted">
-              {nextUp.title} · {formatDateTime(nextUp.date_time)}
-            </p>
+      <div className="mb-3 mt-4 flex items-center justify-between px-5">
+        <h2 className="text-[14px] font-bold">Around Lagos</h2>
+        <span className="text-[12px] text-muted">Newest first</span>
+      </div>
+
+      {/* Day-before reminders stay visible for every activity happening tomorrow. */}
+      {session && upcomingError && (
+        <p role="status" className="mx-4 mt-4 rounded-xl border border-[#edd996] bg-[#fff4d1] p-3 text-[12px] leading-relaxed text-[#7a622f]">
+          Tomorrow&apos;s activity reminders could not be refreshed. {upcomingError}
+        </p>
+      )}
+      {session && upcoming.length > 0 && (
+        <section className="activity-reminder mx-4 mt-4 rounded-card border border-amber/30 bg-sun/15 p-4" aria-label="Activities happening tomorrow">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber motion-reduce:animate-none" />
+            <h2 className="text-[13px] font-bold text-ink">
+              {upcoming.length === 1 ? 'A reminder for tomorrow' : `${upcoming.length} activities tomorrow`}
+            </h2>
           </div>
-          <button
-            onClick={() => setDismissed(true)}
-            className="-mr-1 -mt-1 p-1 text-muted"
-            aria-label="Dismiss"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
+          <div className="space-y-2">
+            {upcoming.map((task) => (
+              <Link
+                key={task.id}
+                to={`/mytasks?task=${encodeURIComponent(task.id)}`}
+                className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline"
+                aria-label={`View upcoming activity ${task.title} in My Tasks`}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-ink">{task.title}</p>
+                  <p className="mt-0.5 truncate text-[12px] text-muted">
+                    {formatDateTime(task.date_time)}
+                  </p>
+                </div>
+                <ArrowRight size={18} className="shrink-0 text-amber" aria-hidden />
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* feed */}
-      <div className="mt-4 space-y-3 px-4">
+      <div className="space-y-3 px-5">
         {loading && (
           <>
             <SkeletonCard />
@@ -217,7 +287,9 @@ export default function Discover() {
 
         {!loading &&
           !error &&
-          tasks.map((t) => <TaskCard key={t.id} task={t} />)}
+          tasks.map((t) => (
+            <TaskCard key={t.id} task={t} applicationStatus={applicationStatuses[t.id]} />
+          ))}
 
         {!loading && !error && tasks.length === 0 && (
           <EmptyState

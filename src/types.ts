@@ -37,7 +37,7 @@ export const AREAS = [
 
 export type VerificationStatus = 'unverified' | 'pending' | 'verified'
 export type TaskStatus = 'open' | 'full' | 'completed' | 'cancelled'
-export type JoinStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn'
+export type JoinStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn' | 'waitlisted'
 
 export interface Profile {
   id: string
@@ -53,6 +53,12 @@ export interface Profile {
   tasks_completed: number
   no_shows: number
   verification_status: VerificationStatus
+  community_check_passed_at: string | null
+  character_style?: 'feminine' | 'masculine'
+  character_skin?: 'deep' | 'cocoa' | 'warm' | 'golden' | 'peach' | 'fair'
+  character_shirt?: 'sunset' | 'lagoon' | 'sky' | 'violet' | 'midnight'
+  character_bottom?: 'trousers-denim' | 'trousers-sand' | 'skirt-coral' | 'skirt-lilac'
+  character_shoes?: 'sneakers-cream' | 'sneakers-coral'
   created_at: string
 }
 
@@ -71,7 +77,7 @@ export interface Task {
   spots_needed: number
   spots_filled: number
   status: TaskStatus
-  fill_mode: 'review' | 'first_come'
+  fill_mode: 'review'
   is_sponsored: boolean
   sponsor_name: string | null
   sponsored_until: string | null
@@ -99,6 +105,10 @@ export interface Message {
   type: 'text' | 'image' | 'audio'
   url: string | null
   duration: number | null
+  reply_to_message_id?: string | null
+  reply_to_sender_name?: string | null
+  reply_to_preview?: string | null
+  deleted_at?: string | null
   created_at: string
 }
 
@@ -111,6 +121,76 @@ export interface Review {
   comment: string | null
   created_at: string
 }
+
+export interface ProfileMedia {
+  id: string
+  profile_id: string
+  storage_path: string
+  media_type: 'image' | 'video'
+  created_at: string
+}
+
+export type ViolationCategory =
+  | 'harassment'
+  | 'no_show'
+  | 'fake_profile'
+  | 'scam'
+  | 'inappropriate'
+  | 'spam'
+  | 'illegal_content'
+  | 'minor_safety'
+  | 'ban_evasion'
+  | 'other'
+
+export type ViolationSeverity =
+  | 'warning'
+  | 'suspension_24h'
+  | 'suspension_7d'
+  | 'suspension_30d'
+  | 'permanent_ban'
+
+export type ViolationStatus = 'pending' | 'reviewed' | 'resolved' | 'appealed'
+
+export interface Violation {
+  id: string
+  user_id: string
+  reported_by: string | null
+  reported_task_id: string | null
+  category: ViolationCategory
+  severity: ViolationSeverity
+  status: ViolationStatus
+  description: string
+  action_taken: string | null
+  banned_until: string | null
+  warning_acknowledged: boolean
+  created_at: string
+  reviewed_at: string | null
+  reviewed_by: string | null
+}
+
+export interface ViolationAppeal {
+  id: string
+  violation_id: string
+  user_id: string
+  appeal_reason: string
+  status: 'pending' | 'granted' | 'denied'
+  admin_response: string | null
+  created_at: string
+  reviewed_at: string | null
+}
+
+export const VIOLATION_CATEGORIES: { value: ViolationCategory; label: string }[] = [
+  { value: 'harassment', label: 'Harassment' },
+  { value: 'no_show', label: "Didn't show up" },
+  { value: 'fake_profile', label: 'Fake profile' },
+  { value: 'scam', label: 'Scam or fraud' },
+  { value: 'inappropriate', label: 'Inappropriate behaviour' },
+  { value: 'spam', label: 'Spam' },
+  { value: 'illegal_content', label: 'Illegal content' },
+  { value: 'minor_safety', label: 'Minor safety concern' },
+  { value: 'ban_evasion', label: 'Ban evasion' },
+  { value: 'other', label: 'Something else' },
+]
 
 export type ReportCategory =
   | 'harassment'

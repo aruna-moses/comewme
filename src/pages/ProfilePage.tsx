@@ -3,13 +3,12 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { fetchProfile, fetchReviews } from '../lib/api'
 import { supabase } from '../lib/supabase'
-import type { Profile, Review, Task } from '../types'
-import { trustLevel } from '../types'
-import { formatDateTime } from '../lib/format'
+import type { Profile, Review } from '../types'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
-import { TrustPill, VerifiedBadge } from '../components/Badges'
-import TaskCard from '../components/TaskCard'
+import CharacterJourney from '../components/CharacterJourney'
+import ProfileMediaGallery from '../components/ProfileMediaGallery'
+import ReportButton from '../components/ReportButton'
 
 export default function ProfilePage() {
   const { id } = useParams<{ id: string }>()
@@ -18,51 +17,35 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
-  const [reviewers, setReviewers] = useState<Record<string, { name: string; avatar: string | null }>>({})
-  const [hosted, setHosted] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let alive = true
+    let receivedRealtimeProfile = false
     if (!id) return
     setLoading(true)
+    const channel = supabase
+      .channel(`profile-journey:${id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${id}` },
+        (payload) => {
+          receivedRealtimeProfile = true
+          if (alive) setProfile(payload.new as Profile)
+        },
+      )
+      .subscribe()
     Promise.all([fetchProfile(id), fetchReviews(id)])
       .then(async ([p, r]) => {
         if (!alive) return
-        setProfile(p)
+        if (!receivedRealtimeProfile) setProfile(p)
         setReviews(r)
-        if (p) {
-          const { data } = await supabase
-            .from('tasks')
-            .select('*')
-            .eq('host_id', id)
-            .order('date_time', { ascending: false })
-            .limit(6)
-          if (alive) setHosted((data ?? []) as Task[])
-        }
-        // One query for every reviewer name, instead of one per review.
-        const ids = [...new Set(r.map((x) => x.reviewer_id))]
-        if (ids.length > 0) {
-          const { data: people } = await supabase
-            .from('profiles')
-            .select('id, display_name, avatar_url')
-            .in('id', ids)
-          if (alive && people) {
-            const map: Record<string, { name: string; avatar: string | null }> = {}
-            for (const person of people) {
-              map[person.id as string] = {
-                name: person.display_name as string,
-                avatar: (person.avatar_url as string | null) ?? null,
-              }
-            }
-            setReviewers(map)
-          }
-        }
       })
       .catch(() => undefined)
       .finally(() => alive && setLoading(false))
     return () => {
       alive = false
+      void supabase.removeChannel(channel)
     }
   }, [id])
 
@@ -102,26 +85,12 @@ export default function ProfilePage() {
         <div className="flex items-start gap-4">
           <Avatar src={profile.avatar_url} name={profile.display_name} size={76} />
           <div className="min-w-0 flex-1 pt-1">
-            <div className="flex items-center gap-1.5">
-              <h1 className="truncate font-display text-[22px] font-bold leading-tight">
-                {profile.display_name}
-              </h1>
-              <VerifiedBadge status={profile.verification_status} />
-            </div>
+            <h1 className="truncate font-display text-[22px] font-bold leading-tight">
+              {profile.display_name}
+            </h1>
             <p className="text-[13px] text-muted">@{profile.username}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <TrustPill level={trustLevel(profile.tasks_completed)} />
-              <span className="text-[12px] text-muted">
-                {profile.area ?? 'Lagos'}
-                {profile.city && profile.city !== 'Lagos' ? `, ${profile.city}` : ''}
-              </span>
-            </div>
           </div>
         </div>
-
-        {profile.bio && (
-          <p className="mt-4 text-[14px] leading-relaxed text-ink/85">{profile.bio}</p>
-        )}
 
         <div className="mt-5 grid grid-cols-3 gap-2">
           {[
@@ -136,16 +105,19 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        {profile.verification_status !== 'verified' && isMe && (
-          <Link
-            to="/settings"
-            className="card mt-3 flex items-center justify-between p-4"
-          >
+        {isMe && (
+          <CharacterJourney
+            profile={profile}
+            isOwner
+            onProfileChange={setProfile}
+          />
+        )}
+
+        {isMe && profile.verification_status !== 'verified' && (
+          <Link to="/settings" className="card mt-3 flex items-center justify-between p-4">
             <div>
               <p className="text-[14px] font-semibold">
-                {profile.verification_status === 'pending'
-                  ? 'Verification under review'
-                  : 'Get verified'}
+                {profile.verification_status === 'pending' ? 'Verification under review' : 'Get verified'}
               </p>
               <p className="mt-0.5 text-[12px] text-muted">
                 A verified face means people trust you faster.
@@ -155,47 +127,17 @@ export default function ProfilePage() {
           </Link>
         )}
 
-        {hosted.length > 0 && (
-          <section className="mt-7">
-            <h2 className="mb-2 font-display text-base font-bold">Activities hosted</h2>
-            <div className="space-y-3">
-              {hosted.map((t) => (
-                <TaskCard key={t.id} task={t} />
-              ))}
-            </div>
-          </section>
-        )}
+        <ProfileMediaGallery profileId={profile.id} isOwner={isMe} />
 
-        <section className="mt-7">
-          <h2 className="mb-2 font-display text-base font-bold">Reviews</h2>
-          {reviews.length === 0 ? (
-            <p className="card p-4 text-[13px] text-muted">
-              No reviews yet. Reviews only come from people who actually did a task together.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {reviews.map((r) => (
-                <div key={r.id} className="card p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Avatar
-                        src={reviewers[r.reviewer_id]?.avatar ?? null}
-                        name={reviewers[r.reviewer_id]?.name ?? 'Someone'}
-                        size={26}
-                      />
-                      <span className="truncate text-[13px] font-semibold">
-                        {reviewers[r.reviewer_id]?.name ?? 'Someone'}
-                      </span>
-                    </div>
-                    <span className="shrink-0 text-[13px] text-amber">{'★'.repeat(r.rating)}</span>
-                  </div>
-                  {r.comment && <p className="mt-2 text-[13px] text-ink/80">{r.comment}</p>}
-                  <p className="mt-1 text-[11px] text-muted">{formatDateTime(r.created_at)}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        {!isMe && me && (
+          <div className="mt-5 flex justify-end">
+            <ReportButton
+              reportedUserId={profile.id}
+              label="Report this account"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line text-[12px] font-semibold text-muted transition hover:border-alert/40 hover:text-alert"
+            />
+          </div>
+        )}
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, CheckCircle2, Send } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { submitReport } from '../lib/api'
 
@@ -7,36 +8,33 @@ type FeedbackType = 'bug' | 'complaint' | 'suggestion' | 'other'
 
 const FEEDBACK_TYPES: { value: FeedbackType; label: string }[] = [
   { value: 'bug', label: 'Bug report' },
-  { value: 'complaint', label: 'Complaint about a member' },
-  { value: 'suggestion', label: 'Suggestion / feature request' },
+  { value: 'complaint', label: 'Member complaint' },
+  { value: 'suggestion', label: 'Suggestion' },
   { value: 'other', label: 'Something else' },
 ]
 
 export default function Feedback() {
   const { profile } = useAuth()
   const navigate = useNavigate()
-
   const [type, setType] = useState<FeedbackType>('bug')
-  const [details, setDetails] = useState('')
-  const [targetMember, setTargetMember] = useState('')
+  const [subject, setSubject] = useState('')
+  const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
 
   if (!profile) return null
+  const reporterId = profile.id
 
-  async function handleSubmit() {
-    if (!details.trim() || details.trim().length < 3) {
-      alert('Please tell us what happened.')
-      return
-    }
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (subject.trim().length < 3 || message.trim().length < 3) return
     setBusy(true)
     try {
-      const reporterId = profile!.id
       await submitReport({
         reporter_id: reporterId,
         category: type === 'complaint' ? 'harassment' : 'feedback',
-        details: details.trim(),
-        reported_user_id: targetMember.trim() || null,
+        details: `Subject: ${subject.trim()}\n\n${message.trim()}`,
+        reported_user_id: null,
       })
       setSent(true)
     } catch (e) {
@@ -47,111 +45,99 @@ export default function Feedback() {
   }
 
   return (
-    <div className="pb-8">
-      <div className="sticky top-0 z-30 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
-        <button onClick={() => navigate(-1)} className="p-1" aria-label="Back">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <h1 className="font-display text-[20px] font-bold leading-none">Feedback &amp; Help</h1>
-      </div>
+    <div className="flex min-h-[calc(100dvh-72px)] flex-col pb-6">
+      <header className="px-5 pb-2 pt-8">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="text-ink" aria-label="Back">
+            <ArrowLeft size={22} aria-hidden />
+          </button>
+          <h1 className="font-display text-[23px] font-bold leading-tight">
+            {sent ? 'Thanks for your feedback' : 'Feedback & complaints'}
+          </h1>
+        </div>
+        <p className="mt-2 text-[14px] leading-relaxed text-muted">
+          Tell us how we can improve or report a problem. We&apos;re listening.
+        </p>
+      </header>
 
-      <div className="px-4 pt-4">
-        {sent ? (
-          <div className="card mx-4 mt-6 flex flex-col items-center px-6 py-10 text-center">
-            <div
-              className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
-              style={{ backgroundImage: 'linear-gradient(135deg,#FFD93D,#FF9F1C)' }}
-            >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M22 11.08V12a10 10 0 1 1-5.93-9.149"
-                  stroke="#0B0B0F"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <polyline points="22 4 12 14.01 9 11.01" stroke="#0B0B0F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <h3 className="font-display text-lg font-bold text-ink">Thanks</h3>
-            <p className="mt-1 text-[13px] text-muted">
-              We’ve received your feedback. A human reviews every message.
+      {sent ? (
+        <div className="mx-5 mt-5 flex-1">
+          <div className="flex items-start gap-2.5 rounded-[13px] border border-[#cce4d4] bg-[#eaf6ee] p-3 text-[#26815d]">
+            <CheckCircle2 size={20} className="mt-0.5 shrink-0" aria-hidden />
+            <p className="text-[12px] leading-relaxed">
+              Your feedback is sent. Thank you for helping make Come w&apos; me better.
             </p>
-            <Link to="/settings" className="btn-primary mt-6">
-              Back to Settings
-            </Link>
           </div>
-        ) : (
-          <div className="card mx-4 mt-6 p-6">
-            <p className="text-[13px] text-muted mb-5">
-              Tell us what’s on your mind. If this is about a specific member,
-              include their name or username so we can look into it.
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="label">What type of feedback?</label>
-                <div className="flex flex-wrap gap-2">
-                  {FEEDBACK_TYPES.map((t) => (
-                    <button
-                      key={t.value}
-                      type="button"
-                      onClick={() => setType(t.value)}
-                      className={`chip flex-1 ${type === t.value ? 'chip-active' : ''}`}>
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="label" htmlFor="details">
-                  Details
-                </label>
-                <textarea
-                  id="details"
-                  className="field min-h-[120px] resize-none"
-                  placeholder="What happened, when, and who was involved?"
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
-                  maxLength={4000}
-                />
-              </div>
-
-              {type === 'complaint' && (
-                <div>
-                  <label className="label" htmlFor="target">
-                    About which member? (optional)
-                  </label>
-                  <input
-                    id="target"
-                    className="field"
-                    placeholder="@username or full name"
-                    value={targetMember}
-                    onChange={(e) => setTargetMember(e.target.value)}
-                    maxLength={80}
-                  />
-                </div>
-              )}
-
-              <div className="pt-2 text-[12px] leading-relaxed text-muted">
-                We don’t share your contact details with other members. All
-                coordination should stay in the app chat.
-              </div>
-
-              <button
-                className="btn-primary w-full"
-                disabled={busy || details.trim().length < 3}
-                onClick={handleSubmit}
+          <div className="card mt-5 rounded-[18px] p-4">
+            <p className="text-[12px] text-muted">Your subject</p>
+            <p className="mt-2 text-[14px] font-semibold">{subject}</p>
+            <p className="mt-3 text-[14px] text-muted">Our team will review your message.</p>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col px-5 pt-5">
+          <div className="space-y-5">
+            <div>
+              <label className="label" htmlFor="feedback-type">Type</label>
+              <select
+                id="feedback-type"
+                className="field"
+                value={type}
+                onChange={(e) => setType(e.target.value as FeedbackType)}
               >
-                {busy ? 'Sending…' : 'Send feedback'}
-              </button>
+                {FEEDBACK_TYPES.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
             </div>
+            <div>
+              <label className="label" htmlFor="feedback-subject">Subject</label>
+              <input
+                id="feedback-subject"
+                className="field"
+                placeholder="Finding tasks near me"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                maxLength={120}
+                required
+              />
+            </div>
+            <div>
+              <label className="label" htmlFor="feedback-message">Message</label>
+              <textarea
+                id="feedback-message"
+                className="field min-h-[128px] resize-y"
+                placeholder="Tell us what happened or how we can improve."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                maxLength={3800}
+                required
+              />
+            </div>
+            <p className="text-[12px] leading-relaxed text-muted">
+              Please don&apos;t include passwords, verification codes or anyone else&apos;s private details.
+            </p>
           </div>
-        )}
-      </div>
+          <div className="mt-auto pt-8">
+            <button
+              type="submit"
+              className="btn-primary w-full rounded-[16px]"
+              disabled={busy || subject.trim().length < 3 || message.trim().length < 3}
+            >
+              <Send size={18} aria-hidden />
+              {busy ? 'Sending…' : 'Send feedback'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {sent && (
+        <div className="px-5 pt-8">
+          <Link to={`/profile/${profile.id}`} className="btn-primary w-full rounded-[16px]">
+            Back to profile
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

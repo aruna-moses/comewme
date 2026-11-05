@@ -1,22 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import { MessageCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 import type { Task } from '../types'
-import { categoryLabel } from '../types'
-import { formatDateTime, formatTime, isWithin24h } from '../lib/format'
-import Avatar from '../components/Avatar'
+import { formatTime } from '../lib/format'
 import Spinner from '../components/Spinner'
 
 export default function ChatList() {
   const { profile } = useAuth()
-  const navigate = useNavigate()
-
+  const { unreadByTask, unreadMessages, error: notificationError } = useNotifications()
   const [chats, setChats] = useState<
     Array<{
       task: Task
-      lastMessage: { body: string; sender_name: string; created_at: string } | null
-      unread: number
+      lastMessage: { body: string; type: 'text' | 'image' | 'audio'; sender_name: string; created_at: string } | null
     }>
   >([])
   const [loading, setLoading] = useState(true)
@@ -68,7 +66,7 @@ export default function ChatList() {
           unique.map(async (t) => {
             const { data: msgs } = await supabase
               .from('messages')
-              .select('body, sender_name, created_at')
+              .select('body, type, sender_name, created_at')
               .eq('task_id', t.id)
               .order('created_at', { ascending: false })
               .limit(1)
@@ -76,7 +74,6 @@ export default function ChatList() {
             return {
               task: t,
               lastMessage: last ?? null,
-              unread: 0, // simplified — could track read receipts later
             }
           })
         )
@@ -101,31 +98,37 @@ export default function ChatList() {
 
   return (
     <div className="pb-8">
-      <div className="sticky top-0 z-30 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
-        <button onClick={() => navigate(-1)} className="p-1" aria-label="Back">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <h1 className="font-display text-[20px] font-bold leading-none">Chats</h1>
-      </div>
+      <header className="px-5 pb-2 pt-8">
+        <h1 className="font-display text-[24px] font-bold leading-tight">Chats</h1>
+        <p className="mt-1 text-[14px] text-muted">Coordinate with your task group before you meet.</p>
+        {unreadMessages > 0 && (
+          <p role="status" className="mt-3 rounded-xl border border-[#f1c4c1] bg-[#fff1f0] p-3 text-[13px] font-semibold text-[#b3261e]">
+            {unreadMessages} new {unreadMessages === 1 ? 'message' : 'messages'} across your activity chats
+          </p>
+        )}
+      </header>
 
-      <div className="px-4 pt-4">
+      <div className="px-5 pt-4">
+        {notificationError && (
+          <p role="status" className="mb-3 rounded-xl bg-[#fff4d1] p-3 text-[12px] leading-relaxed text-[#7a622f]">
+            {notificationError}
+          </p>
+        )}
         {chats.length === 0 ? (
           <div className="card mx-4 mt-6 flex flex-col items-center px-6 py-10 text-center">
             <div
               className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
-              style={{ backgroundImage: 'linear-gradient(135deg,#FFD93D,#FF9F1C)' }}
+              style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)' }}
             >
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path
                   d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"
-                  stroke="#0B0B0F"
+                  stroke="#1F2430"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
-                <polyline points="16 17 21 12 16 7" stroke="#0B0B0F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <polyline points="16 17 21 12 16 7" stroke="#1F2430" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             <h3 className="font-display text-lg font-bold text-ink">No chats yet</h3>
@@ -134,37 +137,42 @@ export default function ChatList() {
             </p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-3">
             {chats.map((c) => (
               <Link
                 key={c.task.id}
-                to={`/task/${c.task.id}`}
-                className="card flex gap-3 p-4"
+                to={`/task/${c.task.id}/chat`}
+                className="card flex items-center gap-3 rounded-[18px] p-4"
               >
-                <Avatar
-                  src={c.task.host_avatar_url}
-                  name={c.task.host_name}
-                  size={44}
-                  className="shrink-0"
-                />
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff4d1] text-amber">
+                  <MessageCircle size={21} aria-hidden />
+                </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <h2 className="truncate font-display text-lg font-bold">{c.task.title}</h2>
-                    {c.lastMessage && <span className="text-[11px] font-semibold text-muted">{formatTime(c.lastMessage.created_at)}</span>}
+                    <h2 className="line-clamp-2 font-display text-[14px] font-bold leading-snug">{c.task.title}</h2>
+                    <span className="ml-2 flex shrink-0 items-center gap-2">
+                      {c.lastMessage && <span className="text-[9px] text-muted">{formatTime(c.lastMessage.created_at)}</span>}
+                      {(unreadByTask[c.task.id] ?? 0) > 0 && (
+                        <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#e53935] px-1 text-[9px] font-bold text-white" aria-label={`${unreadByTask[c.task.id]} unread messages`}>
+                          {unreadByTask[c.task.id] > 99 ? '99+' : unreadByTask[c.task.id]}
+                        </span>
+                      )}
+                    </span>
                   </div>
                   <p className="mt-1 line-clamp-1 text-[13px] text-muted">
-                    {c.lastMessage ? `${c.lastMessage.sender_name}: ${c.lastMessage.body}` : 'No messages yet'}
+                    {c.lastMessage
+                      ? `${c.lastMessage.sender_name}: ${c.lastMessage.type === 'image' ? 'Photo' : c.lastMessage.type === 'audio' ? 'Voice note' : c.lastMessage.body}`
+                      : 'No messages yet'}
                   </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-[12px] font-semibold">{c.task.spots_filled} of {c.task.spots_needed}</span>
-                    {isWithin24h(c.task.date_time) && (
-                      <span className="pill bg-sun/30 text-ink text-[11px] font-bold">Soon</span>
-                    )}
-                  </div>
                 </div>
               </Link>
             ))}
           </div>
+        )}
+        {chats.length > 0 && (
+          <p className="px-2 pt-5 text-center text-[12px] leading-relaxed text-muted">
+            Your task groups appear here once you&apos;ve joined. Say hello before you meet.
+          </p>
         )}
       </div>
     </div>

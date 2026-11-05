@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Moon, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { fetchMyVerification, submitVerification, updateProfile } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { AREAS, CATEGORIES } from '../types'
@@ -8,6 +11,7 @@ import type { Category, Profile } from '../types'
 
 export default function Settings() {
   const { profile, session, signOut, refreshProfile } = useAuth()
+  const { theme, setTheme } = useTheme()
 
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '')
   const [bio, setBio] = useState(profile?.bio ?? '')
@@ -20,6 +24,8 @@ export default function Settings() {
   const [verifyBusy, setVerifyBusy] = useState(false)
   const [verifyError, setVerifyError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [signOutOpen, setSignOutOpen] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
 
   useEffect(() => {
     if (!profile?.id) return
@@ -92,6 +98,18 @@ export default function Settings() {
     }
   }
 
+  async function confirmSignOut() {
+    setSigningOut(true)
+    try {
+      await signOut()
+      window.location.href = '/'
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Could not sign out. Please try again.')
+      setSigningOut(false)
+      setSignOutOpen(false)
+    }
+  }
+
   const verificationCopy: Record<string, { title: string; body: string }> = {
     unverified: submitted
       ? {
@@ -130,7 +148,7 @@ export default function Settings() {
         <img
           src={
             profile.avatar_url ??
-            `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(profile.display_name)}&backgroundColor=FFD93D`
+            `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(profile.display_name)}&backgroundColor=F7A233`
           }
           alt=""
           className="h-16 w-16 rounded-full bg-line object-cover"
@@ -152,6 +170,42 @@ export default function Settings() {
           </label>
         </div>
       </div>
+
+      <section className="card mt-3 p-4" aria-labelledby="theme-heading">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
+            {theme === 'dark' ? <Moon size={19} aria-hidden /> : <Sun size={19} aria-hidden />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 id="theme-heading" className="text-[14px] font-semibold">Appearance</h2>
+            <p className="mt-0.5 text-[12px] text-muted">Choose the look that feels right. Saved on this device.</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 rounded-[14px] bg-canvas p-1" role="group" aria-label="App theme">
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                aria-pressed={theme === 'light'}
+                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[13px] font-semibold transition ${
+                  theme === 'light' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
+                }`}
+              >
+                <Sun size={16} aria-hidden />
+                Light
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                aria-pressed={theme === 'dark'}
+                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[13px] font-semibold transition ${
+                  theme === 'dark' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
+                }`}
+              >
+                <Moon size={16} aria-hidden />
+                Dark
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* verification */}
       <div className="card mt-3 p-4">
@@ -261,10 +315,7 @@ export default function Settings() {
 
         <button
           className="btn-ghost w-full text-alert"
-          onClick={async () => {
-            await signOut()
-            window.location.href = '/'
-          }}
+          onClick={() => setSignOutOpen(true)}
         >
           Sign out
         </button>
@@ -273,6 +324,17 @@ export default function Settings() {
           Come w' me · Lagos · v0.1
         </p>
       </div>
+
+      <ConfirmDialog
+        open={signOutOpen}
+        title="Taking a little break?"
+        message="You’ll be signed out safely. Your profile and all your good memories will be right here when you’re back."
+        cancelLabel="Stay a little longer"
+        confirmLabel="Sign me out"
+        busy={signingOut}
+        onCancel={() => setSignOutOpen(false)}
+        onConfirm={() => void confirmSignOut()}
+      />
     </div>
   )
 }

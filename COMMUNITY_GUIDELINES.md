@@ -1,6 +1,5 @@
 # Come w' me — Community Guidelines
 
-**Last updated:** [DATE]  
 **Version:** 1.0  
 **Applies to:** All users of Come w' me (web and mobile)
 
@@ -63,22 +62,26 @@ If you see a violation:
 - Reports go to a human reviewer, not an algorithm.
 - You can report a user even after an activity is complete.
 
-Reports are reviewed within a reasonable time. You will not be notified of the outcome of every report, but serious violations are acted on quickly.
+Reports are reviewed by the moderation team. Reports are private; you will not be
+notified of the outcome of every report, but serious violations are acted on quickly.
 
 ## 6. Enforcement & Violations
 
 | Violation Level | Examples | Consequence |
 |---|---|---|
-| **Level 1 — Warning** | Minor no-show, first-time rude message, incomplete profile info | In-app warning popup. Must acknowledge before using app. |
-| **Level 2 — Temporary Suspension** | Repeated no-shows, harassment, sharing private info, posting fake activity | 24 hours to 7 days suspended. Cannot post or join activities. |
-| **Level 3 — Extended Suspension** | Repeated Level 2 offenses, scam attempt, ban evasion attempt | 7 to 30 days suspended. |
-| **Level 4 — Permanent Ban** | Sexual content involving minors, fraud, hate speech, threats, criminal activity, repeated severe violations | Permanent removal. Account deleted. |
+| **Warning** | A reviewed violation that needs to be addressed | In-app notice. Acknowledgment is required before using community features. |
+| **Temporary suspension** | A serious or repeated violation | 24 hours, 7 days, or 30 days. Posting, messaging, and joining are blocked while active. |
+| **Permanent ban** | A severe or repeated violation | Community access is blocked. Contact hello@comewme.app or appeal in the app. |
 
-Severe violations (Level 4) may result in immediate permanent ban without prior warnings.
+Moderators determine the appropriate action based on the circumstances. Severe
+violations may result in immediate suspension or a permanent ban without a prior
+warning. A ban does not automatically delete account data.
 
 ## 7. Appeals
 
-If you believe a decision was made in error, you can appeal through the **"Appeal"** option in Settings or by emailing hello@comewme.app. Appeals are reviewed by a human. Include your username, the date of the incident, and why you believe the decision was wrong.
+If you believe a decision was made in error, use **Your reports & decisions** in the
+app to submit an appeal, or email hello@comewme.app. Appeals are reviewed by a
+moderator. Include the incident date and why you believe the decision was wrong.
 
 ## 8. Changes to These Guidelines
 

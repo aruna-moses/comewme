@@ -5,6 +5,30 @@
 @layer base {
   :root {
     color-scheme: light;
+    --color-sun: 247 162 51;
+    --color-amber: 238 123 30;
+    --color-ink: 31 36 48;
+    --color-canvas: 248 246 240;
+    --color-muted: 107 114 128;
+    --color-verified: 38 129 93;
+    --color-alert: 220 38 38;
+    --color-line: 238 234 226;
+    --color-surface: 255 255 255;
+    --color-surface-raised: 244 242 237;
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --color-sun: 250 177 77;
+    --color-amber: 247 148 63;
+    --color-ink: 238 241 246;
+    --color-canvas: 17 20 27;
+    --color-muted: 166 176 191;
+    --color-verified: 88 190 144;
+    --color-alert: 255 112 112;
+    --color-line: 49 56 68;
+    --color-surface: 27 32 41;
+    --color-surface-raised: 36 42 53;
   }
 
   html,
@@ -16,6 +40,23 @@
   body {
     @apply bg-canvas text-ink font-sans antialiased;
     -webkit-tap-highlight-color: transparent;
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 3px solid rgb(238 123 30 / 45%);
+    outline-offset: 2px;
   }
 
   /* Never let a long word break the card layout on a 360px screen. */
@@ -38,7 +79,7 @@
   }
 
   .card {
-    @apply rounded-card bg-white shadow-card border border-line;
+    @apply rounded-card bg-white shadow-card;
   }
 
   .btn {
@@ -49,8 +90,8 @@
 
   /* Yellow is a fill, never text. Text on yellow is always ink. */
   .btn-primary {
-    @apply btn bg-sun text-ink shadow-card hover:brightness-105;
-    background-image: linear-gradient(135deg, #ffd93d, #ff9f1c);
+    @apply btn text-white shadow-card hover:brightness-105;
+    background-image: linear-gradient(180deg, #f7a233, #ee7b1e);
   }
 
   .btn-ghost {
@@ -71,8 +112,8 @@
   }
 
   .chip-active {
-    @apply border-transparent text-ink;
-    background-image: linear-gradient(135deg, #ffd93d, #ff9f1c);
+    @apply border-transparent text-white;
+    background-image: linear-gradient(180deg, #f7a233, #ee7b1e);
   }
 
   .field {
@@ -101,4 +142,330 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+@keyframes activity-reminder-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(238 123 30 / 18%);
+  }
+  50% {
+    box-shadow: 0 0 18px 5px rgb(238 123 30 / 28%);
+  }
+}
+
+.activity-reminder {
+  animation: activity-reminder-glow 2.8s ease-in-out infinite;
+}
+
+@keyframes activity-countdown-attention {
+  0%,
+  100% {
+    box-shadow: 0 2px 8px rgb(238 123 30 / 20%);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 5px 14px rgb(238 123 30 / 38%);
+    transform: translateY(-2px);
+  }
+}
+
+.activity-countdown-badge {
+  background-image: linear-gradient(120deg, #f7a233, #ee7b1e);
+  animation: activity-countdown-attention 2s ease-in-out infinite;
+}
+
+.task-reminder-highlight {
+  animation: activity-reminder-glow 2.8s ease-in-out 2;
+  scroll-margin-block: 35vh;
+}
+
+.voice-note-waveform {
+  touch-action: pan-y;
+}
+
+.voice-note-bar {
+  z-index: 1;
+  width: 3px;
+  min-width: 2px;
+  border-radius: 999px;
+  background: rgb(var(--color-muted) / 35%);
+  transition: background-color 120ms linear;
+}
+
+.voice-note-bar-played {
+  background: rgb(var(--color-amber));
+}
+
+.voice-note-scrubber {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.voice-note-scrubber::-webkit-slider-runnable-track {
+  height: 100%;
+  background: transparent;
+}
+
+.voice-note-scrubber::-moz-range-track {
+  height: 100%;
+  background: transparent;
+}
+
+.voice-note-scrubber::-webkit-slider-thumb {
+  width: 10px;
+  height: 10px;
+  appearance: none;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: rgb(var(--color-amber));
+  box-shadow: 0 1px 4px rgb(31 36 48 / 35%);
+}
+
+.voice-note-scrubber::-moz-range-thumb {
+  width: 8px;
+  height: 8px;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: rgb(var(--color-amber));
+  box-shadow: 0 1px 4px rgb(31 36 48 / 35%);
+}
+
+.chat-message-bubble {
+  touch-action: pan-y;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-reminder,
+  .activity-countdown-badge,
+  .task-reminder-highlight,
+  .milestone-overlay,
+  .milestone-card,
+  .journey-character,
+  .confetti-burst span,
+  .completion-confetti span,
+  .voice-note-bar {
+    animation: none;
+  }
+}
+
+.journey-track {
+  margin-inline: 8px;
+}
+
+.journey-fill {
+  width: var(--journey-progress);
+  transition: width 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.journey-checkpoint {
+  transition: background-color 240ms ease, border-color 240ms ease, transform 240ms ease;
+}
+
+.journey-character {
+  margin-bottom: 3px;
+  transition: left 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: journey-bob 1.4s ease-in-out infinite;
+}
+
+.journey-hero {
+  background-image: linear-gradient(135deg, #fff8e9, #fffdf8 55%, #f8eee3);
+}
+
+.milestone-overlay {
+  animation: milestone-fade-in 180ms ease-out both;
+}
+
+.milestone-card {
+  animation: milestone-pop-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.confetti-burst {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti-burst span {
+  position: absolute;
+  top: 28%;
+  left: 50%;
+  width: 7px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--confetti-color);
+  opacity: 0;
+  animation: confetti-flight 900ms cubic-bezier(0.1, 0.7, 0.2, 1) var(--confetti-delay) both;
+}
+
+.completion-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 71;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.completion-confetti span {
+  position: absolute;
+  top: var(--confetti-top);
+  width: 8px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--confetti-color);
+  opacity: 0;
+  animation: screen-confetti-flight 1.7s cubic-bezier(0.12, 0.72, 0.22, 1) var(--confetti-delay) both;
+}
+
+.completion-confetti .confetti-piece-left {
+  left: -10px;
+}
+
+.completion-confetti .confetti-piece-right {
+  right: -10px;
+}
+
+@keyframes journey-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes milestone-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes milestone-pop-in {
+  from { opacity: 0; transform: translateY(12px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes confetti-flight {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0) scale(.5); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--confetti-x), var(--confetti-y)) rotate(330deg) scale(1); }
+}
+
+@keyframes screen-confetti-flight {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0) scale(.6); }
+  12% { opacity: 1; }
+  70% { opacity: .9; }
+  100% { opacity: 0; transform: translate(var(--confetti-x), var(--confetti-y)) rotate(600deg) scale(1); }
+}
+
+[data-theme='dark'] .bg-white,
+[data-theme='dark'] .card,
+[data-theme='dark'] .btn-ghost,
+[data-theme='dark'] .chip,
+[data-theme='dark'] .field {
+  background-color: rgb(var(--color-surface)) !important;
+}
+
+[data-theme='dark'] .btn-dark {
+  background-color: rgb(36 42 53);
+  color: rgb(var(--color-ink));
+}
+
+[data-theme='dark'] .bg-white\/95 {
+  background-color: rgb(var(--color-surface) / 0.95) !important;
+}
+
+[data-theme='dark'] .bg-white\/70 {
+  background-color: rgb(var(--color-surface) / 0.75) !important;
+}
+
+[data-theme='dark'] .bg-white\/80 {
+  background-color: rgb(var(--color-surface) / 0.85) !important;
+}
+
+[data-theme='dark'] .bg-\[\#f0f1f3\],
+[data-theme='dark'] .bg-\[\#ece9e2\],
+[data-theme='dark'] .bg-\[\#eae6df\] {
+  background-color: rgb(var(--color-surface-raised)) !important;
+}
+
+[data-theme='dark'] .bg-\[\#eef7f5\],
+[data-theme='dark'] .bg-\[\#eef4fb\],
+[data-theme='dark'] .bg-\[\#fff3e8\],
+[data-theme='dark'] .bg-\[\#f5f0f8\],
+[data-theme='dark'] .bg-\[\#fcf0f5\],
+[data-theme='dark'] .bg-\[\#f1f1ef\],
+[data-theme='dark'] .bg-\[\#f7e9d8\],
+[data-theme='dark'] .bg-\[\#eaf6ee\] {
+  background-color: rgb(255 255 255 / 0.08) !important;
+}
+
+[data-theme='dark'] .bg-\[\#fff4d1\],
+[data-theme='dark'] .bg-sun\/15,
+[data-theme='dark'] .bg-sun\/25,
+[data-theme='dark'] .bg-sun\/40 {
+  background-color: rgb(247 148 63 / 0.14) !important;
+}
+
+[data-theme='dark'] .border-\[\#edd996\],
+[data-theme='dark'] .border-\[\#cce4d4\] {
+  border-color: rgb(247 148 63 / 0.35) !important;
+}
+
+[data-theme='dark'] .text-\[\#7a622f\],
+[data-theme='dark'] .text-\[\#cc7625\] {
+  color: rgb(250 202 139) !important;
+}
+
+[data-theme='dark'] .text-\[\#16827d\],
+[data-theme='dark'] .text-\[\#26815d\] {
+  color: rgb(132 219 184) !important;
+}
+
+[data-theme='dark'] .text-\[\#4273a8\] {
+  color: rgb(151 193 239) !important;
+}
+
+[data-theme='dark'] .text-\[\#8054a6\] {
+  color: rgb(205 171 237) !important;
+}
+
+[data-theme='dark'] .text-\[\#d35d88\] {
+  color: rgb(241 155 189) !important;
+}
+
+[data-theme='dark'] .text-\[\#6b7280\],
+[data-theme='dark'] .text-\[\#9ba3b2\] {
+  color: rgb(var(--color-muted)) !important;
+}
+
+[data-theme='dark'] .bg-\[\#fff4d1\] {
+  color: rgb(250 202 139);
+}
+
+[data-theme='dark'] .bg-\[\#eaf6ee\] {
+  color: rgb(132 219 184);
+}
+
+[data-theme='dark'] .journey-hero {
+  background-image: linear-gradient(135deg, #2b2730, #272b34 55%, #342a2b);
+}
+
+[data-theme='dark'] .journey-checkpoint {
+  background-color: rgb(var(--color-surface));
+}
+
+[data-theme='dark'] .journey-checkpoint.border-amber {
+  background-color: rgb(var(--color-amber));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-fill,
+  .journey-checkpoint,
+  .journey-character {
+    transition: none;
+  }
 }
