@@ -112,11 +112,10 @@ export default function ProfilePage() {
           onProfileChange={setProfile}
         />
 
-        {isMe && (
+        {isMe && profile.character_persona && (
           <CharacterJourney
             profile={profile}
             isOwner
-            onProfileChange={setProfile}
           />
         )}
 

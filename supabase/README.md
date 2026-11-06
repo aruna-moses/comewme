@@ -37,7 +37,8 @@ Run it **once**. Re-running it is safe for the tables and policies (they use
 
 The profile character selector stores the chosen personality on the profile; apply
 `migrations/014_character_personality.sql` to an existing project before using it.
-`migrations/007_profile_growth_character.sql` adds legacy character appearance fields.
+Apply `migrations/016_remove_legacy_character_customization.sql` to remove the
+unused legacy character-customization fields.
 
 The public profile gallery stores media in the public `profile-media` bucket and
 metadata in `profile_media`. Apply `migrations/008_public_profile_media.sql` to an
@@ -71,6 +72,10 @@ personality from the provided character portraits.
 
 Apply `migrations/015_more_character_personalities.sql` to add the Burna and Chidi
 character options.
+
+Apply `migrations/016_remove_legacy_character_customization.sql` to remove the old
+customizable SVG character fields; the selected personality portrait is now the
+profile journey character.
 
 Moderator access is intentionally unconfigured until the project owner chooses the
 moderators. Add only trusted authenticated account IDs through the Supabase SQL

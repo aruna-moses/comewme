@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Check, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import { updateProfile } from '../lib/api'
+import { personaImageSrc } from '../lib/personas'
 import type { CharacterPersona, Profile } from '../types'
 
 type Gender = 'female' | 'male'
@@ -194,7 +195,7 @@ export default function PersonalitySelector({
           <div className="mt-4 flex overflow-hidden rounded-[18px] border border-line bg-canvas">
             <div className="flex h-[150px] w-[112px] shrink-0 items-end justify-center bg-sun/10">
               <img
-                src={`/avatars/${shownPersona.name}.png`}
+                src={personaImageSrc(shownPersona.id)}
                 alt={`${shownPersona.name}, ${shownPersona.look}`}
                 className="h-full w-full object-contain object-bottom"
               />
@@ -254,7 +255,7 @@ export default function PersonalitySelector({
                   >
                     <span className="relative flex h-[138px] items-end justify-center bg-canvas">
                       <img
-                        src={`/avatars/${persona.name}.png`}
+                        src={personaImageSrc(persona.id)}
                         alt=""
                         loading="lazy"
                         className="h-full w-full object-contain object-bottom"

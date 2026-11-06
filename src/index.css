@@ -249,6 +249,7 @@
   .milestone-overlay,
   .milestone-card,
   .journey-character,
+  .journey-persona-bob,
   .confetti-burst span,
   .completion-confetti span,
   .voice-note-bar {
@@ -272,6 +273,9 @@
 .journey-character {
   margin-bottom: 3px;
   transition: left 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.journey-persona-bob {
   animation: journey-bob 1.4s ease-in-out infinite;
 }
 

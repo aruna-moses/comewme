@@ -68,11 +68,6 @@ export interface Profile {
   verification_status: VerificationStatus
   community_check_passed_at: string | null
   character_persona?: CharacterPersona | null
-  character_style?: 'feminine' | 'masculine'
-  character_skin?: 'deep' | 'cocoa' | 'warm' | 'golden' | 'peach' | 'fair'
-  character_shirt?: 'sunset' | 'lagoon' | 'sky' | 'violet' | 'midnight'
-  character_bottom?: 'trousers-denim' | 'trousers-sand' | 'skirt-coral' | 'skirt-lilac'
-  character_shoes?: 'sneakers-cream' | 'sneakers-coral'
   created_at: string
 }
 

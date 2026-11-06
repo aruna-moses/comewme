@@ -29,16 +29,6 @@ create table if not exists public.profiles (
                         'tari','ibrahim','zainab','tunde','runo',
                         'kemi','ese','ngozi','david','maya','burna','chidi'
                       )),
-  character_style     text not null default 'feminine'
-                      check (character_style in ('feminine','masculine')),
-  character_skin      text not null default 'cocoa'
-                      check (character_skin in ('deep','cocoa','warm','golden','peach','fair')),
-  character_shirt     text not null default 'sunset'
-                      check (character_shirt in ('sunset','lagoon','sky','violet','midnight')),
-  character_bottom    text not null default 'trousers-denim'
-                      check (character_bottom in ('trousers-denim','trousers-sand','skirt-coral','skirt-lilac')),
-  character_shoes     text not null default 'sneakers-cream'
-                      check (character_shoes in ('sneakers-cream','sneakers-coral')),
   interests           text[] not null default '{}',
   trust_score         int not null default 0,
   tasks_completed     int not null default 0,
