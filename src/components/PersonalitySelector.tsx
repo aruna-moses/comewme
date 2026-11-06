@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Sparkles } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import { updateProfile } from '../lib/api'
 import type { CharacterPersona, Profile } from '../types'
 
@@ -84,6 +84,20 @@ const PERSONAS: Persona[] = [
     look: 'Elegant, sleek black full-length gown.',
     personality: 'Classy, poised, and impactful. Maya carries an air of quiet confidence and authenticity, making her voice respected whenever she speaks up in the community.',
   },
+  {
+    id: 'burna',
+    name: 'Burna',
+    gender: 'male',
+    look: 'Black sleeveless athletic top and joggers with red sneakers.',
+    personality: 'Confident, energetic, and driven. Burna brings a bold presence, loves staying active, and motivates the people around him.',
+  },
+  {
+    id: 'chidi',
+    name: 'Chidi',
+    gender: 'male',
+    look: 'Coral polo shirt, sand-colored shorts, and red sneakers.',
+    personality: 'Approachable, calm, and dependable. Chidi keeps things easygoing, enjoys good company, and is always ready to lend a hand.',
+  },
 ]
 
 function findPersona(id: CharacterPersona | null | undefined) {
@@ -107,15 +121,19 @@ export default function PersonalitySelector({
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [chooserOpen, setChooserOpen] = useState(!profile.character_persona)
 
   useEffect(() => {
     const persona = findPersona(profile.character_persona)
     setDraftPersona(persona?.id ?? null)
     if (persona) setGender(persona.gender)
     setSaved(false)
+    if (persona) setChooserOpen(false)
   }, [profile.character_persona])
 
-  const shownPersona = isOwner ? findPersona(draftPersona) : savedPersona
+  const shownPersona = isOwner && chooserOpen
+    ? findPersona(draftPersona)
+    : savedPersona
   const options = PERSONAS.filter((persona) => persona.gender === gender)
 
   async function saveSelection() {
@@ -127,6 +145,7 @@ export default function PersonalitySelector({
       const updated = await updateProfile(profile.id, { character_persona: draftPersona })
       onProfileChange(updated)
       setSaved(true)
+      setChooserOpen(false)
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Could not save your personality.')
     } finally {
@@ -148,9 +167,28 @@ export default function PersonalitySelector({
         </h2>
         <p className="mt-1 text-[12px] leading-relaxed text-muted">
           {isOwner
-            ? 'Pick a character that feels like you, then save your choice.'
+            ? savedPersona
+              ? 'Your chosen personality is part of your profile.'
+              : 'Pick a character that feels like you, then save your choice.'
             : 'This is the personality they resonate with.'}
         </p>
+
+        {isOwner && savedPersona && (
+          <button
+            type="button"
+            aria-expanded={chooserOpen}
+            onClick={() => {
+              setDraftPersona(profile.character_persona ?? null)
+              setGender(savedPersona.gender)
+              setSaveError('')
+              setChooserOpen((open) => !open)
+            }}
+            className="mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-[11px] font-semibold text-ink transition hover:border-amber"
+          >
+            {chooserOpen ? 'Close chooser' : 'Change personality'}
+            {chooserOpen ? <ChevronUp size={14} aria-hidden /> : <ChevronDown size={14} aria-hidden />}
+          </button>
+        )}
 
         {shownPersona && (
           <div className="mt-4 flex overflow-hidden rounded-[18px] border border-line bg-canvas">
@@ -174,7 +212,7 @@ export default function PersonalitySelector({
           </div>
         )}
 
-        {isOwner && (
+        {isOwner && chooserOpen && (
           <>
             <fieldset className="mt-4">
               <legend className="mb-2 text-[12px] font-semibold">Choose a character</legend>

@@ -49,6 +49,8 @@ export type CharacterPersona =
   | 'ngozi'
   | 'david'
   | 'maya'
+  | 'burna'
+  | 'chidi'
 
 export interface Profile {
   id: string

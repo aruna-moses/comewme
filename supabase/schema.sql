@@ -27,7 +27,7 @@ create table if not exists public.profiles (
   community_check_passed_at timestamptz,
   character_persona   text check (character_persona in (
                         'tari','ibrahim','zainab','tunde','runo',
-                        'kemi','ese','ngozi','david','maya'
+                        'kemi','ese','ngozi','david','maya','burna','chidi'
                       )),
   character_style     text not null default 'feminine'
                       check (character_style in ('feminine','masculine')),

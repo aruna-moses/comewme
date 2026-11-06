@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import type { Profile, Review } from '../types'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
+import CharacterJourney from '../components/CharacterJourney'
 import PersonalitySelector from '../components/PersonalitySelector'
 import ProfileMediaGallery from '../components/ProfileMediaGallery'
 import ReportButton from '../components/ReportButton'
@@ -110,6 +111,14 @@ export default function ProfilePage() {
           isOwner={isMe}
           onProfileChange={setProfile}
         />
+
+        {isMe && (
+          <CharacterJourney
+            profile={profile}
+            isOwner
+            onProfileChange={setProfile}
+          />
+        )}
 
         {isMe && profile.verification_status !== 'verified' && (
           <Link to="/settings" className="card mt-3 flex items-center justify-between p-4">

@@ -69,6 +69,9 @@ RPCs for badge counts, and realtime publication for messages and join-request ch
 Apply `migrations/014_character_personality.sql` to let users select a profile
 personality from the provided character portraits.
 
+Apply `migrations/015_more_character_personalities.sql` to add the Burna and Chidi
+character options.
+
 Moderator access is intentionally unconfigured until the project owner chooses the
 moderators. Add only trusted authenticated account IDs through the Supabase SQL
 editor, for example:
