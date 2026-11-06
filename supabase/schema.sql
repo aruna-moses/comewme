@@ -25,6 +25,10 @@ create table if not exists public.profiles (
   bio                 text,
   phone               text,
   community_check_passed_at timestamptz,
+  character_persona   text check (character_persona in (
+                        'tari','ibrahim','zainab','tunde','runo',
+                        'kemi','ese','ngozi','david','maya'
+                      )),
   character_style     text not null default 'feminine'
                       check (character_style in ('feminine','masculine')),
   character_skin      text not null default 'cocoa'

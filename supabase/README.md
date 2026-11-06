@@ -35,10 +35,9 @@ Run it **once**. Re-running it is safe for the tables and policies (they use
 | `trg_on_task_completed` | Credits everyone who actually turned up |
 | `trg_on_review_created` | Recomputes the trust score from real ratings, and never lets it drop |
 
-The profile growth journey uses the database-maintained `tasks_completed` count.
-Character appearance is stored on the profile; apply
-`migrations/007_profile_growth_character.sql` to an existing project before enabling
-the character editor.
+The profile character selector stores the chosen personality on the profile; apply
+`migrations/014_character_personality.sql` to an existing project before using it.
+`migrations/007_profile_growth_character.sql` adds legacy character appearance fields.
 
 The public profile gallery stores media in the public `profile-media` bucket and
 metadata in `profile_media`. Apply `migrations/008_public_profile_media.sql` to an
@@ -66,6 +65,9 @@ adds `/accept-guidelines`, `/violations`, and `/admin/moderation` workflows.
 Apply `migrations/013_notification_badges.sql` after migration 012 to enable pending
 application and unread-message badges. It adds private per-user chat read cursors,
 RPCs for badge counts, and realtime publication for messages and join-request changes.
+
+Apply `migrations/014_character_personality.sql` to let users select a profile
+personality from the provided character portraits.
 
 Moderator access is intentionally unconfigured until the project owner chooses the
 moderators. Add only trusted authenticated account IDs through the Supabase SQL

@@ -38,6 +38,17 @@ export const AREAS = [
 export type VerificationStatus = 'unverified' | 'pending' | 'verified'
 export type TaskStatus = 'open' | 'full' | 'completed' | 'cancelled'
 export type JoinStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn' | 'waitlisted'
+export type CharacterPersona =
+  | 'tari'
+  | 'ibrahim'
+  | 'zainab'
+  | 'tunde'
+  | 'runo'
+  | 'kemi'
+  | 'ese'
+  | 'ngozi'
+  | 'david'
+  | 'maya'
 
 export interface Profile {
   id: string
@@ -54,6 +65,7 @@ export interface Profile {
   no_shows: number
   verification_status: VerificationStatus
   community_check_passed_at: string | null
+  character_persona?: CharacterPersona | null
   character_style?: 'feminine' | 'masculine'
   character_skin?: 'deep' | 'cocoa' | 'warm' | 'golden' | 'peach' | 'fair'
   character_shirt?: 'sunset' | 'lagoon' | 'sky' | 'violet' | 'midnight'
