@@ -149,10 +149,10 @@ export default function Login() {
 
           {method === 'phone' && (
             <img
-              src="/figma/lagos-community.jpg"
-              alt="Friends walking together in Lagos"
-              className="mt-6 h-[210px] w-full rounded-[16px] object-cover"
-            />
+  src="/signin-banner.png"
+  alt="Sign in banner"
+  className="mt-6 h-[210px] w-full rounded-[16px] object-cover"
+/>
           )}
 
           {method === 'phone' ? (
