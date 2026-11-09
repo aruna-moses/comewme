@@ -11,6 +11,7 @@ import PersonalitySelector from '../components/PersonalitySelector'
 import ProfileMediaGallery from '../components/ProfileMediaGallery'
 import ReportButton from '../components/ReportButton'
 import TrustScoreDetail from '../components/TrustScoreDetail'
+import { calculateTrustScore } from '../lib/trustScore'
 
 export default function ProfilePage() {
   const { id } = useParams<{ id: string }>()
@@ -69,6 +70,15 @@ export default function ProfilePage() {
       ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
       : null
 
+  const calculatedTrust = calculateTrustScore({
+    tasks_completed: profile.tasks_completed,
+    verification_status: profile.verification_status,
+    avatar_url: profile.avatar_url,
+    phone: profile.phone,
+    has_good_reviews: avg ? Number(avg) >= 4 : true,
+    has_reports: false,
+  })
+
   return (
     <div className="pb-8">
       <div className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
@@ -98,7 +108,7 @@ export default function ProfilePage() {
         <div className="mt-5 grid grid-cols-3 gap-2">
           {[
             { label: 'Completed', value: profile.tasks_completed },
-            { label: 'Trust score', value: profile.trust_score },
+            { label: 'Trust score', value: calculatedTrust.score },
             { label: 'Rating', value: avg ?? '—' },
           ].map((s) => (
             <div
@@ -173,7 +183,7 @@ export default function ProfilePage() {
         <TrustScoreDetail
           open={trustOpen}
           onClose={() => setTrustOpen(false)}
-          score={profile.trust_score}
+          score={calculatedTrust.score}
           tasks_completed={profile.tasks_completed}
           verification_status={profile.verification_status}
           avatar_url={profile.avatar_url}
