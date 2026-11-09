@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { createTask } from '../lib/api'
 import { supabase } from '../lib/supabase'
+import { detectCategory } from '../lib/categoryDetector'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category } from '../types'
 
@@ -12,7 +13,7 @@ export default function PostTask() {
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [category, setCategory] = useState<Category>('market_run')
+  const [detectedCategory, setDetectedCategory] = useState<Category>('market_run')
   const [area, setArea] = useState(profile?.area || 'Yaba')
   const [meetingPoint, setMeetingPoint] = useState('')
   const [date, setDate] = useState('')
@@ -48,6 +49,10 @@ export default function PostTask() {
     return () => { active = false }
   }, [profile?.id])
 
+  useEffect(() => {
+    setDetectedCategory(detectCategory(title, description))
+  }, [title, description])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!profile) return
@@ -80,7 +85,7 @@ export default function PostTask() {
         {
           title: title.trim(),
           description: description.trim(),
-          category,
+          category: detectedCategory,
           area,
           meeting_point: meetingPoint.trim(),
           date_time: when.toISOString(),
@@ -131,18 +136,13 @@ export default function PostTask() {
 
         <div>
           <label className="label">Category</label>
-          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                onClick={() => setCategory(c.value)}
-                className={`chip ${category === c.value ? 'chip-active' : ''}`}
-              >
-                {c.emoji} {c.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 rounded-xl border border-line bg-white p-3">
+            <span className="text-[13px] font-semibold text-ink">{detectedCategory === 'other' ? '➕ Other' : CATEGORIES.find((c) => c.value === detectedCategory)?.emoji + ' ' + CATEGORIES.find((c) => c.value === detectedCategory)?.label}</span>
+            <span className="text-[11px] text-muted ml-auto">Auto-detected</span>
           </div>
+          <p className="mt-1 text-[11px] text-muted">
+            We read your title and details to pick the category. You can edit the text above if the category looks wrong.
+          </p>
         </div>
 
         <div>
