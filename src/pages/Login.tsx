@@ -141,11 +141,13 @@ export default function Login() {
       <div className="flex-1 px-5 pb-6 pt-8">
         <div className="mx-auto w-full max-w-[390px]">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white" style={{ backgroundImage: 'linear-gradient(180deg,#f7a233,#ee7b1e)' }}>
-              <Footprints size={21} aria-hidden />
-            </span>
-            <span className="font-display text-[20px] font-bold tracking-tight">Come w&apos; me</span>
-          </div>
+  <img 
+    src="/logo.png" 
+    alt="Logo" 
+    className="h-8 w-8 rounded-[10px] object-cover" 
+  />
+  <span className="font-display text-[20px] font-bold tracking-tight">Come w' me</span>
+</div>
 
           {method === 'phone' && (
             <img
