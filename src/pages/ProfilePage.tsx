@@ -113,7 +113,7 @@ export default function ProfilePage() {
           ].map((s) => (
             <div
               key={s.label}
-              className="card p-3 text-center"
+              className="card p-3 flex flex-col items-center justify-center text-center"
               onClick={s.label === 'Trust score' ? () => setTrustOpen(true) : undefined}
               style={s.label === 'Trust score' ? { cursor: 'pointer' } : undefined}
             >
