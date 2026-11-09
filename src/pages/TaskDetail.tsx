@@ -33,6 +33,7 @@ import { TrustPill, VerifiedBadge } from '../components/Badges'
 import TaskCompletionCelebration from '../components/TaskCompletionCelebration'
 import VoiceNotePlayer from '../components/VoiceNotePlayer'
 import ShareTaskButton from '../components/ShareTaskButton'
+import SOSButton from '../components/SOSButton'
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>()
@@ -657,6 +658,7 @@ export default function TaskDetail() {
               <div className="flex items-center gap-2">
                 <Link to={`/task/${task.id}/chat`} className="btn-ghost btn-sm">Open chat</Link>
                 <a href={`https://meet.jit.si/comewme-${task.id}`} target="_blank" rel="noreferrer" className="btn-ghost btn-sm">Start call</a>
+                <SOSButton taskId={task.id} />
               </div>
             </div>
 
