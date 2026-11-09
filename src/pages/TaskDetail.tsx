@@ -34,6 +34,7 @@ import TaskCompletionCelebration from '../components/TaskCompletionCelebration'
 import VoiceNotePlayer from '../components/VoiceNotePlayer'
 import ShareTaskButton from '../components/ShareTaskButton'
 import SOSButton from '../components/SOSButton'
+import SOSConfirmationSheet from '../components/SOSConfirmationSheet'
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>()
@@ -77,11 +78,13 @@ export default function TaskDetail() {
   const chunksRef = useRef<Blob[]>([])
   const recordingStartedAtRef = useRef(0)
 
+  const [sosOpen, setSosOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [reportCategory, setReportCategory] = useState<ReportCategory>('harassment')
   const [reportSubject, setReportSubject] = useState('')
   const [reportDetails, setReportDetails] = useState('')
   const [reportDone, setReportDone] = useState(false)
+  const [groupInfoOpen, setGroupInfoOpen] = useState(false)
 
   const [rateOpen, setRateOpen] = useState(false)
   const [rating, setRating] = useState<Record<string, number>>({})
@@ -653,11 +656,38 @@ export default function TaskDetail() {
         {/* group chat */}
         {isParticipant && (
           <section className="mt-6">
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-display text-base font-bold">Group</h2>
+            {/* Header - click anywhere to open group info */}
+            <div
+              className="mb-2 flex items-center justify-between cursor-pointer rounded-2xl p-2 hover:bg-canvas transition"
+              onClick={() => setGroupInfoOpen(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && setGroupInfoOpen(true)}
+              aria-label="Open group info"
+            >
+              <div className="flex items-center gap-3">
+                <Avatar src={task.host_avatar_url} name={task.host_name} size={34} />
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-display text-base font-bold text-ink">{task.title}</h2>
+                  <p className="text-[11px] text-muted">{task.spots_filled} of {task.spots_needed} members</p>
+                </div>
+              </div>
               <div className="flex items-center gap-2">
-                <Link to={`/task/${task.id}/chat`} className="btn-ghost btn-sm">Open chat</Link>
-                <a href={`https://meet.jit.si/comewme-${task.id}`} target="_blank" rel="noreferrer" className="btn-ghost btn-sm">Start call</a>
+                <button
+                  type="button"
+                  className="p-1.5 rounded-full bg-line text-muted hover:bg-ink hover:text-white transition"
+                  aria-label="More options"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setGroupInfoOpen(true)
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <circle cx="12" cy="12" r="1" />
+                    <circle cx="12" cy="5" r="1" />
+                    <circle cx="12" cy="19" r="1" />
+                  </svg>
+                </button>
                 <SOSButton taskId={task.id} />
               </div>
             </div>
@@ -796,6 +826,116 @@ export default function TaskDetail() {
           </section>
         )}
 
+        {/* Group Info Sheet */}
+        <Sheet open={groupInfoOpen} onClose={() => setGroupInfoOpen(false)} title={task.title}>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-canvas border border-line">
+              <Avatar src={task.host_avatar_url} name={task.host_name} size={40} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold text-ink">{task.host_name}</p>
+                <p className="text-[11px] text-muted">{categoryLabel(task.category)} · {task.area}</p>
+              </div>
+              <button
+                type="button"
+                className="p-1.5 rounded-full bg-line text-muted hover:bg-ink hover:text-white transition"
+                aria-label="Close"
+                onClick={() => setGroupInfoOpen(false)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Host controls - Mark as done left, Cancel activity right */}
+            {isHost && task.status === 'open' && (
+              <div className="flex justify-between items-center p-4 rounded-xl bg-white border border-line">
+                <button
+                  onClick={handleDone}
+                  disabled={busy}
+                  className="btn-primary px-4 py-2 text-sm font-semibold"
+                >
+                  {busy ? 'Marking…' : 'Mark as done'}
+                </button>
+                <button
+                  onClick={() => setCancelConfirmOpen(true)}
+                  disabled={busy}
+                  className="btn-ghost px-4 py-2 text-sm text-alert hover:bg-alert/5"
+                >
+                  Cancel activity
+                </button>
+              </div>
+            )}
+
+            {/* Open chat button */}
+            <button
+              onClick={() => setGroupInfoOpen(false)}
+              className="btn-primary w-full py-3 text-sm font-semibold"
+            >
+              Open chat
+            </button>
+
+            {/* SOS button */}
+            <button
+              onClick={() => {
+                setGroupInfoOpen(false)
+                setSosOpen(true)
+              }}
+              className="btn-alert w-full py-3 text-sm font-semibold border border-alert text-alert"
+            >
+              SOS — Emergency alert
+            </button>
+
+            {/* Report this activity */}
+            <div className="pt-2 border-t border-line pt-3">
+              <button
+                onClick={() => {
+                  setGroupInfoOpen(false)
+                  setReportOpen(true)
+                }}
+                className="w-full py-3 text-[12px] font-semibold text-muted underline underline-offset-4 text-left"
+              >
+                Report this activity
+              </button>
+            </div>
+          </div>
+        </Sheet>
+
+        {/* Cancel confirm dialog */}
+        {cancelConfirmOpen && (
+          <Sheet open={cancelConfirmOpen} onClose={() => setCancelConfirmOpen(false)} title="Cancel activity?">
+            <p className="text-[13px] text-muted">
+              Cancelling will remove this activity from the feed. People who already joined will be notified.
+            </p>
+            <div className="mt-4 flex gap-3">
+              <button
+                type="button"
+                className="btn-ghost flex-1"
+                onClick={() => setCancelConfirmOpen(false)}
+              >
+                Keep activity
+              </button>
+              <button
+                type="button"
+                className="btn-alert flex-1"
+                disabled={busy}
+                onClick={async () => {
+                  setCancelConfirmOpen(false)
+                  try {
+                    await cancelTask(task.id)
+                    setBusy(false)
+                  } catch (e) {
+                    alert(e instanceof Error ? e.message : 'Could not cancel')
+                    setBusy(false)
+                  }
+                }}
+              >
+                {busy ? 'Cancelling…' : 'Cancel activity'}
+              </button>
+            </div>
+          </Sheet>
+        )}
         {/* report */}
         <button onClick={() => setReportOpen(true)} className="mt-6 w-full py-3 text-[12px] font-semibold text-muted underline underline-offset-4">Report this activity</button>
 
@@ -833,6 +973,11 @@ export default function TaskDetail() {
               <button className="btn-primary mt-3 w-full" disabled={busy || reportSubject.trim().length < 3 || reportDetails.trim().length < 3} onClick={handleReport}>{busy ? 'Sending…' : 'Send report'}</button>
             </>
           )}
+        </Sheet>
+
+        {/* SOS confirmation sheet */}
+        <Sheet open={sosOpen} onClose={() => setSosOpen(false)} title="Emergency SOS">
+          <SOSConfirmationSheet taskId={task.id} onClose={() => setSosOpen(false)} onSent={() => setSosOpen(false)} />
         </Sheet>
 
         {/* rating sheet */}
