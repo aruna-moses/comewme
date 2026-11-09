@@ -1,44 +1,36 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Camera, Mic, Paperclip, Square } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import {
   cancelTask,
   createReview,
-  deleteChatMedia,
-  fetchMessages,
   fetchMyJoinRequest,
   fetchParticipants,
   fetchJoinRequests,
   fetchTask,
   markTaskDone,
   requestJoin,
-  resolveChatMedia,
-  sendMessage,
   setJoinStatus,
   submitReport,
-  subscribeToMessages,
-  uploadChatMedia,
   withdrawJoin,
 } from '../lib/api'
-import type { JoinRequest, Message, Profile, ReportCategory, Task } from '../types'
+import type { JoinRequest, Profile, ReportCategory, Task } from '../types'
 import { REPORT_CATEGORIES, categoryLabel, trustLevel } from '../types'
-import { formatDateTime, formatTime, isPast, isSameDay, timeOfDay } from '../lib/format'
+import { formatDateTime, isPast, timeOfDay } from '../lib/format'
 import Avatar from '../components/Avatar'
 import Sheet from '../components/Sheet'
 import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { TrustPill, VerifiedBadge } from '../components/Badges'
 import TaskCompletionCelebration from '../components/TaskCompletionCelebration'
-import VoiceNotePlayer from '../components/VoiceNotePlayer'
 import ShareTaskButton from '../components/ShareTaskButton'
-import SOSButton from '../components/SOSButton'
 import SOSConfirmationSheet from '../components/SOSConfirmationSheet'
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>()
   const { profile, session } = useAuth()
+  const location = useLocation()
   const navigate = useNavigate()
 
   const [task, setTask] = useState<Task | null>(null)
@@ -61,22 +53,6 @@ export default function TaskDetail() {
     setCompletionCount(null)
     navigate('/')
   }, [navigate])
-
-  const [messages, setMessages] = useState<Message[]>([])
-  const [draft, setDraft] = useState('')
-  const [uploading, setUploading] = useState(false)
-  const [chatError, setChatError] = useState<string | null>(null)
-  const chatEnd = useRef<HTMLDivElement | null>(null)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null)
-  const [progressMessageId, setProgressMessageId] = useState<string | null>(null)
-  const [audioProgress, setAudioProgress] = useState(0)
-
-  // voice note recording
-  const [recording, setRecording] = useState(false)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<Blob[]>([])
-  const recordingStartedAtRef = useRef(0)
 
   const [sosOpen, setSosOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
@@ -126,44 +102,12 @@ export default function TaskDetail() {
     void load()
   }, [load])
 
-  // chat: load + live updates, only for participants
   useEffect(() => {
-    if (!task || !isParticipant) return
-    let alive = true
-
-    fetchMessages(task.id)
-      .then((rows) => alive && setMessages(rows))
-      .catch((e) => alive && setChatError(e instanceof Error ? e.message : 'Could not load group messages.'))
-
-    const unsub = subscribeToMessages(task.id, (m) => {
-      void resolveChatMedia([m])
-        .then(([resolved]) => setMessages((prev) => (prev.some((x) => x.id === resolved.id) ? prev : [...prev, resolved])))
-        .catch((e) => setChatError(e instanceof Error ? e.message : 'Could not load a group attachment.'))
-    }, (message) => {
-      if (message.deleted_at) {
-        setMessages((prev) => prev.map((current) => current.id === message.id ? message : current))
-        if (audioRef.current?.dataset.messageId === message.id) {
-          audioRef.current.pause()
-          audioRef.current = null
-          setPlayingMessageId(null)
-          setAudioProgress(0)
-        }
-      }
-    })
-
-    return () => {
-      alive = false
-      unsub()
-    }
-  }, [task?.id, isParticipant])
-
-  useEffect(() => {
-    chatEnd.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [messages.length])
-
-  useEffect(() => () => {
-    audioRef.current?.pause()
-  }, [])
+    const state = location.state
+    if (!state || typeof state !== 'object' || !('openGroupInfo' in state) || state.openGroupInfo !== true) return
+    setGroupInfoOpen(true)
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
 
   async function handleJoin() {
     if (!task || !profile) return
@@ -240,154 +184,6 @@ export default function TaskDetail() {
     } finally {
       setBusy(false)
     }
-  }
-
-  async function handleSend(text: string, type: 'text' | 'image' | 'audio' = 'text', url: string | null = null, duration: number | null = null): Promise<boolean> {
-    if (!task || !profile || (type === 'text' && !text.trim())) return false
-    setChatError(null)
-    try {
-      const message = await sendMessage(task.id, profile, text, type, url, duration)
-      setMessages((prev) => (prev.some((existing) => existing.id === message.id) ? prev : [...prev, message]))
-      setDraft('')
-      return true
-    } catch (e) {
-      setChatError(e instanceof Error ? e.message : 'Could not send message.')
-      return false
-    }
-  }
-
-  // -------- media attachment --------
-  async function handleAttach(file: File, duration: number | null = null) {
-    if (!task || !profile) return
-    const isImage = file.type.startsWith('image/') && file.type !== 'image/svg+xml'
-    const isAudio = file.type.startsWith('audio/')
-    if (!isImage && !isAudio) {
-      setChatError('Only images and audio files are supported.')
-      return
-    }
-    if (file.size > 15 * 1024 * 1024) {
-      setChatError('Attachments must be 15 MB or smaller.')
-      return
-    }
-    setChatError(null)
-    setUploading(true)
-    let uploadedPath: string | null = null
-    try {
-      const { path } = await uploadChatMedia(task.id, file)
-      uploadedPath = path
-      const sent = await handleSend('', isImage ? 'image' : 'audio', path, duration)
-      if (!sent) {
-        await deleteChatMedia(path)
-        uploadedPath = null
-      }
-    } catch (e) {
-      let message = e instanceof Error ? e.message : 'Could not attach file.'
-      if (uploadedPath) {
-        try {
-          await deleteChatMedia(uploadedPath)
-        } catch {
-          message = `${message} The uploaded file could not be cleaned up.`
-        }
-      }
-      setChatError(message)
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  // -------- voice notes --------
-  async function toggleRecording() {
-    if (!task || !profile) return
-    if (recording) {
-      const mr = mediaRecorderRef.current
-      if (mr && mr.state !== 'inactive') {
-        setUploading(true)
-        mr.stop()
-      }
-      setRecording(false)
-      return
-    }
-
-    let stream: MediaStream | null = null
-    try {
-      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-        throw new Error('Voice recording is not supported in this browser.')
-      }
-      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      stream = audioStream
-      const supportedTypes = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus']
-      const mimeType = typeof MediaRecorder.isTypeSupported === 'function'
-        ? supportedTypes.find((type) => MediaRecorder.isTypeSupported(type))
-        : undefined
-      const mr = mimeType ? new MediaRecorder(audioStream, { mimeType }) : new MediaRecorder(audioStream)
-      mediaRecorderRef.current = mr
-      chunksRef.current = []
-      recordingStartedAtRef.current = Date.now()
-      setChatError(null)
-
-      mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
-      mr.onstop = async () => {
-        setRecording(false)
-        audioStream.getTracks().forEach((t) => t.stop())
-        const blobType = mr.mimeType || chunksRef.current[0]?.type || 'audio/webm'
-        const blob = new Blob(chunksRef.current, { type: blobType })
-        if (blob.size === 0) {
-          setUploading(false)
-          setChatError('No audio was recorded. Please try again.')
-          return
-        }
-        const baseMimeType = blobType.split(';')[0]
-        const extension = baseMimeType === 'audio/mp4' ? 'm4a' : baseMimeType === 'audio/ogg' ? 'ogg' : 'webm'
-        const file = new File([blob], `voice-${Date.now()}.${extension}`, { type: baseMimeType })
-        const duration = Math.max(1, Math.ceil((Date.now() - recordingStartedAtRef.current) / 1000))
-        await handleAttach(file, duration)
-      }
-      mr.onerror = () => {
-        setRecording(false)
-        setUploading(false)
-        audioStream.getTracks().forEach((t) => t.stop())
-        setChatError('Voice recording failed. Please try again.')
-      }
-
-      mr.start()
-      setRecording(true)
-    } catch (e) {
-      stream?.getTracks().forEach((track) => track.stop())
-      setChatError(e instanceof Error ? e.message : 'Microphone access was denied.')
-    }
-  }
-
-  function toggleAudio(messageId: string, audio: HTMLAudioElement) {
-    if (audioRef.current === audio && playingMessageId === messageId) {
-      audio.pause()
-      audio.currentTime = 0
-      audioRef.current = null
-      setPlayingMessageId(null)
-      setProgressMessageId(messageId)
-      setAudioProgress(0)
-      return
-    }
-
-    audioRef.current?.pause()
-    if (audioRef.current) audioRef.current.currentTime = 0
-    audio.currentTime = 0
-    audioRef.current = audio
-    setPlayingMessageId(messageId)
-    setProgressMessageId(messageId)
-    setAudioProgress(0)
-    void audio.play().catch(() => {
-      if (audioRef.current === audio) audioRef.current = null
-      setPlayingMessageId(null)
-      setChatError('Could not play this voice note. Please try again.')
-    })
-  }
-
-  function handleAudioEnded(messageId: string) {
-    if (audioRef.current?.dataset.messageId !== messageId) return
-    setAudioProgress(audioRef.current.duration || 0)
-    setProgressMessageId(messageId)
-    setPlayingMessageId(null)
-    audioRef.current = null
   }
 
   async function handleReport() {
@@ -653,175 +449,55 @@ export default function TaskDetail() {
           <button className="btn-dark mt-5 w-full" onClick={() => setRateOpen(true)}>Rate this activity</button>
         )}
 
-        {/* group chat */}
+        {/* Group chat */}
         {isParticipant && (
           <section className="mt-6">
-            {/* Header - click anywhere to open group info */}
             <div
-              className="mb-2 flex items-center justify-between cursor-pointer rounded-2xl p-2 hover:bg-canvas transition"
+              className="flex cursor-pointer items-center justify-between rounded-2xl p-2 transition hover:bg-canvas"
               onClick={() => setGroupInfoOpen(true)}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && setGroupInfoOpen(true)}
+              onKeyDown={(event) => event.key === 'Enter' && setGroupInfoOpen(true)}
               aria-label="Open group info"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <Avatar src={task.host_avatar_url} name={task.host_name} size={34} />
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-display text-base font-bold text-ink">{task.title}</h2>
+                <div className="min-w-0">
+                  <h2 className="truncate font-display text-base font-bold text-ink">{task.title}</h2>
                   <p className="text-[11px] text-muted">{task.spots_filled} of {task.spots_needed} members</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="p-1.5 rounded-full bg-line text-muted hover:bg-ink hover:text-white transition"
-                  aria-label="More options"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setGroupInfoOpen(true)
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <circle cx="12" cy="12" r="1" />
-                    <circle cx="12" cy="5" r="1" />
-                    <circle cx="12" cy="19" r="1" />
-                  </svg>
-                </button>
-                <SOSButton taskId={task.id} />
-              </div>
+              <button
+                type="button"
+                className="ml-2 shrink-0 rounded-full bg-line p-1.5 text-muted transition hover:bg-ink hover:text-white"
+                aria-label="More options"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setGroupInfoOpen(true)
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="12" cy="5" r="1" />
+                  <circle cx="12" cy="19" r="1" />
+                </svg>
+              </button>
             </div>
-
-            <div className="card overflow-hidden">
-              <div className="max-h-96 space-y-4 overflow-y-auto p-4">
-                {messages.length === 0 && (
-                  <p className="py-6 text-center text-[13px] text-muted">Nobody has said anything yet. Break the ice.</p>
-                )}
-                {messages.map((m, i) => {
-                  const mine = m.sender_id === profile?.id
-                  const prev = messages[i - 1]
-                  const newDay = i === 0 || !isSameDay(m.created_at, prev.created_at)
-                  const showName = !mine && (i === 0 || messages[i - 1]?.sender_id !== m.sender_id)
-
-                  return (
-                    <div key={m.id} className="flex flex-col">
-                      {newDay && (
-                        <p className="mx-2 my-1 text-[10px] font-semibold uppercase tracking-wider text-muted">{formatDateTime(m.created_at).split(' · ')[0]}</p>
-                      )}
-                      <div className={`flex gap-2 ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
-                        {!mine && <Avatar src={m.sender_avatar_url} name={m.sender_name} size={26} />}
-                        <div className={`max-w-[82%] ${mine ? 'text-right' : 'text-left'}`}>
-                          {showName && !mine && <p className="text-[10px] font-semibold text-muted mb-0.5">{m.sender_name}</p>}
-
-                          {m.type === 'image' && m.url && (
-                            <img
-                              src={m.url}
-                              alt="Photo shared in the group chat"
-                              className="mt-0.5 max-h-64 max-w-full cursor-pointer rounded-xl object-cover"
-                              onClick={() => window.open(m.url!, '_blank')}
-                            />
-                          )}
-                          {m.type === 'audio' && m.url && (
-                            <div className="mt-0.5">
-                              <VoiceNotePlayer
-                                messageId={m.id}
-                                url={m.url}
-                                duration={m.duration}
-                                isPlaying={playingMessageId === m.id}
-                                currentTime={progressMessageId === m.id ? audioProgress : 0}
-                                onToggle={toggleAudio}
-                                onProgress={(time) => {
-                                  setProgressMessageId(m.id)
-                                  setAudioProgress(time)
-                                }}
-                                onEnded={() => handleAudioEnded(m.id)}
-                              />
-                            </div>
-                          )}
-                          {m.type === 'text' && m.body && (
-                            <div className={`mt-0.5 inline-block rounded-2xl px-3 py-2 text-[14px] leading-snug whitespace-pre-wrap ${mine ? 'bg-sun/40 text-ink' : 'bg-canvas text-ink'}`}>
-                              {m.body}
-                            </div>
-                          )}
-                          <p className={`text-[10px] ${mine ? 'text-amber/70' : 'text-muted'}`}>{formatTime(m.created_at)}</p>
-                        </div>
-                        {mine && <Avatar src={profile?.avatar_url ?? null} name={profile?.display_name ?? 'You'} size={26} />}
-                      </div>
-                    </div>
-                  )
-                })}
-                <div ref={chatEnd} />
-              </div>
-
-              <div className="flex items-end gap-2 border-t border-line p-2">
-                <label
-                  className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-canvas hover:text-ink ${uploading || recording ? 'pointer-events-none opacity-50' : ''}`}
-                  title="Take a photo to share"
-                >
-                  <Camera size={19} aria-hidden />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    aria-label="Take a photo to share"
-                    className="sr-only"
-                    disabled={uploading || recording}
-                    onChange={(e) => {
-                      const photo = e.currentTarget.files?.[0]
-                      if (photo) void handleAttach(photo)
-                      e.currentTarget.value = ''
-                    }}
-                  />
-                </label>
-                <label
-                  className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-canvas hover:text-ink ${uploading || recording ? 'pointer-events-none opacity-50' : ''}`}
-                  title="Attach a photo or audio"
-                >
-                  <Paperclip size={19} aria-hidden />
-                  <input
-                    type="file"
-                    accept="image/*,audio/*"
-                    className="sr-only"
-                    disabled={uploading || recording}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0]
-                      if (f) void handleAttach(f)
-                      e.currentTarget.value = ''
-                    }}
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => void toggleRecording()}
-                  disabled={uploading}
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${recording ? 'animate-pulse bg-alert text-white' : 'bg-canvas text-muted hover:text-ink'} disabled:cursor-not-allowed disabled:opacity-50`}
-                  title={recording ? 'Stop and send voice note' : 'Record voice note'}
-                  aria-label={recording ? 'Stop and send voice note' : 'Record voice note'}
-                >
-                  {recording ? <Square size={16} fill="currentColor" aria-hidden /> : <Mic size={19} aria-hidden />}
-                </button>
-
-                <input
-                  className="field min-h-[44px] border-0 bg-canvas flex-1"
-                  placeholder="Message the group…"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend(draft)}
-                  maxLength={2000}
-                  disabled={uploading || recording}
-                />
-                <button
-                  type="button"
-                  className="btn-primary btn-sm shrink-0"
-                  onClick={() => void handleSend(draft)}
-                  disabled={!draft.trim() || uploading || recording}
-                >
-                  {uploading ? '…' : 'Send'}
-                </button>
-              </div>
-              {chatError && <p role="alert" className="px-3 pb-2 text-[12px] font-medium text-alert">{chatError}</p>}
-              <p className="mt-2 text-[11px] text-muted">Never share a home address here. Keep the first meet public.</p>
+            <div className="mt-3 flex gap-3">
+              <button
+                type="button"
+                onClick={() => navigate(`/task/${task.id}/chat`)}
+                className="btn-primary min-h-11 flex-1 text-sm font-semibold"
+              >
+                Open chat
+              </button>
+              <button
+                type="button"
+                onClick={() => setSosOpen(true)}
+                className="btn-alert min-h-11 flex-1 border border-alert text-sm font-semibold text-alert"
+              >
+                SOS
+              </button>
             </div>
           </section>
         )}
@@ -850,42 +526,44 @@ export default function TaskDetail() {
 
             {/* Host controls - Mark as done left, Cancel activity right */}
             {isHost && task.status === 'open' && (
-              <div className="flex justify-between items-center p-4 rounded-xl bg-white border border-line">
+              <div className="grid grid-cols-2 gap-3 rounded-xl border border-line bg-white p-3">
                 <button
                   onClick={handleDone}
                   disabled={busy}
-                  className="btn-primary px-4 py-2 text-sm font-semibold"
+                  className="btn-primary w-full px-3 py-2 text-sm font-semibold"
                 >
                   {busy ? 'Marking…' : 'Mark as done'}
                 </button>
                 <button
                   onClick={() => setCancelConfirmOpen(true)}
                   disabled={busy}
-                  className="btn-ghost px-4 py-2 text-sm text-alert hover:bg-alert/5"
+                  className="btn-ghost w-full px-3 py-2 text-sm text-alert hover:bg-alert/5"
                 >
                   Cancel activity
                 </button>
               </div>
             )}
 
-            {/* Open chat button */}
-            <button
-              onClick={() => setGroupInfoOpen(false)}
-              className="btn-primary w-full py-3 text-sm font-semibold"
-            >
-              Open chat
-            </button>
-
-            {/* SOS button */}
-            <button
-              onClick={() => {
-                setGroupInfoOpen(false)
-                setSosOpen(true)
-              }}
-              className="btn-alert w-full py-3 text-sm font-semibold border border-alert text-alert"
-            >
-              SOS — Emergency alert
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => navigate(`/task/${task.id}/chat`)}
+                className="btn-primary w-full py-3 text-sm font-semibold"
+              >
+                Open chat
+              </button>
+              <button
+                type="button"
+                aria-label="Send emergency SOS"
+                onClick={() => {
+                  setGroupInfoOpen(false)
+                  setSosOpen(true)
+                }}
+                className="btn-alert w-full border border-alert py-3 text-sm font-semibold text-alert"
+              >
+                SOS
+              </button>
+            </div>
 
             {/* Report this activity */}
             <div className="pt-2 border-t border-line pt-3">

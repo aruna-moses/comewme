@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Camera, Copy, Flag, Mic, MoreVertical, Paperclip, Reply, Send, Square, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Reply, Send, Square, Trash2, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import {
@@ -15,15 +15,12 @@ import {
   resolveChatMedia,
   sendMessage,
   subscribeToMessages,
-  submitReport,
   uploadChatMedia,
 } from '../lib/api'
 import { formatTime, isSameDay } from '../lib/format'
-import { REPORT_CATEGORIES } from '../types'
-import type { JoinRequest, Message, ReportCategory, Task } from '../types'
+import type { JoinRequest, Message, Task } from '../types'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
-import Sheet from '../components/Sheet'
 import ConfirmDialog from '../components/ConfirmDialog'
 import VoiceNotePlayer from '../components/VoiceNotePlayer'
 
@@ -47,12 +44,6 @@ export default function ChatRoom() {
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null)
   const [progressMessageId, setProgressMessageId] = useState<string | null>(null)
   const [audioProgress, setAudioProgress] = useState(0)
-  const [groupReportOpen, setGroupReportOpen] = useState(false)
-  const [groupReportCategory, setGroupReportCategory] = useState<ReportCategory>('inappropriate')
-  const [groupReportDetails, setGroupReportDetails] = useState('')
-  const [groupReportError, setGroupReportError] = useState('')
-  const [groupReportSent, setGroupReportSent] = useState(false)
-  const [groupReportBusy, setGroupReportBusy] = useState(false)
   const chatEnd = useRef<HTMLDivElement | null>(null)
   const mediaRecorder = useRef<MediaRecorder | null>(null)
   const recordingChunks = useRef<Blob[]>([])
@@ -437,32 +428,6 @@ export default function ChatRoom() {
     }
   }
 
-  async function handleGroupReport() {
-    if (!task || !profile || groupReportDetails.trim().length < 3) return
-    setGroupReportError('')
-    setGroupReportBusy(true)
-    try {
-      await submitReport({
-        reporter_id: profile.id,
-        category: groupReportCategory,
-        details: `Group report for "${task.title}":\n\n${groupReportDetails.trim()}`,
-        task_id: task.id,
-      })
-      setGroupReportSent(true)
-    } catch (e) {
-      setGroupReportError(e instanceof Error ? e.message : 'Could not submit this report.')
-    } finally {
-      setGroupReportBusy(false)
-    }
-  }
-
-  function closeGroupReport() {
-    setGroupReportOpen(false)
-    setGroupReportSent(false)
-    setGroupReportError('')
-    setGroupReportDetails('')
-  }
-
   if (loading) return <Spinner full />
 
   if (!authorized || !task) {
@@ -483,16 +448,23 @@ export default function ChatRoom() {
         <button type="button" onClick={() => navigate('/chats')} className="rounded-full p-2 hover:bg-canvas" aria-label="Back to chats">
           <ArrowLeft size={21} aria-hidden />
         </button>
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4d1] text-amber">
-          <span className="text-sm font-bold" aria-hidden>G</span>
-        </span>
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate font-display text-[16px] font-bold">{task.title}</h1>
-          <p className="truncate text-[12px] text-muted">
-            Group chat · {participants.length + 1} {participants.length === 0 ? 'member' : 'members'}
-          </p>
-        </div>
-        <Link to={`/task/${task.id}`} className="text-[12px] font-semibold text-amber">Activity</Link>
+        <button
+          type="button"
+          onClick={() => navigate(`/task/${task.id}`, { state: { openGroupInfo: true } })}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-xl py-1 text-left transition hover:bg-canvas"
+          aria-label="Open group and activity information"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4d1] text-amber">
+            <span className="text-sm font-bold" aria-hidden>G</span>
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-display text-[16px] font-bold">{task.title}</span>
+            <span className="block truncate text-[12px] text-muted">
+              Group chat · {participants.length + 1} {participants.length === 0 ? 'member' : 'members'}
+            </span>
+          </span>
+          <MoreVertical size={19} className="shrink-0 text-muted" aria-hidden />
+        </button>
       </header>
 
       <section className="flex flex-1 flex-col px-3 pb-3">
@@ -520,16 +492,6 @@ export default function ChatRoom() {
             </Link>
             ))}
           </section>
-          <div className="flex justify-end pb-2">
-            <button
-              type="button"
-              onClick={() => setGroupReportOpen(true)}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-muted hover:bg-canvas hover:text-alert"
-            >
-              <Flag size={14} aria-hidden />
-              Report group
-            </button>
-          </div>
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto py-4">
@@ -737,50 +699,6 @@ export default function ChatRoom() {
           </div>
         </div>
       </section>
-      <Sheet open={groupReportOpen} onClose={closeGroupReport} title={groupReportSent ? 'Report received' : 'Report this group'}>
-        {groupReportSent ? (
-          <div className="py-3 text-center">
-            <p role="status" className="font-display text-lg font-bold">Thanks for letting us know.</p>
-            <p className="mt-2 text-[13px] leading-relaxed text-muted">Our team will review your report privately.</p>
-            <button type="button" className="btn-primary mt-4 w-full" onClick={closeGroupReport}>Done</button>
-          </div>
-        ) : (
-          <>
-            <p className="mb-3 text-[13px] leading-relaxed text-muted">
-              Report concerns about this group. Your report is private.
-            </p>
-            <label className="label" htmlFor="group-report-category">Reason</label>
-            <select
-              id="group-report-category"
-              className="field"
-              value={groupReportCategory}
-              onChange={(event) => setGroupReportCategory(event.target.value as ReportCategory)}
-            >
-              {REPORT_CATEGORIES.filter((category) => category.value !== 'feedback').map((category) => (
-                <option key={category.value} value={category.value}>{category.label}</option>
-              ))}
-            </select>
-            <label className="label mt-3" htmlFor="group-report-details">What happened?</label>
-            <textarea
-              id="group-report-details"
-              className="field min-h-[112px] resize-y"
-              value={groupReportDetails}
-              onChange={(event) => setGroupReportDetails(event.target.value)}
-              placeholder="Share details that will help us review this group."
-              maxLength={3800}
-            />
-            {groupReportError && <p role="alert" className="mt-2 text-[12px] text-alert">{groupReportError}</p>}
-            <button
-              type="button"
-              className="btn-primary mt-3 w-full"
-              onClick={() => void handleGroupReport()}
-              disabled={groupReportBusy || groupReportDetails.trim().length < 3}
-            >
-              {groupReportBusy ? 'Sending…' : 'Submit report'}
-            </button>
-          </>
-        )}
-      </Sheet>
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Delete this message?"
