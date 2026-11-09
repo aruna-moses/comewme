@@ -206,9 +206,6 @@ export default function PersonalitySelector({
                 {!isOwner && <span className="pill bg-sun/20 text-amber">Personality</span>}
               </div>
               <p className="mt-1 text-[11px] leading-relaxed text-muted">{shownPersona.personality}</p>
-              <p className="mt-2 text-[10px] font-medium leading-relaxed text-muted/80">
-                Look: {shownPersona.look}
-              </p>
             </div>
           </div>
         )}
@@ -269,9 +266,6 @@ export default function PersonalitySelector({
                     <span className="block p-2.5">
                       <span className="block text-[13px] font-bold text-ink">{persona.name}</span>
                       <span className="mt-0.5 block text-[10px] leading-relaxed text-muted">{persona.personality}</span>
-                      <span className="mt-1.5 block text-[9px] leading-relaxed text-muted/80">
-                        Look: {persona.look}
-                      </span>
                     </span>
                   </button>
                 )
