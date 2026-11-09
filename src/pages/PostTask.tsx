@@ -14,6 +14,7 @@ export default function PostTask() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [detectedCategory, setDetectedCategory] = useState<Category>('market_run')
+  const [selectedCategory, setSelectedCategory] = useState<Category>('market_run')
   const [area, setArea] = useState(profile?.area || 'Yaba')
   const [meetingPoint, setMeetingPoint] = useState('')
   const [date, setDate] = useState('')
@@ -51,7 +52,9 @@ export default function PostTask() {
   }, [profile?.id])
 
   useEffect(() => {
-    setDetectedCategory(detectCategory(title, description))
+    const detected = detectCategory(title, description)
+    setDetectedCategory(detected)
+    setSelectedCategory(detected)
   }, [title, description])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -92,7 +95,7 @@ export default function PostTask() {
         {
           title: title.trim(),
           description: description.trim(),
-          category: detectedCategory,
+          category: selectedCategory,
           area,
           meeting_point: meetingPoint.trim(),
           date_time: when.toISOString(),
@@ -294,21 +297,25 @@ export default function PostTask() {
 
             <div className="card p-4">
               <p className="text-[12px] font-semibold uppercase tracking-wide text-muted">Category</p>
-              <div className="mt-1 flex items-center gap-3">
-                <span className={`pill ${detectedCategory === 'other' ? 'bg-line text-muted' : 'bg-sun/25 text-ink'}`}>
-                  {categoryEmoji} {categoryLabel}
-                </span>
-                <button
-                  type="button"
-                  className="btn-ghost btn-sm"
-                  onClick={() => setStep('form')}
+              <div className="mt-1">
+                <select
+                  id="category"
+                  className="field"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value as Category)}
                 >
-                  Change category
-                </button>
+                  {CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.emoji} {c.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-muted">
+                  {selectedCategory === detectedCategory
+                    ? 'Auto-detected category'
+                    : 'You changed the category'}
+                </p>
               </div>
-              <p className="mt-1 text-[11px] text-muted">
-                We picked this based on your title and details. Tap "Change category" if it looks wrong.
-              </p>
             </div>
 
             <div className="card p-4">
