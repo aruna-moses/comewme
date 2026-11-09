@@ -10,6 +10,7 @@ import CharacterJourney from '../components/CharacterJourney'
 import PersonalitySelector from '../components/PersonalitySelector'
 import ProfileMediaGallery from '../components/ProfileMediaGallery'
 import ReportButton from '../components/ReportButton'
+import TrustScoreDetail from '../components/TrustScoreDetail'
 
 export default function ProfilePage() {
   const { id } = useParams<{ id: string }>()
@@ -19,6 +20,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
+  const [trustOpen, setTrustOpen] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -99,9 +101,32 @@ export default function ProfilePage() {
             { label: 'Trust score', value: profile.trust_score },
             { label: 'Rating', value: avg ?? '—' },
           ].map((s) => (
-            <div key={s.label} className="card p-3 text-center">
+            <div
+              key={s.label}
+              className="card p-3 text-center"
+              onClick={s.label === 'Trust score' ? () => setTrustOpen(true) : undefined}
+              style={s.label === 'Trust score' ? { cursor: 'pointer' } : undefined}
+            >
               <p className="font-display text-lg font-bold leading-none">{s.value}</p>
               <p className="mt-1 text-[11px] text-muted">{s.label}</p>
+              {s.label === 'Trust score' && (
+                <div className="mt-2 flex items-center justify-center gap-1">
+                  <span className="text-[10px] text-muted">Details</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-muted"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -144,6 +169,18 @@ export default function ProfilePage() {
             />
           </div>
         )}
+
+        <TrustScoreDetail
+          open={trustOpen}
+          onClose={() => setTrustOpen(false)}
+          score={profile.trust_score}
+          tasks_completed={profile.tasks_completed}
+          verification_status={profile.verification_status}
+          avatar_url={profile.avatar_url}
+          phone={profile.phone}
+          has_good_reviews={avg ? Number(avg) >= 4 : true}
+          has_reports={false}
+        />
       </div>
     </div>
   )
