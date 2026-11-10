@@ -179,8 +179,7 @@ export default function TaskCard({
           ) : (
             <Link
               to={`/task/${task.id}`}
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-ink"
-              style={{ backgroundImage: 'linear-gradient(135deg,#FFD93D,#FF9F1C)' }}
+              className="join-task-pill"
             >
               Join task
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>

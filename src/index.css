@@ -98,6 +98,15 @@
     @apply btn bg-white text-ink border border-line hover:bg-canvas;
   }
 
+  .join-task-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white transition hover:brightness-105;
+    background-image: linear-gradient(180deg, #f7a233, #ee7b1e);
+  }
+
+  [data-theme='dark'] .join-task-pill {
+    color: #0b0b0f;
+  }
+
   .btn-dark {
     @apply btn bg-ink text-white;
   }
