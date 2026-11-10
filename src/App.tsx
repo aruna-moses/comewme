@@ -23,7 +23,6 @@ import Spinner from './components/Spinner'
 import GuidelinesModal from './components/GuidelinesModal'
 import WarningModal, { activeRestriction, unacknowledgedWarning } from './components/WarningModal'
 import ModerationAlert from './components/ModerationAlert'
-import ShareTask from './pages/ShareTask'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth()
@@ -112,7 +111,6 @@ export default function App() {
     <div className="app-shell">
       <Routes>
         <Route path="/" element={<Discover />} />
-        <Route path="/share/task/:id" element={<ShareTask />} />
         <Route path="/task/:id/chat" element={<RequireAuth><ChatRoom /></RequireAuth>} />
         <Route path="/task/:id" element={<TaskDetail />} />
         <Route path="/mytasks" element={<RequireAuth><MyTasks /></RequireAuth>} />
