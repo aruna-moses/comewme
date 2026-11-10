@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowRight, Clock3, MapPin, MessageCircle, UsersRound } from 'lucide-react'
+import { MessageCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 import type { JoinStatus, Task } from '../types'
-import { CATEGORIES, categoryLabel } from '../types'
-import { formatDateTime } from '../lib/format'
 import Spinner from '../components/Spinner'
-import Avatar from '../components/Avatar'
-import ShareTaskButton from '../components/ShareTaskButton'
+import TaskCard from '../components/TaskCard'
 
 export default function MyTasks() {
   const { profile } = useAuth()
@@ -200,120 +197,34 @@ export default function MyTasks() {
         <div className="mt-4 space-y-3">
           {!loadError && list.map((t) => {
             const applicationStatus = applicationStatuses[t.id]
-            const progress = Math.min(100, Math.round((t.spots_filled / t.spots_needed) * 100))
-            const capacityFull = t.status === 'full' || t.spots_filled >= t.spots_needed
-            const spotsRemaining = Math.max(0, t.spots_needed - t.spots_filled)
-            const statusLabel = applicationStatus === 'accepted'
-              ? 'Accepted'
-              : applicationStatus === 'pending'
-                ? 'In review'
-                : applicationStatus === 'waitlisted'
-                  ? 'Waitlisted'
-                  : applicationStatus === 'declined'
-                    ? 'Not selected'
-                    : null
 
             return (
-            <article
+            <div
               key={t.id}
-              className={`card rounded-[18px] p-4 ${targetTaskId === t.id ? 'task-reminder-highlight' : ''}`}
+              id={`task-${t.id}`}
+              className={targetTaskId === t.id ? 'task-reminder-highlight rounded-[22px]' : ''}
             >
-              <Link
-                id={`task-${t.id}`}
-                to={`/task/${t.id}`}
-                className="block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="pill bg-[#eef7f5] text-[#16827d]">
-                    {CATEGORIES.find((category) => category.value === t.category)?.emoji}{' '}
-                    {categoryLabel(t.category).toUpperCase()}
-                  </span>
-                  {tab === 'going' && statusLabel ? (
-                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                      applicationStatus === 'accepted'
-                        ? 'bg-verified/10 text-verified'
-                        : applicationStatus === 'pending'
-                          ? 'bg-amber/10 text-amber'
-                          : applicationStatus === 'waitlisted'
-                            ? 'bg-[#eef4fb] text-[#4273a8]'
-                            : 'bg-line text-muted'
-                    }`}>
-                      {statusLabel}
-                    </span>
-                  ) : (
-                    <span className={`text-[11px] font-semibold ${
-                      t.status === 'open'
-                        ? 'text-verified'
-                        : t.status === 'full'
-                          ? 'text-amber'
-                          : 'text-muted'
-                    }`}>
-                      {t.status === 'full' ? 'Full' : t.status === 'open' ? 'Open' : t.status}
-                    </span>
-                  )}
-                </div>
-                <h2 className="mt-3 font-display text-[16px] font-bold leading-snug">{t.title}</h2>
-                {tab === 'going' && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <Avatar src={t.host_avatar_url} name={t.host_name} size={25} />
-                    <p className="truncate text-[12px] text-muted">Posted by <span className="font-semibold text-ink">{t.host_name}</span></p>
-                  </div>
-                )}
-                <div className="mt-2 space-y-1.5 text-[12px] text-muted">
-                  <p className="flex items-center gap-1.5">
-                    <MapPin size={15} aria-hidden />
-                    {t.area}
-                  </p>
-                  <p className="flex items-center gap-1.5">
-                    <Clock3 size={15} aria-hidden />
-                    {formatDateTime(t.date_time)}
-                  </p>
-                </div>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#f7e9d8]" aria-label={`${progress}% of activity spots filled`}>
-                  <div className="h-full rounded-full bg-amber transition-all" style={{ width: `${progress}%` }} />
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-2 text-[12px]">
-                  <span className="inline-flex items-center gap-1.5 text-muted">
-                    <UsersRound size={15} aria-hidden />
-                    {t.spots_filled}/{t.spots_needed} joined
-                  </span>
-                  <span className={`font-semibold ${capacityFull ? 'text-amber' : 'text-muted'}`}>
-                    {capacityFull ? 'Full' : `${spotsRemaining} spot${spotsRemaining === 1 ? '' : 's'} left`}
-                  </span>
-                </div>
-              </Link>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
-                {tab === 'hosting' && pendingApplicants[t.id] > 0 ? (
-                  <span className="inline-flex items-center gap-1 font-semibold text-amber">
-                    {pendingApplicants[t.id]} applicant{pendingApplicants[t.id] === 1 ? '' : 's'}
-                    <ArrowRight size={14} aria-hidden />
-                  </span>
-                ) : tab === 'going' && applicationStatus === 'accepted' ? (
-                  <span className="text-[12px] font-semibold text-verified">Your group is ready</span>
-                ) : (
-                  <span className="text-[12px] font-semibold text-muted">
-                    {tab === 'hosting' ? 'View task' : 'View application'}
-                  </span>
-                )}
-                {tab === 'going' && applicationStatus === 'accepted' ? (
-                  <div className="flex items-center gap-1">
-                    <ShareTaskButton task={t} />
-                    <Link to={`/task/${t.id}/chat`} className="btn-primary btn-sm inline-flex items-center gap-1.5">
-                      <MessageCircle size={14} aria-hidden />
-                      Open chat
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1">
-                    <ShareTaskButton task={t} />
-                    <Link to={`/task/${t.id}`} className="inline-flex items-center gap-1 text-[12px] font-semibold text-amber">
-                      View
-                      <ArrowRight size={14} aria-hidden />
-                    </Link>
-                  </div>
+              <TaskCard task={t} applicationStatus={tab === 'going' ? applicationStatus : undefined} />
+              <div className="mt-2 flex items-center justify-between gap-2 px-1">
+                <span className="text-[12px] font-semibold text-muted">
+                  {tab === 'hosting'
+                    ? (pendingApplicants[t.id] ?? 0) > 0
+                      ? `${pendingApplicants[t.id]} waiting for your review`
+                      : 'No applicants yet'
+                    : applicationStatus === 'accepted'
+                      ? 'Your group is ready'
+                      : applicationStatus === 'pending'
+                        ? 'Waiting for the host'
+                        : 'Application sent'}
+                </span>
+                {tab === 'going' && applicationStatus === 'accepted' && (
+                  <Link to={`/task/${t.id}/chat`} className="btn-primary btn-sm inline-flex items-center gap-1.5">
+                    <MessageCircle size={14} aria-hidden />
+                    Open chat
+                  </Link>
                 )}
               </div>
-            </article>
+            </div>
           )})}
           {!loadError && list.length === 0 && (
             <div className="card mx-4 mt-6 flex flex-col items-center px-6 py-10 text-center">

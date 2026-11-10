@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { fetchProfile, fetchReviews } from '../lib/api'
@@ -22,6 +23,7 @@ export default function ProfilePage() {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [trustOpen, setTrustOpen] = useState(false)
+  const [growthOpen, setGrowthOpen] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -141,16 +143,42 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        <PersonalitySelector
-          profile={profile}
-          isOwner={isMe}
-          onProfileChange={setProfile}
-        />
-
-        {isMe && profile.character_persona && (
-          <CharacterJourney
+        {isMe ? (
+          <div className="card mt-3 overflow-hidden">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-3 p-4 text-left"
+              onClick={() => setGrowthOpen((v) => !v)}
+              aria-expanded={growthOpen}
+              aria-controls="growth-panel"
+            >
+              <div>
+                <p className="text-[13px] font-semibold">Your growth journey</p>
+                <p className="mt-0.5 text-[11px] text-muted">Personality &amp; chapters — tap to {growthOpen ? 'hide' : 'show'}</p>
+              </div>
+              <ChevronDown size={18} className={`shrink-0 transition-transform duration-200 ${growthOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {growthOpen && (
+              <div id="growth-panel" className="border-t border-line p-3">
+                <PersonalitySelector
+                  profile={profile}
+                  isOwner
+                  onProfileChange={setProfile}
+                />
+                {profile.character_persona && (
+                  <CharacterJourney
+                    profile={profile}
+                    isOwner
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <PersonalitySelector
             profile={profile}
-            isOwner
+            isOwner={false}
+            onProfileChange={setProfile}
           />
         )}
 
