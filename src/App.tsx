@@ -17,6 +17,7 @@ import Feedback from './pages/Feedback'
 import CommunityCheck from './pages/CommunityCheck'
 import Violations from './pages/Violations'
 import AdminModeration from './pages/AdminModeration'
+import Advertise from './pages/Advertise'
 import Spinner from './components/Spinner'
 import GuidelinesModal from './components/GuidelinesModal'
 import WarningModal, { activeRestriction, unacknowledgedWarning } from './components/WarningModal'
@@ -140,6 +141,14 @@ export default function App() {
           element={
             <RequireAuth>
               <Settings />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/advertise"
+          element={
+            <RequireAuth>
+              <Advertise />
             </RequireAuth>
           }
         />

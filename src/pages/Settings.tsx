@@ -249,6 +249,24 @@ export default function Settings() {
         </Link>
       </div>
 
+      {/* advertise */}
+      <div className="card mt-3 p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
+            <span className="text-[10px] font-bold">$</span>
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold">Advertise Your Business</p>
+            <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
+              Run a sponsored ad at the top of Discover. Reach Lagosians looking for things to do.
+            </p>
+          </div>
+        </div>
+        <Link to="/advertise" className="btn-primary w-full mt-3 text-sm font-bold">
+          Create an Ad
+        </Link>
+      </div>
+
       {/* details */}
       <div className="mt-6 space-y-4">
         <div>
