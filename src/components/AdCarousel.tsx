@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchActiveAds } from '../lib/ads'
 import type { Ad } from '../lib/ads'
+import { AD_SLOT_ASPECT } from '../lib/adSlot'
 
 /** Shown when no paid ads are live yet, so the slot never looks broken. */
 const HOUSE_AD: Ad = {
@@ -111,7 +112,10 @@ export default function AdCarousel() {
   const clickable = /^https?:\/\//i.test(current.destination_url)
 
   const body = (
-    <div className="h-16 w-full">
+    <div
+      className="w-full overflow-hidden rounded-[10px]"
+      style={{ aspectRatio: String(AD_SLOT_ASPECT) }}
+    >
       <AdFace ad={current} />
     </div>
   )

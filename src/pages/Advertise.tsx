@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
+  Crop,
   ImagePlus,
   Loader2,
   Settings as SettingsIcon,
@@ -14,7 +15,9 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { submitAd } from '../lib/ads'
 import type { Ad } from '../lib/ads'
+import { AD_SLOT_ASPECT } from '../lib/adSlot'
 import { AdFace } from '../components/AdCarousel'
+import AdImageCropper from '../components/AdImageCropper'
 
 const BRAND_COLORS = [
   '#FF9F1C', '#FFD93D', '#DC2626', '#16A34A', '#0B0B0F', '#3B82F6',
@@ -45,6 +48,8 @@ export default function AdvertisePage() {
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [originalSrc, setOriginalSrc] = useState<string | null>(null)
+  const [cropperSrc, setCropperSrc] = useState<string | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -54,8 +59,9 @@ export default function AdvertisePage() {
   useEffect(() => {
     return () => {
       if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview)
+      if (originalSrc?.startsWith('blob:')) URL.revokeObjectURL(originalSrc)
     }
-  }, [imagePreview])
+  }, [imagePreview, originalSrc])
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -68,17 +74,31 @@ export default function AdvertisePage() {
       setImageError('That file is not an image. Please choose a JPG or PNG.')
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setImageError('That image is larger than 5MB. Please choose a smaller one.')
+    if (file.size > 12 * 1024 * 1024) {
+      setImageError('That image is larger than 12MB. Please choose a smaller one.')
       return
     }
+    if (originalSrc) URL.revokeObjectURL(originalSrc)
+    const url = URL.createObjectURL(file)
+    setOriginalSrc(url)
+    setCropperSrc(url)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  function applyCrop(file: File, previewUrl: string) {
+    if (imagePreview) URL.revokeObjectURL(imagePreview)
     setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
+    setImagePreview(previewUrl)
+    setCropperSrc(null)
   }
 
   function clearImage() {
+    if (imagePreview) URL.revokeObjectURL(imagePreview)
+    if (originalSrc) URL.revokeObjectURL(originalSrc)
     setImageFile(null)
     setImagePreview(null)
+    setOriginalSrc(null)
+    setCropperSrc(null)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -249,8 +269,8 @@ export default function AdvertisePage() {
                 </span>
               </div>
               <p className="mt-1 text-[11px] leading-relaxed text-muted">
-                Best size is <strong className="text-ink">1200 × 400px</strong> (wide). We crop from
-                the centre to fit the strip, so keep the important part in the middle.
+                Pick any picture — then drag to choose the exact strip that shows in the feed.
+                Wider pictures work best.
               </p>
 
               <input
@@ -262,8 +282,11 @@ export default function AdvertisePage() {
                 onChange={(e) => pickFile(e.target.files?.[0])}
               />
 
-              {/* Real-size crop preview — this is the actual shape of the feed slot */}
-              <div className="mt-3 h-16 w-full overflow-hidden rounded-[10px] border border-dashed border-line bg-canvas">
+              {/* Exactly the shape of the feed slot */}
+              <div
+                className="mt-3 w-full overflow-hidden rounded-[10px] border border-dashed border-line bg-canvas"
+                style={{ aspectRatio: String(AD_SLOT_ASPECT) }}
+              >
                 {imagePreview ? (
                   <img src={imagePreview} alt="Ad crop preview" className="h-full w-full object-cover" />
                 ) : (
@@ -283,6 +306,16 @@ export default function AdvertisePage() {
                   <ImagePlus size={14} />
                   {imagePreview ? 'Change picture' : 'Choose picture'}
                 </button>
+                {originalSrc && (
+                  <button
+                    type="button"
+                    onClick={() => setCropperSrc(originalSrc)}
+                    className="btn-ghost btn-sm"
+                  >
+                    <Crop size={14} />
+                    Adjust crop
+                  </button>
+                )}
                 {imagePreview && (
                   <button type="button" onClick={clearImage} className="btn-ghost btn-sm">
                     <X size={14} />
@@ -487,7 +520,7 @@ export default function AdvertisePage() {
                     <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
                       Advertisement
                     </p>
-                    <div className="h-16 w-full">
+                    <div className="w-full overflow-hidden rounded-[10px]" style={{ aspectRatio: String(AD_SLOT_ASPECT) }}>
                       <AdFace ad={previewAd} />
                     </div>
                   </div>
@@ -564,6 +597,14 @@ export default function AdvertisePage() {
           You can track status in Settings any time.
         </p>
       </div>
+
+      {cropperSrc && (
+        <AdImageCropper
+          src={cropperSrc}
+          onCancel={() => setCropperSrc(null)}
+          onDone={applyCrop}
+        />
+      )}
     </div>
   )
 }

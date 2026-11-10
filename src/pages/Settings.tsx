@@ -4,7 +4,7 @@ import { Moon, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import ConfirmDialog from '../components/ConfirmDialog'
-import { fetchMyVerification, submitVerification, updateProfile } from '../lib/api'
+import { fetchMyVerification, isModerator, submitVerification, updateProfile } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category, Profile } from '../types'
@@ -26,6 +26,21 @@ export default function Settings() {
   const [submitted, setSubmitted] = useState(false)
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  const [isMod, setIsMod] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    isModerator()
+      .then((ok) => {
+        if (active) setIsMod(ok)
+      })
+      .catch(() => {
+        if (active) setIsMod(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!profile?.id) return
@@ -321,6 +336,23 @@ export default function Settings() {
       </div>
 
       {/* feedback */}
+
+      {isMod && (
+        <div className="card mt-3 p-4">
+          <p className="text-[14px] font-semibold">Moderation</p>
+          <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
+            Review member reports and approve advertiser ads before they go live.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Link to="/admin/moderation" className="btn-ghost btn-sm">
+              Reports
+            </Link>
+            <Link to="/admin/ads" className="btn-primary btn-sm">
+              Ad review
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="mt-8 space-y-2">
         <div className="card p-4">

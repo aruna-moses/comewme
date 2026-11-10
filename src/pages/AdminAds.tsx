@@ -5,6 +5,7 @@ import { isModerator } from '../lib/api'
 import { fetchAdsForReview, reviewAd } from '../lib/ads'
 import type { Ad } from '../lib/ads'
 import { AdFace } from '../components/AdCarousel'
+import { AD_SLOT_ASPECT } from '../lib/adSlot'
 import Spinner from '../components/Spinner'
 
 const STATUS_STYLE: Record<Ad['status'], string> = {
@@ -102,7 +103,7 @@ export default function AdminAds() {
                   </span>
                 </div>
 
-                <div className="mt-3 h-16 w-full">
+                <div className="mt-3 w-full overflow-hidden rounded-[10px]" style={{ aspectRatio: String(AD_SLOT_ASPECT) }}>
                   <AdFace ad={ad} />
                 </div>
 
