@@ -36,15 +36,16 @@ export default function PublicHome() {
       {/* Sticky sign-in bar */}
       <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[480px] items-center justify-between px-4">
-          <Link to="/" className="font-display text-[16px] font-bold tracking-[0.18em] text-amber">
-            COME W&apos; ME
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/logo.png" alt="Come w' me logo" className="h-8 w-8 rounded-[10px] object-cover" />
+            <span className="font-display text-[16px] font-bold leading-none tracking-tight text-ink">COME W&apos; ME</span>
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/login" className="btn-ghost btn-sm">
-              Sign in
-            </Link>
             <Link to="/login" className="btn-primary btn-sm">
-              Join free
+              Sign up
+            </Link>
+            <Link to="/login" className="btn-ghost btn-sm">
+              Log in
             </Link>
           </div>
         </div>
@@ -68,11 +69,11 @@ export default function PublicHome() {
           ))}
         </div>
         <Link to="/login" className="btn-primary mt-5 flex w-full items-center justify-center gap-1.5 rounded-[16px] py-3.5 text-[15px]">
-          Join — it&apos;s free
+          Sign up free
           <ArrowRight size={17} aria-hidden />
         </Link>
         <p className="mt-2 text-center text-[11px] text-muted">
-          Already on board? Just <Link to="/login" className="font-semibold text-ink underline underline-offset-2">sign in</Link>.
+          Already on board? Just <Link to="/login" className="font-semibold text-ink underline underline-offset-2">log in</Link>.
         </p>
       </section>
 
@@ -80,7 +81,7 @@ export default function PublicHome() {
       <section className="mx-auto max-w-[480px] px-4 pb-10">
         <div className="mb-2 flex items-center justify-between px-1">
           <h2 className="text-[14px] font-bold">Around Lagos</h2>
-          <span className="text-[11px] text-muted">A preview — sign in to see everything</span>
+          <span className="text-[11px] text-muted">A preview — log in to see everything</span>
         </div>
 
         {loading ? (
@@ -94,14 +95,14 @@ export default function PublicHome() {
             ))}
             {tasks.length === 0 && (
               <p className="py-6 text-center text-[13px] text-muted">
-                Nothing in the feed right now — it fills up fast. Sign in to catch the next one.
+                Nothing in the feed right now — it fills up fast. Log in to catch the next one.
               </p>
             )}
           </div>
         )}
 
         <Link to="/login" className="btn-ghost mt-4 w-full">
-          Sign in to see all activities and join
+          Log in to see all activities and join
           <ArrowRight size={14} aria-hidden />
         </Link>
       </section>
