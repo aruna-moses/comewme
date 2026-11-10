@@ -199,6 +199,24 @@ export default function Discover() {
         </p>
       </div>
 
+      <div className="mx-5 mt-4 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4">
+        <div className="flex flex-col items-center justify-center gap-2">
+          <span className="text-[10px] font-semibold tracking-wider text-[#6b7280] uppercase">Advertisement</span>
+          <div className="w-full h-32 rounded-lg bg-[#e2e8f0] flex items-center justify-center mb-2 overflow-hidden relative">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-[#94a3b8]">
+              <div className="flex gap-1">
+                <div className="h-4 w-1/3 rounded bg-[#cbd5e1]" />
+                <div className="h-4 w-1/2 rounded bg-[#cbd5e1]" />
+                <div className="h-4 w-1/3 rounded bg-[#cbd5e1]" />
+              </div>
+              <div className="h-8 w-3/4 rounded bg-[#cbd5e1]" />
+              <p className="text-[11px]">Your ad here</p>
+              <p className="text-[10px]">Reach Lagos residents</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto px-5 pb-1">
           {session && interests.length > 0 && (
             <button
