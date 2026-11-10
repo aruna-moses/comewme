@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, CheckCircle, Image, Play, Send, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle, Image, Play, Send, X, Plus, Image as ImageIcon } from 'lucide-react'
 
 export default function AdvertisePage() {
   const navigate = useNavigate()
@@ -17,6 +17,7 @@ export default function AdvertisePage() {
     paymentProof: '',
   })
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   const steps = [
     { id: 1, label: 'Brand Details' },
@@ -35,7 +36,6 @@ export default function AdvertisePage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setPreviewOpen(false)
-    // In production: submit to your admin dashboard for review
     alert(
       `Ad submitted for review!\n\nBrand: ${form.brandName}\nHeadline: ${form.headline}\nStarts: ${form.startDate}\nEnds: ${form.endDate}\n\nAn admin will review and approve it before it appears at the top of Discover.`
     )
@@ -44,6 +44,12 @@ export default function AdvertisePage() {
 
   const isLastStep = step === 4
   const isFirstStep = step === 1
+
+  // Brand color options
+  const brandColors = [
+    '#FF9F1C', '#FFD93D', '#DC2626', '#16A34A', '#0B0B0F', '#3B82F6',
+    '#EC4899', '#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444',
+  ]
 
   return (
     <div className="min-h-screen px-5 pb-10 pt-12 flex flex-col">
@@ -89,10 +95,10 @@ export default function AdvertisePage() {
           <div className="space-y-5">
             <div className="card p-5">
               <p className="text-[12px] font-semibold uppercase tracking-wide text-muted mb-3">
-                Brand Information
+                Brand Details
               </p>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
                   <label className="label" htmlFor="brandName">
                     Brand Name
@@ -113,28 +119,54 @@ export default function AdvertisePage() {
                   <label className="label" htmlFor="logoUrl">
                     Brand Logo or Photo
                   </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      id="logoUrl"
-                      type="text"
-                      className="field flex-1"
-                      placeholder="https://yourbrand.com/logo.png"
-                      value={form.logoUrl}
-                      onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
-                    />
-                    <button
-                      type="button"
-                      className="btn-ghost btn-sm"
-                      onClick={() => {
-                        // In real app: open image picker
-                        setForm({ ...form, logoUrl: 'https://via.placeholder.com/150' })
-                      }}
-                    >
-                      Pick Image
-                    </button>
+                  <div className="flex flex-col gap-3">
+                    <div className="relative group">
+                      <input
+                        id="logoUrl"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          if (f) {
+                            setForm({ ...form, logoUrl: f.name })
+                            const reader = new FileReader()
+                            reader.onload = (ev) => setImagePreview(ev.target?.result as string)
+                            reader.readAsDataURL(f)
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="flex h-14 w-14 items-center justify-center rounded-xl border border-line bg-white hover:bg-[#f3f4f6] cursor-pointer text-muted hover:text-ink transition"
+                      >
+                        <ImageIcon size={20} />
+                        <span className="sr-only">Upload Image</span>
+                      </button>
+                      {imagePreview && (
+                        <button
+                          type="button"
+                          className="absolute top-1 right-1 rounded-full bg-white p-1 text-[10px] text-alert hover:bg-alert/5"
+                          onClick={() => {
+                            setImagePreview(null)
+                            setForm({ ...form, logoUrl: '' })
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                      {imagePreview && (
+                        <div className="absolute inset-0 opacity-30" />
+                      )}
+                    </div>
+                    {imagePreview && (
+                      <div className="mt-3 w-20 h-20 rounded-full overflow-hidden border border-[#cbd5e1]">
+                        <img src={imagePreview!} alt="Brand logo" className="w-full h-full object-cover" />
+                      </div>
+                    )}
                   </div>
                   <p className="text-[11px] text-muted">
-                    Upload your logo or a photo that represents your brand.
+                    Upload your logo or a photo that represents your brand. Square images work best.
                   </p>
                 </div>
 
@@ -142,19 +174,31 @@ export default function AdvertisePage() {
                   <label className="label" htmlFor="brandColor">
                     Brand Color
                   </label>
-                  <div className="flex gap-2">
-                    {['#FF9F1C', '#FFD93D', '#DC2626', '#16A34A', '#0B0B0F', '#3B82F6'].map(
-                      (color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => setForm({ ...form, brandColor: color })}
-                          className={`h-8 w-8 rounded-full border-2 ${
-                            form.brandColor === color ? 'ring-2 ring-ink' : 'border-transparent'
-                          } bg-[${color}]`}
-                        />
-                      )
-                    )}
+                  <div className="flex flex-wrap gap-2">
+                    {brandColors.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setForm({ ...form, brandColor: color })}
+                        className={`w-7 h-7 rounded-full border-2 cursor-pointer ${
+                          form.brandColor === color ? 'ring-2 ring-ink' : 'border-transparent'
+                        } bg-[${color}]`}
+                      />
+                    ))}
+                    <button
+                      type="button"
+                      className="w-7 h-7 rounded-full border-2 cursor-pointer border-[#cbd5e1] bg-white relative"
+                      onClick={() => {
+                        const color = prompt('Enter a hex color (e.g., #FF5733):')
+                        if (color && /^#[0-9A-Fa-f]{6}$/.test(color)) {
+                          setForm({ ...form, brandColor: color })
+                        } else if (color) {
+                          alert('Please enter a valid hex color like #FF5733')
+                        }
+                      }}
+                    >
+                      <span className="absolute inset-0 rounded-full border-2 border-white" />
+                    </button>
                   </div>
                   <p className="text-[11px] text-muted">
                     Choose your brand color for the ad card border.
@@ -186,7 +230,7 @@ export default function AdvertisePage() {
                 Ad Content
               </p>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
                   <label className="label" htmlFor="headline">
                     Headline
@@ -200,7 +244,7 @@ export default function AdvertisePage() {
                     maxLength={60}
                   />
                   <p className="text-[11px] text-muted">
-                    Short and catchy — this is what grabs attention.
+                    Short and catchy — this is what grabs attention in the ad box.
                   </p>
                 </div>
 
@@ -219,6 +263,7 @@ export default function AdvertisePage() {
                     <option value="Visit Website">Visit Website</option>
                     <option value="Learn More">Learn More</option>
                     <option value="Call Now">Call Now</option>
+                    <option value="Shop Now">Shop Now</option>
                   </select>
                   <p className="text-[11px] text-muted">
                     What people click to take action.
@@ -238,7 +283,7 @@ export default function AdvertisePage() {
                     onChange={(e) => setForm({ ...form, destinationUrl: e.target.value })}
                   />
                   <p className="text-[11px] text-muted">
-                    Your website, WhatsApp, Instagram, or reservation link.
+                    When someone taps your ad, they’ll go here — your website, WhatsApp, Instagram, or reservation link.
                   </p>
                 </div>
               </div>
@@ -334,22 +379,22 @@ export default function AdvertisePage() {
               </p>
 
               {/* Ad Preview */}
-              <div className="w-full h-24 rounded-xl border border-[#e2e8f0] bg-white flex items-center justify-center overflow-hidden relative p-2">
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[#1d1d1f]">
-                  {form.logoUrl ? (
-                    <img src={form.logoUrl} alt="brand" className="h-8 w-8 rounded-full object-cover" />
+              <div className="w-full h-24 rounded-xl border border-[#e2e8f0] bg-white flex items-center justify-center overflow-hidden relative">
+                <div className="absolute inset-0 p-4 flex flex-col items-center justify-center gap-2 text-[#1d1d1f]">
+                  {form.logoUrl || imagePreview ? (
+                    <img src={(form.logoUrl || imagePreview)!} alt="brand" className="h-8 w-8 rounded-full object-cover" />
                   ) : (
                     <div className="h-8 w-8 rounded-full bg-[#cbd5e1]" />
                   )}
                   <div className="text-center">
                     <p className="text-[12px] font-bold text-ink">{form.headline}</p>
-                    <p className="text-[9px] text-[#86868b]">{form.ctaText}</p>
+                    <p className="text-[10px] text-[#86868b]">{form.ctaText}</p>
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 p-4 rounded-lg border border-[#f3f4f6] bg-[#f9fafb]">
-                <p className="text-[11px] font-semibold text-[#6b7280] uppercase mb-2">
+                <p className="text-[11px] font-semibold tracking-wide text-[#6b7280] mb-2">
                   Summary
                 </p>
                 <div className="space-y-2 text-[12px] text-ink/80">
@@ -360,6 +405,12 @@ export default function AdvertisePage() {
                   <div className="flex justify-between">
                     <span>Headline:</span>
                     <span className="font-medium">{form.headline}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Color:</span>
+                    <span className="font-medium" style={{ color: form.brandColor }}>
+                      {form.brandColor}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Starts:</span>
@@ -408,50 +459,48 @@ export default function AdvertisePage() {
               </button>
             </div>
 
-            <div className="space-y-4 mb-4">
-              <div className="flex items-start gap-3">
-                <div className="h-8 w-8 rounded-full bg-sun/20 flex items-center justify-center shrink-0">
-                  <Send size={16} className="text-amber" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-ink">Submit your ad for review?</p>
-                  <p className="text-[12px] text-muted">
-                    An admin will review your ad before it appears at the top of Discover.
-                  </p>
-                </div>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="h-8 w-8 rounded-full bg-sun/20 flex items-center justify-center shrink-0">
+                <Send size={16} className="text-amber" />
               </div>
+              <div className="flex-1">
+                <p className="font-semibold text-ink">Submit your ad for review?</p>
+                <p className="text-[12px] text-muted">
+                  An admin will review your ad before it appears at the top of Discover.
+                </p>
+              </div>
+            </div>
 
-              <div className="space-y-2 text-[12px] text-ink/80">
-                <div className="flex justify-between">
-                  <span>Brand:</span>
-                  <span className="font-medium">{form.brandName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Headline:</span>
-                  <span className="font-medium">{form.headline}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Schedule:</span>
-                  <span className="font-medium">{form.startDate} → {form.endDate}</span>
-                </div>
+            <div className="space-y-2 text-[12px] text-ink/80">
+              <div className="flex justify-between">
+                <span>Brand:</span>
+                <span className="font-medium">{form.brandName}</span>
               </div>
+              <div className="flex justify-between">
+                <span>Headline:</span>
+                <span className="font-medium">{form.headline}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Schedule:</span>
+                <span className="font-medium">{form.startDate} → {form.endDate}</span>
+              </div>
+            </div>
 
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  className="btn-ghost flex-1"
-                  onClick={() => setPreviewOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn-primary flex-1"
-                  onClick={handleSubmit}
-                >
-                  Submit for Review
-                </button>
-              </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                className="btn-ghost flex-1"
+                onClick={() => setPreviewOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-primary flex-1"
+                onClick={handleSubmit}
+              >
+                Submit for Review
+              </button>
             </div>
           </div>
         </div>
