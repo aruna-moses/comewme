@@ -11,6 +11,7 @@ import TaskCard from '../components/TaskCard'
 import SkeletonCard from '../components/SkeletonCard'
 import EmptyState from '../components/EmptyState'
 import Avatar from '../components/Avatar'
+import AdCarousel from '../components/AdCarousel'
 
 const PAGE = 20
 
@@ -199,22 +200,7 @@ export default function Discover() {
         </p>
       </div>
 
-      <div className="mx-5 mt-4 sticky top-0 z-40 rounded-xl border border-[#e2e8f0] bg-white p-3">
-        <div className="flex flex-col items-center justify-center gap-1">
-          <span className="text-[10px] font-semibold tracking-wider text-[#6b7280] uppercase">Advertisement</span>
-          <div className="w-full h-16 rounded-xl bg-[#f5f5f7] flex items-center justify-center overflow-hidden relative border border-[#d2d2d7]">
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[#1d1d1f]">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="#1d1d1f" aria-hidden>
-                <path d="M18.164 7.75c-.672-.586-1.344-.984-2.278-1.29-.93-.328-1.926-.52-3-.52h-2c-1.078 0-2.07.195-2.954.52-.879.305-1.616.703-2.298 1.29-.679.586-1.126 1.241-1.32 1.968-.195.726-.195 1.454-.195 2.226 0 .774 0 1.498.195 2.226.195.727.641 1.379 1.32 1.968.679.586 1.414.984 2.298 1.29.879.328 1.875.52 2.954.52h2c1.078 0 2.07-.195 2.954-.52.879-.305 1.616-.703 2.278-1.29.679-.586 1.126-1.241 1.32-1.968.195-.727.195-1.454.195-2.226 0-.773 0-1.498-.195-2.226-.195-.726-.641-1.378-1.32-1.967zM12 10c-.805 0-1.453-.352-1.969-.844-.516-.492-.773-1.172-.773-1.953s.258-1.454.773-1.953c.516-.488 1.164-.844 1.969-.844s1.453.352 1.969.844c.515.492.773 1.172.773 1.953s-.258 1.453-.773 1.953c-.515.488-1.164.844-1.969.844z"/>
-              </svg>
-              <div className="text-center">
-                <p className="text-[13px] font-bold text-ink">Apple</p>
-                <p className="text-[10px] text-[#86868b]">iPhone · Shop now</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AdCarousel />
 
       <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto px-5 pb-1">
           {session && interests.length > 0 && (

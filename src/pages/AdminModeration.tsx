@@ -99,6 +99,13 @@ export default function AdminModeration() {
           </div>
         ) : (
           <>
+            <Link to="/admin/ads" className="card flex items-center justify-between rounded-2xl p-4">
+              <span>
+                <span className="block text-[14px] font-semibold">Ad review</span>
+                <span className="mt-0.5 block text-[12px] text-muted">Approve or reject advertiser submissions.</span>
+              </span>
+              <span aria-hidden className="text-muted">→</span>
+            </Link>
             <section>
               <h2 className="mb-3 font-display text-[18px] font-bold">Pending reports ({reports.length})</h2>
               <div className="space-y-3">

@@ -17,6 +17,7 @@ import Feedback from './pages/Feedback'
 import CommunityCheck from './pages/CommunityCheck'
 import Violations from './pages/Violations'
 import AdminModeration from './pages/AdminModeration'
+import AdminAds from './pages/AdminAds'
 import Advertise from './pages/Advertise'
 import Spinner from './components/Spinner'
 import GuidelinesModal from './components/GuidelinesModal'
@@ -118,6 +119,7 @@ export default function App() {
         <Route path="/accept-guidelines" element={<RequireAuth><AcceptGuidelinesRoute /></RequireAuth>} />
         <Route path="/violations" element={<RequireAuth><Violations /></RequireAuth>} />
         <Route path="/admin/moderation" element={<RequireAuth><AdminModeration /></RequireAuth>} />
+        <Route path="/admin/ads" element={<RequireAuth><AdminAds /></RequireAuth>} />
         <Route
           path="/post"
           element={
