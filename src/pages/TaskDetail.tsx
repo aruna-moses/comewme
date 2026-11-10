@@ -47,6 +47,12 @@ export default function TaskDetail() {
   const [busy, setBusy] = useState(false)
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false)
+  const [decisionPending, setDecisionPending] = useState<{
+    requestId: string
+    name: string
+    status: 'declined' | 'waitlisted' | 'remove'
+  } | null>(null)
+  const [doneConfirmOpen, setDoneConfirmOpen] = useState(false)
   const [completionCount, setCompletionCount] = useState<number | null>(null)
   const closeCompletionCelebration = useCallback(() => setCompletionCount(null), [])
   const findNextActivity = useCallback(() => {
@@ -155,7 +161,7 @@ export default function TaskDetail() {
 
   async function handleDone() {
     if (!task) return
-    if (!confirm('Mark this activity as done? People will be asked to rate each other.')) return
+    setDoneConfirmOpen(false)
     setBusy(true)
     try {
       await markTaskDone(task.id)
@@ -338,7 +344,7 @@ export default function TaskDetail() {
             </Link>
           )}
 
-          {session && isHost && ['open', 'full'].includes(task.status) && <button className="btn-primary w-full" disabled={busy} onClick={handleDone}>Mark as done</button>}
+          {session && isHost && ['open', 'full'].includes(task.status) && <button className="btn-primary w-full" disabled={busy} onClick={() => setDoneConfirmOpen(true)}>Mark as done</button>}
           {session && isHost && ['open', 'full'].includes(task.status) && <button className="btn-ghost mt-2 w-full" disabled={busy} onClick={() => setCancelConfirmOpen(true)}>Cancel activity</button>}
 
           {session && !isHost && task.status === 'open' && (!myRequest || myRequest.status === 'declined') && (
@@ -412,9 +418,9 @@ export default function TaskDetail() {
                       {spotsLeft === 0 ? 'Full' : 'Accept'}
                     </button>
                     {r.status !== 'waitlisted' && (
-                      <button className="btn-ghost btn-sm flex-1" disabled={busy} onClick={() => handleDecision(r.id, 'waitlisted')}>Waitlist</button>
+                      <button className="btn-ghost btn-sm flex-1" disabled={busy} onClick={() => setDecisionPending({ requestId: r.id, name: r.requester_name, status: 'waitlisted' })}>Waitlist</button>
                     )}
-                    <button className="btn-ghost btn-sm flex-1" disabled={busy} onClick={() => handleDecision(r.id, 'declined')}>Decline</button>
+                    <button className="btn-ghost btn-sm flex-1" disabled={busy} onClick={() => setDecisionPending({ requestId: r.id, name: r.requester_name, status: 'declined' })}>Decline</button>
                   </div>
                 </div>
               ))}
@@ -434,7 +440,7 @@ export default function TaskDetail() {
                     type="button"
                     className="btn-ghost btn-sm"
                     disabled={busy}
-                    onClick={() => handleDecision(r.id, 'declined')}
+                    onClick={() => setDecisionPending({ requestId: r.id, name: r.requester_name, status: 'remove' })}
                   >
                     Remove
                   </button>
@@ -528,7 +534,7 @@ export default function TaskDetail() {
             {isHost && task.status === 'open' && (
               <div className="grid grid-cols-2 gap-3 rounded-xl border border-line bg-white p-3">
                 <button
-                  onClick={handleDone}
+                  onClick={() => setDoneConfirmOpen(true)}
                   disabled={busy}
                   className="btn-primary w-full px-3 py-2 text-sm font-semibold"
                 >
@@ -701,6 +707,45 @@ export default function TaskDetail() {
           busy={busy}
           onCancel={() => setLeaveConfirmOpen(false)}
           onConfirm={() => void handleLeave()}
+        />
+        {decisionPending && (
+          <ConfirmDialog
+            open
+            destructive
+            busy={busy}
+            title={
+              decisionPending.status === 'remove'
+                ? `Remove ${decisionPending.name}?`
+                : decisionPending.status === 'waitlisted'
+                  ? `Waitlist ${decisionPending.name}?`
+                  : `Decline ${decisionPending.name}?`
+            }
+            message={
+              decisionPending.status === 'remove'
+                ? "They'll be notified they're out and won't be in the group any more. You can welcome someone else instead."
+                : decisionPending.status === 'waitlisted'
+                  ? "They'll be kept as backup and moved in automatically if a spot frees up."
+                  : "They'll be notified they weren't selected. Spots go to whoever the host picks."
+            }
+            cancelLabel="Keep request"
+            confirmLabel={decisionPending.status === 'remove' ? 'Remove' : decisionPending.status === 'waitlisted' ? 'Waitlist' : 'Decline'}
+            onCancel={() => setDecisionPending(null)}
+            onConfirm={() => {
+              const target = decisionPending
+              setDecisionPending(null)
+              void handleDecision(target.requestId, target.status === 'remove' ? 'declined' : target.status)
+            }}
+          />
+        )}
+        <ConfirmDialog
+          open={doneConfirmOpen}
+          title="Mark this activity as done?"
+          message="Everyone in the activity will all be asked to rate each other. This can't be undone."
+          cancelLabel="Not yet"
+          confirmLabel="Mark as done"
+          busy={busy}
+          onCancel={() => setDoneConfirmOpen(false)}
+          onConfirm={() => void handleDone()}
         />
         {completionCount !== null && (
           <TaskCompletionCelebration

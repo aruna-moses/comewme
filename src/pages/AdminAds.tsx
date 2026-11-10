@@ -6,6 +6,7 @@ import { fetchAdsForReview, reviewAd } from '../lib/ads'
 import type { Ad } from '../lib/ads'
 import { AdFace } from '../components/AdCarousel'
 import { AD_SLOT_ASPECT } from '../lib/adSlot'
+import ConfirmDialog from '../components/ConfirmDialog'
 import Spinner from '../components/Spinner'
 
 const STATUS_STYLE: Record<Ad['status'], string> = {
@@ -22,6 +23,10 @@ export default function AdminAds() {
   const [busy, setBusy] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [confirmAction, setConfirmAction] = useState<{
+    ad: Ad
+    status: 'rejected' | 'paused'
+  } | null>(null)
 
   const load = useCallback(async () => {
     setError(null)
@@ -163,7 +168,7 @@ export default function AdminAds() {
                       type="button"
                       className="btn-ghost btn-sm flex-1"
                       disabled={busy === ad.id}
-                      onClick={() => void act(ad, 'paused')}
+                      onClick={() => setConfirmAction({ ad, status: 'paused' })}
                     >
                       <Pause size={14} />
                       Pause
@@ -174,7 +179,7 @@ export default function AdminAds() {
                       type="button"
                       className="btn-ghost btn-sm flex-1 text-alert"
                       disabled={busy === ad.id}
-                      onClick={() => void act(ad, 'rejected')}
+                      onClick={() => setConfirmAction({ ad, status: 'rejected' })}
                     >
                       <X size={14} />
                       Reject
@@ -196,6 +201,28 @@ export default function AdminAds() {
             ))}
         </div>
       </div>
+
+      {confirmAction && (
+        <ConfirmDialog
+          open
+          destructive={confirmAction.status === 'rejected'}
+          title={confirmAction.status === 'rejected' ? `Reject ${confirmAction.ad.brand_name}?` : `Pause ${confirmAction.ad.brand_name}?`}
+          message={
+            confirmAction.status === 'rejected'
+              ? 'The ad is taken down and will never run. If you left a note for the advertiser, make sure you write it first.'
+              : 'The ad stops showing right away until you approve it again. Nothing is deleted.'
+          }
+          cancelLabel="Keep it"
+          confirmLabel={confirmAction.status === 'rejected' ? 'Reject' : 'Pause'}
+          busy={busy === confirmAction.ad.id}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => {
+            const target = confirmAction
+            setConfirmAction(null)
+            void act(target.ad, target.status)
+          }}
+        />
+      )}
     </div>
   )
 }

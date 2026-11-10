@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ImagePlus, LoaderCircle, LockKeyhole, Play, Trash2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import ConfirmDialog from './ConfirmDialog'
 
 const BUCKET = 'profile-media'
 const MAX_MEDIA = 6
@@ -48,6 +49,7 @@ export default function ProfileMediaGallery({
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [removePending, setRemovePending] = useState<ProfileMedia | null>(null)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState<ProfileMedia | null>(null)
 
@@ -249,7 +251,7 @@ export default function ProfileMediaGallery({
                   className="absolute right-2 top-2 z-[2] flex h-8 w-8 items-center justify-center rounded-full bg-ink/65 text-white transition hover:bg-alert disabled:opacity-60"
                   aria-label="Remove public media"
                   disabled={deletingId === item.id}
-                  onClick={() => void removeMedia(item)}
+                  onClick={() => setRemovePending(item)}
                 >
                   {deletingId === item.id ? <LoaderCircle size={15} className="animate-spin" aria-hidden /> : <Trash2 size={15} aria-hidden />}
                 </button>
@@ -261,6 +263,24 @@ export default function ProfileMediaGallery({
 
       {isOwner && media.length > 0 && media.length < MAX_MEDIA && (
         <p className="mt-2 text-[10px] text-muted">{MAX_MEDIA - media.length} more {MAX_MEDIA - media.length === 1 ? 'spot' : 'spots'} available</p>
+      )}
+
+      {removePending && (
+        <ConfirmDialog
+          open
+          destructive
+          title="Remove this moment?"
+          message="It goes out of your public profile for everyone, and the file is deleted. There's no undo — you'll need to upload it again."
+          cancelLabel="Keep it"
+          confirmLabel="Remove"
+          busy={deletingId === removePending.id}
+          onCancel={() => setRemovePending(null)}
+          onConfirm={() => {
+            const target = removePending
+            setRemovePending(null)
+            void removeMedia(target)
+          }}
+        />
       )}
 
       {selected && (

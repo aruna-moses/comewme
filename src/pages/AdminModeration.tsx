@@ -23,6 +23,15 @@ import type { Violation, ViolationSeverity } from '../types'
 import { VIOLATION_CATEGORIES } from '../types'
 import { useNotifications } from '../context/NotificationContext'
 import Spinner from '../components/Spinner'
+import ConfirmDialog from '../components/ConfirmDialog'
+
+const SEVERITY_LABELS: Record<string, string> = {
+  warning: 'a warning',
+  suspension_24h: 'a 24-hour suspension',
+  suspension_7d: 'a 7-day suspension',
+  suspension_30d: 'a 30-day suspension',
+  permanent_ban: 'a permanent ban',
+}
 
 type PendingAppeal = Awaited<ReturnType<typeof getPendingViolationAppeals>>[number]
 
@@ -56,6 +65,7 @@ export default function AdminModeration() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [confirmAction, setConfirmAction] = useState<{ kind: 'review' | 'dismiss'; id: string } | null>(null)
 
   const load = useCallback(async () => {
     setError(null)
@@ -334,10 +344,10 @@ export default function AdminModeration() {
                       onChange={(event) => setActions({ ...actions, [report.id]: event.target.value })}
                     />
                     <div className="mt-3 grid grid-cols-2 gap-2">
-                      <button className="btn-primary" disabled={busy !== null} onClick={() => void handleReview(report.id)}>
+                      <button className="btn-primary" disabled={busy !== null} onClick={() => setConfirmAction({ kind: 'review', id: report.id })}>
                         {busy === report.id ? 'Saving…' : 'Apply action'}
                       </button>
-                      <button className="btn-ghost" disabled={busy !== null} onClick={() => void handleDismiss(report.id)}>
+                      <button className="btn-ghost" disabled={busy !== null} onClick={() => setConfirmAction({ kind: 'dismiss', id: report.id })}>
                         {busy === report.id ? 'Saving…' : 'Dismiss report'}
                       </button>
                     </div>
@@ -383,6 +393,29 @@ export default function AdminModeration() {
             </section>
           </>
         )}
+
+      {confirmAction && (
+        <ConfirmDialog
+          open
+          destructive
+          busy={busy !== null}
+          title={confirmAction.kind === 'dismiss' ? 'Dismiss this report?' : 'Apply this action?'}
+          message={
+            confirmAction.kind === 'dismiss'
+              ? 'No action is taken and the member is never notified. The report is closed for good.'
+              : `This applies "${SEVERITY_LABELS[severity[confirmAction.id] ?? 'warning']}" to the reported member. It can't be undone.`
+          }
+          cancelLabel="Keep it"
+          confirmLabel={confirmAction.kind === 'dismiss' ? 'Dismiss' : 'Apply'}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => {
+            const target = confirmAction
+            setConfirmAction(null)
+            if (target.kind === 'dismiss') void handleDismiss(target.id)
+            else void handleReview(target.id)
+          }}
+        />
+      )}
 
         {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] text-alert">{error}</p>}
       </main>
