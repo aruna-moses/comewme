@@ -44,7 +44,8 @@ function htmlPage({ title, description, taskUrl, shareUrl, siteUrl, statusCode =
   const safeDescription = escapeHtml(description)
   const safeTaskUrl = escapeHtml(taskUrl)
   const safeShareUrl = escapeHtml(shareUrl)
-  const imageUrl = `${siteUrl}/figma/lagos-community.jpg`
+  // Append a cache-busting version so WhatsApp/Telegram pick the new banner up immediately.
+  const imageUrl = `${siteUrl}/signin-banner.png?v=2`
 
   return {
     statusCode,
@@ -62,13 +63,14 @@ function htmlPage({ title, description, taskUrl, shareUrl, siteUrl, statusCode =
     <meta property="og:description" content="${safeDescription}">
     <meta property="og:url" content="${safeShareUrl}">
     <meta property="og:image" content="${imageUrl}">
-    <meta property="og:image:type" content="image/jpeg">
-    <meta property="og:image:alt" content="Friends meeting up in Lagos">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="Friends holding hands, Come w’ me">
     <meta property="og:locale" content="en_NG">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${safeTitle}">
     <meta name="twitter:description" content="${safeDescription}">
     <meta name="twitter:image" content="${imageUrl}">
+    <meta name="twitter:image:alt" content="Friends holding hands, Come w’ me">
     <meta http-equiv="refresh" content="1;url=${safeTaskUrl}">
     <style>
       body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; background: #fafaf7; color: #0b0b0f; font: 16px system-ui, sans-serif; }
