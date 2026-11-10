@@ -202,16 +202,18 @@ export default function Discover() {
       <div className="mx-5 mt-4 sticky top-0 z-40 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4">
         <div className="flex flex-col items-center justify-center gap-2">
           <span className="text-[10px] font-semibold tracking-wider text-[#6b7280] uppercase">Advertisement</span>
-          <div className="w-full h-20 rounded-lg bg-[#e2e8f0] flex items-center justify-center mb-2 overflow-hidden relative">
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[#94a3b8]">
-              <div className="flex gap-1">
+          <div className="w-full h-20 rounded-xl bg-[#f3f4f6] flex items-center justify-center overflow-hidden relative">
+            <div className="absolute inset-0 p-4 flex flex-col items-center justify-center gap-3 text-[#6b7280]">
+              <div className="flex gap-2">
                 <div className="h-3 w-1/3 rounded bg-[#cbd5e1]" />
-                <div className="h-3 w-1/2 rounded bg-[#cbd5e1]" />
-                <div className="h-3 w-1/3 rounded bg-[#cbd5e1]" />
+                <div className="h-3 w-3/4 rounded bg-[#cbd5e1]" />
+                <div className="h-3 w-1/4 rounded bg-[#cbd5e1]" />
               </div>
-              <div className="h-6 w-3/4 rounded bg-[#cbd5e1]" />
-              <p className="text-[10px]">Your ad here</p>
-              <p className="text-[9px]">Reach Lagos residents</p>
+              <div className="h-6 w-2/3 rounded bg-[#cbd5e1] mt-2" />
+              <div className="text-center">
+                <p className="text-[13px] font-bold text-ink">Ads goes here</p>
+                <p className="text-[10px] text-[#6b7280]">Your brand could be here</p>
+              </div>
             </div>
           </div>
         </div>
