@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Moon, Sun } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { Moon, Sun, Megaphone } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -145,8 +146,10 @@ export default function Settings() {
         <span className="w-6" />
       </div>
 
+      <SectionLabel>Account</SectionLabel>
+
       {/* photo */}
-      <div className="card mt-4 flex items-center gap-4 p-4">
+      <div className="card mt-2 flex items-center gap-4 p-4">
         <img
           src={
             profile.avatar_url ??
@@ -173,104 +176,8 @@ export default function Settings() {
         </div>
       </div>
 
-      <section className="card mt-3 p-4" aria-labelledby="theme-heading">
-        <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
-            {theme === 'dark' ? <Moon size={19} aria-hidden /> : <Sun size={19} aria-hidden />}
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 id="theme-heading" className="text-[14px] font-semibold">Appearance</h2>
-            <p className="mt-0.5 text-[12px] text-muted">Choose the look that feels right. Saved on this device.</p>
-            <div className="mt-3 grid grid-cols-2 gap-2 rounded-[14px] bg-canvas p-1" role="group" aria-label="App theme">
-              <button
-                type="button"
-                onClick={() => setTheme('light')}
-                aria-pressed={theme === 'light'}
-                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[13px] font-semibold transition ${
-                  theme === 'light' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
-                }`}
-              >
-                <Sun size={16} aria-hidden />
-                Light
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme('dark')}
-                aria-pressed={theme === 'dark'}
-                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[13px] font-semibold transition ${
-                  theme === 'dark' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
-                }`}
-              >
-                <Moon size={16} aria-hidden />
-                Dark
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* verification */}
-      <div className="card mt-3 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[14px] font-semibold">{vc.title}</p>
-            <p className="mt-0.5 text-[12px] leading-relaxed text-muted">{vc.body}</p>
-          </div>
-          {profile.verification_status === 'verified' && (
-            <span className="pill bg-verified/15 text-verified">Verified</span>
-          )}
-        </div>
-
-        {profile.verification_status === 'unverified' && !submitted && (
-          <label className="btn-ghost btn-sm mt-3 cursor-pointer">
-            {verifyBusy ? 'Uploading…' : 'Send selfie'}
-            <input
-              type="file"
-              accept="image/*"
-              capture="user"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) void uploadSelfie(f)
-              }}
-            />
-          </label>
-        )}
-
-        {verifyError && <p className="mt-2 text-[12px] font-medium text-alert">{verifyError}</p>}
-      </div>
-
-      {/* feedback */}
-      <div className="card mt-3 p-4">
-        <p className="text-[14px] font-semibold">Feedback &amp; help</p>
-        <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
-          Report a bug, complain about a member, or send a suggestion. A human reads every message.
-        </p>
-        <Link to="/feedback" className="btn-ghost btn-sm mt-3">
-          Send feedback
-        </Link>
-      </div>
-
-      {/* advertise */}
-      <div className="card mt-3 p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
-            <span className="text-[10px] font-bold">$</span>
-          </div>
-          <div>
-            <p className="text-[14px] font-semibold">Advertise Your Business</p>
-            <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
-              Run a sponsored ad at the top of Discover. Reach Lagosians looking for things to do.
-            </p>
-          </div>
-        </div>
-        <Link to="/advertise" className="btn-primary w-full mt-3 text-sm font-bold">
-          Create an Ad
-        </Link>
-      </div>
-
-      {/* details */}
-      <div className="mt-6 space-y-4">
+      <section className="card mt-3 space-y-4 p-4" aria-labelledby="details-heading">
+        <p id="details-heading" className="text-[13px] font-semibold">Profile details</p>
         <div>
           <label className="label" htmlFor="dn">Display name</label>
           <input
@@ -320,12 +227,104 @@ export default function Settings() {
         <button className="btn-primary w-full" disabled={saving} onClick={save}>
           {saving ? 'Saving…' : saved ? 'Saved' : 'Save changes'}
         </button>
+      </section>
+
+      <SectionLabel className="mt-5">Appearance</SectionLabel>
+
+      <section className="card mt-2 p-4" aria-labelledby="theme-heading">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
+            {theme === 'dark' ? <Moon size={19} aria-hidden /> : <Sun size={19} aria-hidden />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 id="theme-heading" className="text-[14px] font-semibold">Appearance</h2>
+            <p className="mt-0.5 text-[12px] text-muted">Choose the look that feels right. Saved on this device.</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 rounded-[14px] bg-canvas p-1" role="group" aria-label="App theme">
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                aria-pressed={theme === 'light'}
+                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[13px] font-semibold transition ${
+                  theme === 'light' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
+                }`}
+              >
+                <Sun size={16} aria-hidden />
+                Light
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                aria-pressed={theme === 'dark'}
+                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[13px] font-semibold transition ${
+                  theme === 'dark' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
+                }`}
+              >
+                <Moon size={16} aria-hidden />
+                Dark
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* verification */}
+      <SectionLabel className="mt-5">Verification</SectionLabel>
+      <div className="card mt-2 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[14px] font-semibold">{vc.title}</p>
+            <p className="mt-0.5 text-[12px] leading-relaxed text-muted">{vc.body}</p>
+          </div>
+          {profile.verification_status === 'verified' && (
+            <span className="pill bg-verified/15 text-verified">Verified</span>
+          )}
+        </div>
+
+        {profile.verification_status === 'unverified' && !submitted && (
+          <label className="btn-ghost btn-sm mt-3 cursor-pointer">
+            {verifyBusy ? 'Uploading…' : 'Send selfie'}
+            <input
+              type="file"
+              accept="image/*"
+              capture="user"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void uploadSelfie(f)
+              }}
+            />
+          </label>
+        )}
+
+        {verifyError && <p className="mt-2 text-[12px] font-medium text-alert">{verifyError}</p>}
       </div>
 
-      {/* feedback */}
+      <SectionLabel className="mt-5">For business</SectionLabel>
+
+      <div className="card mt-2 p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
+            <Megaphone size={15} aria-hidden />
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold">Advertise Your Business</p>
+            <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
+              Run a sponsored ad at the top of Discover. Reach Lagosians looking for things to do.
+            </p>
+          </div>
+        </div>
+        <Link to="/advertise" className="btn-primary w-full mt-3 text-sm font-bold">
+          Create an Ad
+        </Link>
+      </div>
+
+      {/* account details — sits directly under the photo */}
+
 
       {moderation.is_moderator && (
-        <div className="card mt-3 p-4">
+        <>
+          <SectionLabel className="mt-5">Moderation</SectionLabel>
+          <div className="card mt-2 p-4">
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="text-[14px] font-semibold">Moderation</p>
@@ -347,16 +346,21 @@ export default function Settings() {
               Ad review
             </Link>
           </div>
-        </div>
+          </div>
+        </>
       )}
 
-      <div className="mt-8 space-y-2">
+      <SectionLabel className="mt-5">Support</SectionLabel>
+      <div className="mt-2 space-y-2">
         <div className="card p-4">
-          <p className="text-[13px] font-semibold">Something not working?</p>
+          <p className="text-[14px] font-semibold">Help &amp; support</p>
           <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
-            Tell us on any activity's "Report this activity" link, or email{' '}
-            <span className="font-semibold text-ink">hello@comewme.app</span>. A human reads it.
+            A bug, a complaint, or a suggestion? A human reads every message. Tell us here, or email{' '}
+            <span className="font-semibold text-ink">hello@comewme.app</span>.
           </p>
+          <Link to="/feedback" className="btn-primary btn-sm mt-3 w-full">
+            Send feedback
+          </Link>
         </div>
 
         <button
@@ -382,5 +386,13 @@ export default function Settings() {
         onConfirm={() => void confirmSignOut()}
       />
     </div>
+  )
+}
+
+function SectionLabel({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <p className={`px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted ${className}`}>
+      {children}
+    </p>
   )
 }

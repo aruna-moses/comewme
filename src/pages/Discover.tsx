@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react'
+import { ArrowRight, Search, ShieldCheck, SlidersHorizontal, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { fetchFeed, fetchUpcomingForUser } from '../lib/api'
 import { supabase } from '../lib/supabase'
@@ -30,6 +30,13 @@ export default function Discover() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [hideSafetyTip, setHideSafetyTip] = useState(() => {
+    try {
+      return window.localStorage.getItem('comewme:safety-tip-dismissed') === '1'
+    } catch {
+      return false
+    }
+  })
 
   const [upcoming, setUpcoming] = useState<Task[]>([])
   const [upcomingError, setUpcomingError] = useState<string | null>(null)
@@ -193,12 +200,29 @@ export default function Discover() {
         )}
       </header>
 
-      <div className="mx-5 mt-3 flex items-start gap-2.5 rounded-[13px] border border-[#edd996] bg-[#fff4d1] p-3 text-[#7a622f]">
-        <ShieldCheck size={20} className="mt-0.5 shrink-0 text-amber" aria-hidden />
-        <p className="text-[12px] leading-[1.45]">
-          Meet in public, keep personal details private, and check each poster&apos;s reputation before you join.
-        </p>
-      </div>
+      {!hideSafetyTip && (
+        <div className="mx-5 mt-3 flex items-start gap-2.5 rounded-[13px] border border-[#edd996] bg-[#fff4d1] p-3 text-[#7a622f]">
+          <ShieldCheck size={20} className="mt-0.5 shrink-0 text-amber" aria-hidden />
+          <p className="flex-1 text-[12px] leading-[1.45]">
+            Meet in public, keep personal details private, and check each poster&apos;s reputation before you join.
+          </p>
+          <button
+            type="button"
+            className="-mr-1 shrink-0 p-1 text-[#9c8621]"
+            aria-label="Dismiss safety tip"
+            onClick={() => {
+              setHideSafetyTip(true)
+              try {
+                window.localStorage.setItem('comewme:safety-tip-dismissed', '1')
+              } catch {
+                // best effort
+              }
+            }}
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
 
       <AdCarousel />
 
