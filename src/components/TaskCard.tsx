@@ -5,7 +5,6 @@ import type { Category, JoinStatus, Task, VerificationStatus } from '../types'
 import { categoryLabel, CATEGORIES } from '../types'
 import { formatDateTime } from '../lib/format'
 import Avatar from './Avatar'
-import ReportButton from './ReportButton'
 import ShareTaskButton from './ShareTaskButton'
 
 const tileStyles: Record<Category, string> = {
@@ -169,13 +168,31 @@ export default function TaskCard({
 
       <div className="mt-2 flex items-center justify-between border-t border-line pt-2">
         <ShareTaskButton task={task} />
-        <div className="flex items-center gap-1">
-          <ReportButton reportedUserId={task.host_id} taskId={task.id} />
+        <div className="flex items-center gap-2">
+          {status.label === 'Full' ? (
+            <Link
+              to={`/task/${task.id}`}
+              className="inline-flex items-center gap-1 rounded-full border border-line bg-canvas px-3 py-1.5 text-[11px] font-semibold text-muted"
+            >
+              View anyway
+            </Link>
+          ) : (
+            <Link
+              to={`/task/${task.id}`}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-ink"
+              style={{ backgroundImage: 'linear-gradient(135deg,#FFD93D,#FF9F1C)' }}
+            >
+              Join task
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          )}
           <button
             type="button"
-            aria-expanded={expanded}
-            aria-label={expanded ? 'Hide details' : 'Show details'}
             onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Collapse details' : 'See details'}
             className="rounded-full p-1.5 text-muted transition hover:bg-line"
           >
             <ChevronDown size={17} className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
