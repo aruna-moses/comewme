@@ -4,7 +4,8 @@ import { Moon, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import ConfirmDialog from '../components/ConfirmDialog'
-import { fetchMyVerification, isModerator, submitVerification, updateProfile } from '../lib/api'
+import { fetchMyVerification, submitVerification, updateProfile } from '../lib/api'
+import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category, Profile } from '../types'
@@ -26,21 +27,7 @@ export default function Settings() {
   const [submitted, setSubmitted] = useState(false)
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
-  const [isMod, setIsMod] = useState(false)
-
-  useEffect(() => {
-    let active = true
-    isModerator()
-      .then((ok) => {
-        if (active) setIsMod(ok)
-      })
-      .catch(() => {
-        if (active) setIsMod(false)
-      })
-    return () => {
-      active = false
-    }
-  }, [])
+  const { moderation } = useNotifications()
 
   useEffect(() => {
     if (!profile?.id) return
@@ -337,17 +324,26 @@ export default function Settings() {
 
       {/* feedback */}
 
-      {isMod && (
+      {moderation.is_moderator && (
         <div className="card mt-3 p-4">
-          <p className="text-[14px] font-semibold">Moderation</p>
-          <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
-            Review member reports and approve advertiser ads before they go live.
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-[14px] font-semibold">Moderation</p>
+              <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
+                SOS alerts, member reports and advertiser ads all land in one inbox.
+              </p>
+            </div>
+            {moderation.sos + moderation.reports + moderation.appeals + moderation.ads > 0 && (
+              <span className="shrink-0 rounded-full bg-[#e53935] px-2 py-0.5 text-[10px] font-bold text-white">
+                {moderation.sos + moderation.reports + moderation.appeals + moderation.ads}
+              </span>
+            )}
+          </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Link to="/admin/moderation" className="btn-ghost btn-sm">
-              Reports
+            <Link to="/admin/moderation" className="btn-primary btn-sm">
+              Open inbox
             </Link>
-            <Link to="/admin/ads" className="btn-primary btn-sm">
+            <Link to="/admin/ads" className="btn-ghost btn-sm">
               Ad review
             </Link>
           </div>

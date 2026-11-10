@@ -22,6 +22,7 @@ import Advertise from './pages/Advertise'
 import Spinner from './components/Spinner'
 import GuidelinesModal from './components/GuidelinesModal'
 import WarningModal, { activeRestriction, unacknowledgedWarning } from './components/WarningModal'
+import ModerationAlert from './components/ModerationAlert'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth()
@@ -168,6 +169,7 @@ export default function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <ModerationAlert />
       <BottomNav />
       {session && restriction && <WarningModal violation={restriction} onAcknowledge={async () => undefined} />}
       {session && !restriction && warning && <WarningModal violation={warning} onAcknowledge={() => acknowledgeWarning(warning.id)} />}

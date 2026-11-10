@@ -41,7 +41,7 @@ function IconProfile({ active }: { active: boolean }) {
 
 export default function BottomNav() {
   const { profile, session } = useAuth()
-  const { pendingApplications, unreadMessages } = useNotifications()
+  const { pendingApplications, unreadMessages, moderation } = useNotifications()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -111,7 +111,13 @@ export default function BottomNav() {
             </button>
           </div>
           {item('/chats', 'Chats', (a) => <IconChat active={a} />, unreadMessages, 'unread messages')}
-          {item(profileTo, 'Profile', (a) => <IconProfile active={a} />)}
+          {item(
+            profileTo,
+            'Profile',
+            (a) => <IconProfile active={a} />,
+            moderation.sos + moderation.reports + moderation.appeals + moderation.ads,
+            'items need review',
+          )}
         </div>
       </nav>
     </>
