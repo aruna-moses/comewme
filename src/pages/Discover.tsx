@@ -199,7 +199,7 @@ export default function Discover() {
         </p>
       </div>
 
-      <div className="mx-5 mt-4 sticky top-[14rem] z-10 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4">
+      <div className="mx-5 mt-4 sticky top-0 z-40 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4">
         <div className="flex flex-col items-center justify-center gap-2">
           <span className="text-[10px] font-semibold tracking-wider text-[#6b7280] uppercase">Advertisement</span>
           <div className="w-full h-20 rounded-lg bg-[#e2e8f0] flex items-center justify-center mb-2 overflow-hidden relative">
