@@ -51,6 +51,7 @@ export default function BottomNav() {
     || location.pathname === '/community-check'
     || location.pathname === '/accept-guidelines'
     || location.pathname === '/violations'
+    || /^\/share\//.test(location.pathname)
     || location.pathname === '/admin/moderation'
     || /^\/task\/[^/]+\/chat$/.test(location.pathname)
   ) return null

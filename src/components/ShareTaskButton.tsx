@@ -3,6 +3,22 @@ import { Check, Share2 } from 'lucide-react'
 import type { Task } from '../types'
 import { formatDateTime } from '../lib/format'
 
+async function copyToClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;'
+  document.body.appendChild(textarea)
+  textarea.select()
+  const ok = typeof document.execCommand === 'function' && document.execCommand('copy')
+  document.body.removeChild(textarea)
+  if (!ok) throw new Error('Could not copy')
+}
+
 export default function ShareTaskButton({ task }: { task: Task }) {
   const [message, setMessage] = useState('')
 
@@ -17,23 +33,17 @@ export default function ShareTaskButton({ task }: { task: Task }) {
         return
       }
 
-      await navigator.clipboard.writeText(url)
+      await copyToClipboard(url)
       setMessage('Link copied')
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') return
 
-      if (navigator.clipboard?.writeText) {
-        try {
-          await navigator.clipboard.writeText(url)
-          setMessage('Link copied')
-          return
-        } catch {
-          setMessage('Could not share this link')
-          return
-        }
+      try {
+        await copyToClipboard(url)
+        setMessage('Link copied')
+      } catch {
+        setMessage('Could not copy — long-press the link instead')
       }
-
-      setMessage('Could not share this link')
     }
   }
 
