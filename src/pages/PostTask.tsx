@@ -4,28 +4,33 @@ import { useAuth } from '../context/AuthContext'
 import { createTask } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { detectCategory } from '../lib/categoryDetector'
+import { clearDraftGroup, usePersistedState } from '../lib/drafts'
+import DraftNotice from '../components/DraftNotice'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category } from '../types'
+
+const DRAFT = 'post-task'
 
 export default function PostTask() {
   const { profile } = useAuth()
   const navigate = useNavigate()
 
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
+  const [title, setTitle] = usePersistedState(`${DRAFT}:title`, '')
+  const [description, setDescription] = usePersistedState(`${DRAFT}:description`, '')
   const [detectedCategory, setDetectedCategory] = useState<Category>('market_run')
-  const [selectedCategory, setSelectedCategory] = useState<Category>('market_run')
-  const [area, setArea] = useState(profile?.area || 'Yaba')
-  const [meetingPoint, setMeetingPoint] = useState('')
-  const [date, setDate] = useState('')
-  const [time, setTime] = useState('')
-  const [spots, setSpots] = useState(2)
+  const [selectedCategory, setSelectedCategory] = usePersistedState<Category>(`${DRAFT}:category`, 'market_run')
+  const [categoryTouched, setCategoryTouched] = usePersistedState(`${DRAFT}:category-touched`, false)
+  const [area, setArea] = usePersistedState(`${DRAFT}:area`, profile?.area || 'Yaba')
+  const [meetingPoint, setMeetingPoint] = usePersistedState(`${DRAFT}:meeting`, '')
+  const [date, setDate] = usePersistedState(`${DRAFT}:date`, '')
+  const [time, setTime] = usePersistedState(`${DRAFT}:time`, '')
+  const [spots, setSpots] = usePersistedState(`${DRAFT}:spots`, 2)
   const [busy, setBusy] = useState(false)
   const [postingControlLoading, setPostingControlLoading] = useState(true)
   const [postingControlReady, setPostingControlReady] = useState(false)
   const [postingSuspended, setPostingSuspended] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [step, setStep] = useState<'form' | 'confirm'>('form')
+  const [step, setStep] = usePersistedState<'form' | 'confirm'>(`${DRAFT}:step`, 'form')
 
   useEffect(() => {
     let active = true
@@ -54,8 +59,22 @@ export default function PostTask() {
   useEffect(() => {
     const detected = detectCategory(title, description)
     setDetectedCategory(detected)
-    setSelectedCategory(detected)
-  }, [title, description])
+    // Don't stomp a category the person picked by hand.
+    if (!categoryTouched) setSelectedCategory(detected)
+  }, [title, description, categoryTouched, setSelectedCategory])
+
+  function resetDraft() {
+    setTitle('')
+    setDescription('')
+    setMeetingPoint('')
+    setDate('')
+    setTime('')
+    setSpots(2)
+    setArea(profile?.area || 'Yaba')
+    setCategoryTouched(false)
+    setSelectedCategory(detectCategory('', ''))
+    setStep('form')
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -104,6 +123,7 @@ export default function PostTask() {
         },
         profile,
       )
+      clearDraftGroup(DRAFT)
       navigate(`/task/${task.id}`, { replace: true })
     } catch (e) {
       const message = e instanceof Error
@@ -128,6 +148,7 @@ export default function PostTask() {
 
   return (
     <form onSubmit={handleSubmit} className="px-4 pb-8 pt-5">
+      <DraftNotice group={DRAFT} what="activity" onDiscard={resetDraft} />
       {step === 'form' && (
         <>
           <h1 className="font-display text-[24px] font-bold">Post an activity</h1>
@@ -302,7 +323,10 @@ export default function PostTask() {
                   id="category"
                   className="field"
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value as Category)}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value as Category)
+                    setCategoryTouched(true)
+                  }}
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c.value} value={c.value}>

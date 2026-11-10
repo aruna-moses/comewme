@@ -16,8 +16,10 @@ import { useAuth } from '../context/AuthContext'
 import { submitAd } from '../lib/ads'
 import type { Ad } from '../lib/ads'
 import { AD_SLOT_ASPECT, lagosTodayISO } from '../lib/adSlot'
+import { clearDraftGroup, usePersistedState } from '../lib/drafts'
 import { AdFace } from '../components/AdCarousel'
 import AdImageCropper from '../components/AdImageCropper'
+import DraftNotice from '../components/DraftNotice'
 
 const BRAND_COLORS = [
   '#FF9F1C', '#FFD93D', '#DC2626', '#16A34A', '#0B0B0F', '#3B82F6',
@@ -33,21 +35,24 @@ const STEPS = [
 ]
 
 const today = lagosTodayISO()
+const DRAFT = 'advertise'
+
+const EMPTY_FORM = {
+  brandName: '',
+  headline: '',
+  ctaText: 'Book Now',
+  destinationUrl: '',
+  brandColor: '#FF9F1C',
+  startDate: today,
+  endDate: '',
+}
 
 export default function AdvertisePage() {
   const { profile } = useAuth()
-  const [step, setStep] = useState(1)
-  const [form, setForm] = useState({
-    brandName: '',
-    headline: '',
-    ctaText: 'Book Now',
-    destinationUrl: '',
-    brandColor: '#FF9F1C',
-    startDate: today,
-    endDate: '',
-  })
+  const [step, setStep] = usePersistedState(`${DRAFT}:step`, 1)
+  const [form, setForm] = usePersistedState(`${DRAFT}:form`, EMPTY_FORM)
+  const [imageData, setImageData] = usePersistedState<string | null>(`${DRAFT}:image`, null)
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [originalSrc, setOriginalSrc] = useState<string | null>(null)
   const [cropperSrc, setCropperSrc] = useState<string | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
@@ -56,12 +61,46 @@ export default function AdvertisePage() {
   const [done, setDone] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const imagePreview = imageData
+
+  // Once submitted, drop the saved draft when the person leaves this screen.
+  const doneRef = useRef(false)
+  useEffect(() => {
+    doneRef.current = done
+  }, [done])
   useEffect(() => {
     return () => {
-      if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview)
+      if (doneRef.current) clearDraftGroup(DRAFT)
+    }
+  }, [])
+
+  // A restored draft carries the cropped picture as a data URL — rebuild the File to upload.
+  useEffect(() => {
+    if (!imageData) {
+      setImageFile(null)
+      return
+    }
+    let active = true
+    fetch(imageData)
+      .then((res) => res.blob())
+      .then((blob) => {
+        if (active) {
+          setImageFile(new File([blob], 'ad-picture.jpg', { type: blob.type || 'image/jpeg' }))
+        }
+      })
+      .catch(() => {
+        if (active) setImageFile(null)
+      })
+    return () => {
+      active = false
+    }
+  }, [imageData])
+
+  useEffect(() => {
+    return () => {
       if (originalSrc?.startsWith('blob:')) URL.revokeObjectURL(originalSrc)
     }
-  }, [imagePreview, originalSrc])
+  }, [originalSrc])
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -85,21 +124,26 @@ export default function AdvertisePage() {
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  function applyCrop(file: File, previewUrl: string) {
-    if (imagePreview) URL.revokeObjectURL(imagePreview)
-    setImageFile(file)
-    setImagePreview(previewUrl)
+  function applyCrop(file: File) {
+    void fileToDataUrl(file)
+      .then((dataUrl) => setImageData(dataUrl))
+      .catch(() => setImageError('Could not read that picture. Please choose another one.'))
     setCropperSrc(null)
   }
 
   function clearImage() {
-    if (imagePreview) URL.revokeObjectURL(imagePreview)
     if (originalSrc) URL.revokeObjectURL(originalSrc)
+    setImageData(null)
     setImageFile(null)
-    setImagePreview(null)
     setOriginalSrc(null)
     setCropperSrc(null)
     if (fileRef.current) fileRef.current.value = ''
+  }
+
+  function resetDraft() {
+    setStep(1)
+    setForm(EMPTY_FORM)
+    clearImage()
   }
 
   const step1Valid = form.brandName.trim().length > 0
@@ -242,6 +286,7 @@ export default function AdvertisePage() {
       </div>
 
       <div className="mx-auto mt-4 w-full max-w-[480px] px-5">
+        <DraftNotice group={DRAFT} what="ad" onDiscard={resetDraft} />
         {step === 1 && (
           <div className="space-y-4">
             <div className="card p-4">
@@ -607,6 +652,15 @@ export default function AdvertisePage() {
       )}
     </div>
   )
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new Error('Could not read that picture.'))
+    reader.readAsDataURL(file)
+  })
 }
 
 function daysBetween(start: string, end: string) {

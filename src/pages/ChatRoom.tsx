@@ -18,6 +18,7 @@ import {
   uploadChatMedia,
 } from '../lib/api'
 import { formatTime, isSameDay } from '../lib/format'
+import { usePersistedState } from '../lib/drafts'
 import type { JoinRequest, Message, Task } from '../types'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
@@ -34,7 +35,7 @@ export default function ChatRoom() {
   const [authorized, setAuthorized] = useState(false)
   const [loading, setLoading] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
-  const [draft, setDraft] = useState('')
+  const [draft, setDraft] = usePersistedState(`chat:${id}:draft`, '')
   const [uploading, setUploading] = useState(false)
   const [recording, setRecording] = useState(false)
   const [error, setError] = useState<string | null>(null)

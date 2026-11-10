@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { clearAllDrafts } from '../lib/drafts'
 import {
   acceptGuidelines as saveGuidelinesAcceptance,
   acknowledgeViolationWarning,
@@ -196,6 +197,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signOut() {
         const { error } = await supabase.auth.signOut()
         if (error) throw error
+        // Never leave half-typed drafts for the next person on a shared phone.
+        clearAllDrafts()
         setProfile(null)
       },
       async refreshProfile() {

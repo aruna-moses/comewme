@@ -7,7 +7,7 @@ import { AD_SLOT_ASPECT } from '../lib/adSlot'
 type Props = {
   src: string
   onCancel: () => void
-  onDone: (file: File, previewUrl: string) => void
+  onDone: (file: File) => void
 }
 
 function loadImage(src: string) {
@@ -60,7 +60,7 @@ export default function AdImageCropper({ src, onCancel, onDone }: Props) {
     setError(null)
     try {
       const file = await cropToFile(src, area)
-      onDone(file, URL.createObjectURL(file))
+      onDone(file)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not crop this picture.')
       setBusy(false)

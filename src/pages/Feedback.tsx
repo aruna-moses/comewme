@@ -1,10 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, CheckCircle2, Send } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { submitReport } from '../lib/api'
+import { clearDraftGroup, usePersistedState } from '../lib/drafts'
+import DraftNotice from '../components/DraftNotice'
 
 type FeedbackType = 'bug' | 'complaint' | 'suggestion' | 'other'
+
+const DRAFT = 'feedback'
 
 const FEEDBACK_TYPES: { value: FeedbackType; label: string }[] = [
   { value: 'bug', label: 'Bug report' },
@@ -16,11 +20,21 @@ const FEEDBACK_TYPES: { value: FeedbackType; label: string }[] = [
 export default function Feedback() {
   const { profile } = useAuth()
   const navigate = useNavigate()
-  const [type, setType] = useState<FeedbackType>('bug')
-  const [subject, setSubject] = useState('')
-  const [message, setMessage] = useState('')
+  const [type, setType] = usePersistedState<FeedbackType>(`${DRAFT}:type`, 'bug')
+  const [subject, setSubject] = usePersistedState(`${DRAFT}:subject`, '')
+  const [message, setMessage] = usePersistedState(`${DRAFT}:message`, '')
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
+
+  const sentRef = useRef(false)
+  useEffect(() => {
+    sentRef.current = sent
+  }, [sent])
+  useEffect(() => {
+    return () => {
+      if (sentRef.current) clearDraftGroup(DRAFT)
+    }
+  }, [])
 
   if (!profile) return null
   const reporterId = profile.id
@@ -76,6 +90,15 @@ export default function Feedback() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col px-5 pt-5">
+          <DraftNotice
+            group={DRAFT}
+            what="message"
+            onDiscard={() => {
+              setType('bug')
+              setSubject('')
+              setMessage('')
+            }}
+          />
           <div className="space-y-5">
             <div>
               <label className="label" htmlFor="feedback-type">Type</label>
