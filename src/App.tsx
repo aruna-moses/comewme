@@ -20,6 +20,7 @@ import AdminModeration from './pages/AdminModeration'
 import AdminAds from './pages/AdminAds'
 import Advertise from './pages/Advertise'
 import Spinner from './components/Spinner'
+import ResetPassword from './pages/ResetPassword'
 import GuidelinesModal from './components/GuidelinesModal'
 import WarningModal, { activeRestriction, unacknowledgedWarning } from './components/WarningModal'
 import ModerationAlert from './components/ModerationAlert'
@@ -117,6 +118,7 @@ export default function App() {
         <Route path="/chats" element={<RequireAuth><ChatList /></RequireAuth>} />
         <Route path="/profile/:id" element={<ProfilePage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/accept-guidelines" element={<RequireAuth><AcceptGuidelinesRoute /></RequireAuth>} />
         <Route path="/violations" element={<RequireAuth><Violations /></RequireAuth>} />
         <Route path="/admin/moderation" element={<RequireAuth><AdminModeration /></RequireAuth>} />

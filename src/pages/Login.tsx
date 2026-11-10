@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Check, Eye, EyeOff, Footprints, Phone, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { supabase } from '../lib/supabase'
 
 export default function Login() {
   const {
@@ -20,7 +21,7 @@ export default function Login() {
     : '/'
 
   const [method, setMethod] = useState<'phone' | 'email'>('phone')
-  const [mode, setMode] = useState<'in' | 'up'>('in')
+  const [mode, setMode] = useState<'in' | 'up' | 'forgot'>('in')
   const [phone, setPhone] = useState('')
   const [phoneSent, setPhoneSent] = useState(false)
   const [code, setCode] = useState('')
@@ -96,6 +97,24 @@ export default function Login() {
     e.preventDefault()
     setError(null)
     setNotice(null)
+
+    if (mode === 'forgot') {
+      if (!email.trim()) return
+      setBusy(true)
+      try {
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: `${window.location.origin}/reset-password`,
+        })
+        if (resetError) throw resetError
+        setNotice('If an account exists for that email, a reset link is on its way. Check your inbox and spam folder.')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not send the reset link. Try again in a minute.')
+      } finally {
+        setBusy(false)
+      }
+      return
+    }
+
     if (!guidelinesChecked) {
       setError('Please agree to follow the Community Guidelines before continuing.')
       return
@@ -287,6 +306,41 @@ export default function Login() {
               </button>
             </>
           ) : (
+            mode === 'forgot' ? (
+              <>
+                <h1 className="mt-7 font-display text-[28px] font-bold leading-tight tracking-tight">Reset password</h1>
+                <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
+                  Enter the email you use to sign in. We&apos;ll send you a link to get back in — it expires after an hour.
+                </p>
+                <form onSubmit={handleEmailSubmit} className="mt-6 space-y-3">
+                  <div>
+                    <label className="label" htmlFor="reset-email">Email</label>
+                    <input
+                      id="reset-email"
+                      type="email"
+                      autoComplete="email"
+                      className="field"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>}
+                  {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[13px] font-medium text-verified">{notice}</p>}
+                  <button type="submit" className="btn-primary w-full rounded-[16px]" disabled={busy || !email.trim()}>
+                    {busy ? 'Sending…' : 'Send reset link'}
+                  </button>
+                </form>
+                <button
+                  type="button"
+                  onClick={() => { setMode('in'); setError(null); setNotice(null) }}
+                  className="mt-4 w-full py-2 text-[13px] font-semibold text-amber"
+                >
+                  Back to sign in
+                </button>
+              </>
+            ) : (
             <>
               <h1 className="mt-7 font-display text-[28px] font-bold leading-tight tracking-tight">Come w&apos; me</h1>
               <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
@@ -346,6 +400,15 @@ export default function Login() {
                     </button>
                   </div>
                 </div>
+                {mode === 'in' && (
+                  <button
+                    type="button"
+                    onClick={() => { setMode('forgot'); setError(null); setNotice(null) }}
+                    className="block w-full text-right text-[12px] font-semibold text-amber"
+                  >
+                    Forgot password?
+                  </button>
+                )}
                 {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>}
                 {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[13px] font-medium text-verified">{notice}</p>}
                 <button type="submit" className="btn-primary w-full" disabled={busy || !guidelinesChecked}>
@@ -387,8 +450,9 @@ export default function Login() {
                 Use phone number instead
               </button>
             </>
+            )
           )}
-        </div>
+      </div>
       </div>
 
       <p className="px-8 pb-6 text-center text-[11px] leading-relaxed text-muted">

@@ -46,7 +46,8 @@ export default function BottomNav() {
   const navigate = useNavigate()
 
   if (
-    location.pathname === '/login'
+    !session
+    || location.pathname === '/login'
     || location.pathname === '/onboarding'
     || location.pathname === '/community-check'
     || location.pathname === '/accept-guidelines'

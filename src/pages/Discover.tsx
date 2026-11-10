@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Search, ShieldCheck, SlidersHorizontal, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import Spinner from '../components/Spinner'
 import { fetchFeed, fetchUpcomingForUser } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { AREAS, CATEGORIES } from '../types'
@@ -13,11 +14,12 @@ import EmptyState from '../components/EmptyState'
 import Avatar from '../components/Avatar'
 import AdCarousel from '../components/AdCarousel'
 import ActivityReminderSheet from '../components/ActivityReminderSheet'
+import PublicHome from '../components/PublicHome'
 
 const PAGE = 20
 
 export default function Discover() {
-  const { profile, session } = useAuth()
+  const { profile, session, loading: authLoading } = useAuth()
 
   const [category, setCategory] = useState<Category | 'all'>('all')
   const [area, setArea] = useState<string>('all')
@@ -155,6 +157,9 @@ export default function Discover() {
       window.clearTimeout(midnightRefresh)
     }
   }, [profile?.id])
+
+  if (authLoading) return <Spinner full />
+  if (!session) return <PublicHome />
 
   return (
     <div className="pb-6">
