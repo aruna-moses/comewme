@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { lagosTodayISO } from './adSlot'
 
 export type AdStatus = 'pending' | 'approved' | 'rejected' | 'paused'
 
@@ -34,7 +35,7 @@ const FIELDS =
 
 /** Ads that are approved and inside their run window — used by the Discover carousel. */
 export async function fetchActiveAds(): Promise<Ad[]> {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = lagosTodayISO()
   const { data, error } = await supabase
     .from('advertisements')
     .select(FIELDS)

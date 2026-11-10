@@ -15,7 +15,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { submitAd } from '../lib/ads'
 import type { Ad } from '../lib/ads'
-import { AD_SLOT_ASPECT } from '../lib/adSlot'
+import { AD_SLOT_ASPECT, lagosTodayISO } from '../lib/adSlot'
 import { AdFace } from '../components/AdCarousel'
 import AdImageCropper from '../components/AdImageCropper'
 
@@ -32,7 +32,7 @@ const STEPS = [
   { id: 4, label: 'Preview', hint: 'Check and submit' },
 ]
 
-const today = new Date().toISOString().slice(0, 10)
+const today = lagosTodayISO()
 
 export default function AdvertisePage() {
   const { profile } = useAuth()
