@@ -17,9 +17,10 @@ export default function PostTask() {
 
   const [title, setTitle] = usePersistedState(`${DRAFT}:title`, '')
   const [description, setDescription] = usePersistedState(`${DRAFT}:description`, '')
+  const [manualCategory, setManualCategory] = usePersistedState<Category | null>(`${DRAFT}:manual-category`, null)
   const [detectedCategory, setDetectedCategory] = useState<Category>('market_run')
-  const [selectedCategory, setSelectedCategory] = usePersistedState<Category>(`${DRAFT}:category`, 'market_run')
-  const [categoryTouched, setCategoryTouched] = usePersistedState(`${DRAFT}:category-touched`, false)
+  const selectedCategory = manualCategory ?? detectedCategory
+  const setSelectedCategory = setManualCategory
   const [area, setArea] = usePersistedState(`${DRAFT}:area`, profile?.area || 'Yaba')
   const [meetingPoint, setMeetingPoint] = usePersistedState(`${DRAFT}:meeting`, '')
   const [date, setDate] = usePersistedState(`${DRAFT}:date`, '')
@@ -59,9 +60,16 @@ export default function PostTask() {
   useEffect(() => {
     const detected = detectCategory(title, description)
     setDetectedCategory(detected)
-    // Don't stomp a category the person picked by hand.
-    if (!categoryTouched) setSelectedCategory(detected)
-  }, [title, description, categoryTouched, setSelectedCategory])
+  }, [title, description])
+
+  // The "saved draft" strip only makes sense when something is actually there.
+  // Drop leftovers from builds that persisted an untouched empty form.
+  useEffect(() => {
+    const empty =
+      !title && !description && !meetingPoint && !date && !time && manualCategory === null && spots === 2 && step === 'form'
+    if (empty) clearDraftGroup(DRAFT)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function resetDraft() {
     setTitle('')
@@ -71,8 +79,7 @@ export default function PostTask() {
     setTime('')
     setSpots(2)
     setArea(profile?.area || 'Yaba')
-    setCategoryTouched(false)
-    setSelectedCategory(detectCategory('', ''))
+    setManualCategory(null)
     setStep('form')
   }
 
@@ -323,10 +330,7 @@ export default function PostTask() {
                   id="category"
                   className="field"
                   value={selectedCategory}
-                  onChange={(e) => {
-                    setSelectedCategory(e.target.value as Category)
-                    setCategoryTouched(true)
-                  }}
+                  onChange={(e) => setSelectedCategory(e.target.value as Category)}
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c.value} value={c.value}>
