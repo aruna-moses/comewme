@@ -12,6 +12,7 @@ import SkeletonCard from '../components/SkeletonCard'
 import EmptyState from '../components/EmptyState'
 import Avatar from '../components/Avatar'
 import AdCarousel from '../components/AdCarousel'
+import ActivityReminderSheet from '../components/ActivityReminderSheet'
 
 const PAGE = 20
 
@@ -40,6 +41,8 @@ export default function Discover() {
 
   const [upcoming, setUpcoming] = useState<Task[]>([])
   const [upcomingError, setUpcomingError] = useState<string | null>(null)
+  const [reminderOpen, setReminderOpen] = useState(false)
+  const reminderKey = `comewme:reminder-shown:${new Date(Date.now() + 86_400_000).toDateString()}`
 
   const interests = profile?.interests ?? []
 
@@ -92,6 +95,17 @@ export default function Discover() {
   useEffect(() => {
     void load(0)
   }, [load])
+
+  // Pop the reminder sheet once per day for activities starting tomorrow.
+  useEffect(() => {
+    if (!session || upcoming.length === 0 || reminderOpen) return
+    try {
+      const seen: string[] = JSON.parse(window.localStorage.getItem(reminderKey) ?? '[]')
+      if (!upcoming.every((t) => seen.includes(t.id))) setReminderOpen(true)
+    } catch {
+      setReminderOpen(true)
+    }
+  }, [upcoming, session, reminderOpen, reminderKey])
 
   useEffect(() => {
     if (!profile?.id) {
@@ -340,6 +354,22 @@ export default function Discover() {
           <p className="py-4 text-center text-[12px] text-muted">That's everything for now.</p>
         )}
       </div>
+
+      {reminderOpen && upcoming.length > 0 && (
+        <ActivityReminderSheet
+          tasks={upcoming}
+          onClose={() => {
+            try {
+              const seen: string[] = JSON.parse(window.localStorage.getItem(reminderKey) ?? '[]')
+              const merged = Array.from(new Set([...seen, ...upcoming.map((t) => t.id)]))
+              window.localStorage.setItem(reminderKey, JSON.stringify(merged))
+            } catch {
+              // best effort
+            }
+            setReminderOpen(false)
+          }}
+        />
+      )}
     </div>
   )
 }
