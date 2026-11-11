@@ -19,12 +19,12 @@ export default function InAppToast() {
   const location = useLocation()
   const [visible, setVisible] = useState<string | null>(null)
 
-  // Show one toast at a time — the newest unread, suppressed on the inbox page.
+  // Show one toast at a time — the newest unread, suppressed on the inbox page and on the matching chat.
   const pathname = location.pathname
   const candidate = notifications.find((n) => !n.read_at) ?? null
 
   useEffect(() => {
-    if (!candidate || pathname === '/notifications') return
+    if (!candidate || pathname === '/notifications' || (candidate.link_path && candidate.link_path === pathname)) return
     const current = candidate
     setVisible((currentId) => (currentId === current.id ? currentId : current.id))
     const timer = window.setTimeout(() => setVisible(null), 6000)

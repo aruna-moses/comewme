@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Check, HeartHandshake, ShieldCheck, Flag, Info, CalendarDays } from 'lucide-react'
+import { Check, HeartHandshake, ShieldCheck, Flag, Info, CalendarDays, MessageCircle } from 'lucide-react'
 import type { InAppNotification, NotificationType } from '../lib/notifications'
 
 const TYPE_CONFIG: Record<NotificationType, { icon: typeof HeartHandshake; className: string; label: string }> = {
@@ -7,6 +7,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof HeartHandshake; class
   selfie:       { icon: ShieldCheck,    className: 'bg-sun/25 text-amber',      label: 'Selfie' },
   appeal:       { icon: Flag,           className: 'bg-[#eef4fb] text-[#4273a8]', label: 'Appeal' },
   violation:    { icon: Flag,           className: 'bg-alert/10 text-alert',     label: 'Report' },
+  chat:         { icon: MessageCircle,  className: 'bg-sun/20 text-amber',       label: 'Chat' },
   info:         { icon: Info,           className: 'bg-line text-muted',         label: 'Info' },
   reminder:     { icon: CalendarDays,   className: 'bg-sun/20 text-amber',       label: 'Reminder' },
 }

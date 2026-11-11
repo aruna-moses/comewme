@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-export type NotificationType = 'join_request' | 'selfie' | 'appeal' | 'violation' | 'info' | 'reminder'
+export type NotificationType = 'join_request' | 'selfie' | 'appeal' | 'violation' | 'chat' | 'info' | 'reminder'
 
 export interface InAppNotification {
   id: string
