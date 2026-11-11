@@ -156,27 +156,6 @@ export default function Settings() {
         </div>
       </section>
 
-      <SectionLabel className="mt-5">Selfie verification</SectionLabel>
-
-      <Link to={`/profile/${profile.id}`} className="card mt-2 flex items-center justify-between gap-3 p-4 transition hover:bg-canvas" aria-label="Open profile details and selfie verification">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
-            <ShieldCheck size={17} aria-hidden />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-ink">Selfie verification</p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
-              {profile.verification_status === 'verified'
-                ? 'Green check confirmed — verified everywhere.'
-                : profile.verification_status === 'pending'
-                  ? 'Under review. We’ll notify you when the badge is decided.'
-                  : 'Send a selfie to flip on the green check everywhere.'}
-            </p>
-          </div>
-        </div>
-        <ChevronRight size={18} className="mt-0.5 shrink-0 text-muted" aria-hidden />
-      </Link>
-
       <SectionLabel className="mt-5">For business</SectionLabel>
 
       <div className="card mt-2 p-4">
