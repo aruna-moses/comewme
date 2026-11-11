@@ -645,7 +645,7 @@ export default function ChatRoom() {
           {replyTarget && (
             <div className="mb-2 flex items-center gap-2 rounded-xl border-l-2 border-amber bg-canvas px-3 py-2">
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold text-amber">Replying to {replyTarget.sender_name}</p>
+                <p className="text-[11px] font-bold text-amber">Replying to {replyTarget.sender_id === profile?.id ? 'You' : replyTarget.sender_name}</p>
                 <p className="truncate text-[11px] text-muted">
                   {replyTarget.type === 'image' ? 'Photo' : replyTarget.type === 'audio' ? 'Voice note' : replyTarget.body}
                 </p>

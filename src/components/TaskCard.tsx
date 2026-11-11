@@ -1,9 +1,10 @@
-import { CheckCircle2, ChevronDown, Clock3, MapPin, UsersRound } from 'lucide-react'
 import { useState } from 'react'
+import { CheckCircle2, ChevronDown, Clock3, MapPin, UsersRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Category, JoinStatus, Task, VerificationStatus } from '../types'
 import { categoryLabel, CATEGORIES } from '../types'
 import { formatDateTime } from '../lib/format'
+import { useAuth } from '../context/AuthContext'
 import Avatar from './Avatar'
 import ShareTaskButton from './ShareTaskButton'
 
@@ -77,6 +78,8 @@ export default function TaskCard({
   /** Number of pending join requests on this task (host view only) — rendered as a red badge. */
   reviewBadge?: number
 }) {
+  const { profile } = useAuth()
+  const isOwnTask = Boolean(profile && profile.id === task.host_id)
   const [expanded, setExpanded] = useState(false)
   const sponsored = liveSponsor(task)
   const pct = Math.min(100, Math.round((task.spots_filled / task.spots_needed) * 100))
@@ -115,7 +118,7 @@ export default function TaskCard({
             </div>
             <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted">
               <Avatar src={task.host_avatar_url} name={task.host_name} size={18} />
-              <span className="truncate max-w-[45%]">{task.host_name}</span>
+              <span className="truncate max-w-[45%]">{isOwnTask ? 'You' : task.host_name}</span>
               {verificationStatus === 'verified' && (
                 <CheckCircle2 size={11} className="shrink-0 text-amber" aria-label="Verified member" />
               )}

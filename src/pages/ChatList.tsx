@@ -14,7 +14,7 @@ export default function ChatList() {
   const [chats, setChats] = useState<
     Array<{
       task: Task
-      lastMessage: { body: string; type: 'text' | 'image' | 'audio'; sender_name: string; created_at: string } | null
+      lastMessage: { body: string; type: 'text' | 'image' | 'audio'; sender_name: string; sender_id: string; created_at: string } | null
     }>
   >([])
   const [loading, setLoading] = useState(true)
@@ -66,7 +66,7 @@ export default function ChatList() {
           unique.map(async (t) => {
             const { data: msgs } = await supabase
               .from('messages')
-              .select('body, type, sender_name, created_at')
+              .select('body, type, sender_name, sender_id, created_at')
               .eq('task_id', t.id)
               .order('created_at', { ascending: false })
               .limit(1)
@@ -156,7 +156,7 @@ export default function ChatList() {
                   </div>
                   <p className="mt-1 line-clamp-1 text-[13px] text-muted">
                     {c.lastMessage
-                      ? `${c.lastMessage.sender_name}: ${c.lastMessage.type === 'image' ? 'Photo' : c.lastMessage.type === 'audio' ? 'Voice note' : c.lastMessage.body}`
+                      ? `${c.lastMessage.sender_id === profile?.id ? 'You' : c.lastMessage.sender_name}: ${c.lastMessage.type === 'image' ? 'Photo' : c.lastMessage.type === 'audio' ? 'Voice note' : c.lastMessage.body}`
                       : 'No messages yet'}
                   </p>
                 </div>

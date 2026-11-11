@@ -73,6 +73,7 @@ export default function TaskDetail() {
   const [rated, setRated] = useState<Record<string, boolean>>({})
 
   const isHost = Boolean(profile && task && task.host_id === profile.id)
+  const hostDisplayName = isHost ? 'You' : task?.host_name ?? ''
   const isAccepted = myRequest?.status === 'accepted'
   const isParticipant = Boolean(isHost || isAccepted)
   const isFull = Boolean(task && task.spots_filled >= task.spots_needed)
@@ -242,7 +243,7 @@ export default function TaskDetail() {
 
   const spotsLeft = Math.max(0, task.spots_needed - task.spots_filled)
   const rateTargets = [
-    { id: task.host_id, name: task.host_name, avatar: task.host_avatar_url },
+    { id: task.host_id, name: hostDisplayName, avatar: task.host_avatar_url },
     ...participants.map((p) => ({
       id: p.requester_id,
       name: p.requester_name,
@@ -279,10 +280,10 @@ export default function TaskDetail() {
 
         {/* host */}
         <Link to={`/profile/${task.host_id}`} className="card mt-5 flex items-center gap-3 p-4">
-          <Avatar src={task.host_avatar_url} name={task.host_name} size={48} />
+          <Avatar src={task.host_avatar_url} name={hostDisplayName} size={48} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <p className="truncate font-semibold">{task.host_name}</p>
+              <p className="truncate font-semibold">{hostDisplayName}</p>
               <VerifiedBadge status={hostProfile?.verification_status} />
             </div>
             <div className="mt-1 flex items-center gap-2">
@@ -467,7 +468,7 @@ export default function TaskDetail() {
               aria-label="Open group info"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <Avatar src={task.host_avatar_url} name={task.host_name} size={34} />
+                <Avatar src={task.host_avatar_url} name={hostDisplayName} size={34} />
                 <div className="min-w-0">
                   <h2 className="truncate font-display text-base font-bold text-ink">{task.title}</h2>
                   <p className="text-[11px] text-muted">{task.spots_filled} of {task.spots_needed} members</p>
@@ -512,9 +513,9 @@ export default function TaskDetail() {
         <Sheet open={groupInfoOpen} onClose={() => setGroupInfoOpen(false)} title={task.title}>
           <div className="space-y-4">
             <div className="flex items-center gap-3 p-4 rounded-xl bg-canvas border border-line">
-              <Avatar src={task.host_avatar_url} name={task.host_name} size={40} />
+              <Avatar src={task.host_avatar_url} name={hostDisplayName} size={40} />
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-semibold text-ink">{task.host_name}</p>
+                <p className="text-[13px] font-semibold text-ink">{hostDisplayName}</p>
                 <p className="text-[11px] text-muted">{categoryLabel(task.category)} · {task.area}</p>
               </div>
               <button
@@ -644,7 +645,7 @@ export default function TaskDetail() {
               <div className="card rounded-[16px] p-4">
                 <p className="text-[12px] text-muted">Task</p>
                 <p className="mt-1 text-[14px] font-semibold">{task.title}</p>
-                <p className="mt-2 text-[12px] text-amber">Reporting host: {task.host_name}</p>
+                <p className="mt-2 text-[12px] text-amber">Reporting host: {hostDisplayName}</p>
               </div>
               <select className="field" value={reportCategory} onChange={(e) => setReportCategory(e.target.value as ReportCategory)}>
                 {REPORT_CATEGORIES.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
