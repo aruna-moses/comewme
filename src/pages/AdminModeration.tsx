@@ -70,6 +70,7 @@ export default function AdminModeration() {
   const [recent, setRecent] = useState<RecentReview[]>([])
   const [recentOpen, setRecentOpen] = useState(false)
   const [detailItem, setDetailItem] = useState<RecentReview | null>(null)
+  const [recentFilter, setRecentFilter] = useState<'all' | RecentReview['kind']>('all')
   const [severity, setSeverity] = useState<Record<string, ViolationSeverity>>({})
   const [actions, setActions] = useState<Record<string, string>>({})
   const [responses, setResponses] = useState<Record<string, string>>({})
@@ -193,11 +194,18 @@ export default function AdminModeration() {
 
   const filteredRecent = useMemo(() => {
     const q = recentQuery.trim().toLowerCase()
-    if (!q) return recent
-    return recent.filter((item) =>
-      [item.title, item.display_name ?? '', item.username ?? '', item.note ?? '', item.status, item.kind].join(' ').toLowerCase().includes(q),
-    )
-  }, [recent, recentQuery])
+    return recent.filter((item) => {
+      if (recentFilter !== 'all' && item.kind !== recentFilter) return false
+      if (!q) return true
+      return [item.title, item.display_name ?? '', item.username ?? '', item.note ?? '', item.status, item.kind].join(' ').toLowerCase().includes(q)
+    })
+  }, [recent, recentQuery, recentFilter])
+
+  const recentCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const r of recent) counts[r.kind] = (counts[r.kind] ?? 0) + 1
+    return counts
+  }, [recent])
 
   async function handleSOS(alert: SOSAlert, status: SOSStatus) {
     setBusy(alert.id)
@@ -613,6 +621,34 @@ export default function AdminModeration() {
               </button>
               {recentOpen && (
                 <div id="reviewed-panel" className="mt-2 space-y-2">
+                  {/* Category chips — jump straight to the queue you care about */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {([
+                      { id: 'all', label: 'All' },
+                      { id: 'sos', label: 'SOS' },
+                      { id: 'report', label: 'Reports' },
+                      { id: 'appeal', label: 'Appeals' },
+                      { id: 'ad', label: 'Ads' },
+                      { id: 'verification', label: 'Selfies' },
+                    ] as Array<{ id: 'all' | RecentReview['kind']; label: string }>).map(({ id, label }) => {
+                      const active = recentFilter === id
+                      const n = id === 'all' ? recent.length : recentCounts[id] ?? 0
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => setRecentFilter(id)}
+                          className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+                            active ? 'border-amber/40 bg-sun/20 text-ink' : 'border-line bg-white text-muted'
+                          }`}
+                        >
+                          {label} ({n})
+                        </button>
+                      )
+                    })}
+                  </div>
                   <div className="flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2">
                     <Search size={14} className="shrink-0 text-muted" aria-hidden />
                     <input
@@ -630,7 +666,9 @@ export default function AdminModeration() {
                   </div>
                   {filteredRecent.length === 0 && (
                     <p className="rounded-xl border border-line bg-white p-4 text-[12px] leading-relaxed text-muted">
-                      {recentQuery ? 'No reviewed items match that search.' : 'Nothing here yet. Everything you approve, reject, dismiss or resolve gathers here for later — nothing is ever thrown away.'}
+                      {recentQuery || recentFilter !== 'all'
+                        ? 'No reviewed items match that filter.'
+                        : 'Nothing here yet. Everything you approve, reject, dismiss or resolve gathers here for later — nothing is ever thrown away.'}
                     </p>
                   )}
                   {filteredRecent.map((item) => (
