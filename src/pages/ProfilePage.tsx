@@ -3,6 +3,7 @@ import { ChevronDown, MapPin, Pencil } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { fetchProfile, fetchReviews } from '../lib/api'
+import { VerifiedBadge } from '../components/Badges'
 import { supabase } from '../lib/supabase'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category, Profile, Review } from '../types'
@@ -114,8 +115,9 @@ export default function ProfilePage() {
         <div className="flex items-start gap-4">
           <Avatar src={profile.avatar_url} name={profile.display_name} size={76} />
           <div className="min-w-0 flex-1 pt-1">
-            <h1 className="truncate font-display text-[22px] font-bold leading-tight">
+            <h1 className="flex items-center gap-1.5 truncate font-display text-[22px] font-bold leading-tight">
               {profile.display_name}
+              {profile.verification_status === 'verified' && <VerifiedBadge status="verified" size={18} />}
             </h1>
             <p className="text-[13px] text-muted">@{profile.username}</p>
             {(profile.area || (profile.interests && profile.interests.length > 0)) && (

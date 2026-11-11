@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
-import { Check, Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Check, Loader2, ShieldCheck, Camera } from 'lucide-react'
 import Sheet from './Sheet'
 import { useAuth } from '../context/AuthContext'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category } from '../types'
-import { updateProfile } from '../lib/api'
+import { fetchMyVerification, submitVerification, updateProfile } from '../lib/api'
+import { supabase } from '../lib/supabase'
 
 export default function ProfileDetailsSheet({
   open,
@@ -20,8 +21,11 @@ export default function ProfileDetailsSheet({
   const [interests, setInterests] = useState<Category[]>(profile?.interests ?? [])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [submitted, setSubmitted] = useState<boolean | null>(null)
+  const [verifyBusy, setVerifyBusy] = useState(false)
+  const [verifyError, setVerifyError] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
-  // Sync when the underlying profile refreshes (e.g. after save).
   useEffect(() => {
     if (!profile || !open) return
     setName(profile.display_name ?? '')
@@ -29,6 +33,27 @@ export default function ProfileDetailsSheet({
     setArea(profile.area ?? 'Yaba')
     setInterests(profile.interests ?? [])
   }, [profile, open])
+
+  useEffect(() => {
+    if (!open || !profile?.id) return
+    fetchMyVerification(profile.id).then((v) => setSubmitted(Boolean(v))).catch(() => setSubmitted(false))
+  }, [open, profile?.id])
+
+  async function sendSelfie(file: File) {
+    if (!profile?.id) return
+    setVerifyBusy(true)
+    setVerifyError(null)
+    try {
+      await submitVerification(profile.id, file)
+      setSubmitted(true)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not submit.'
+      setVerifyError(/duplicate|unique/i.test(message) ? 'We have one already — we are looking at it.' : message)
+    } finally {
+      setVerifyBusy(false)
+    }
+  }
+
 
   function toggleInterest(category: Category) {
     setInterests((prev) => (prev.includes(category) ? prev.filter((x) => x !== category) : [...prev, category]))
@@ -63,6 +88,48 @@ export default function ProfileDetailsSheet({
         <p className="text-[12px] text-muted">
           These details are shown on your profile to other members.
         </p>
+        {/* Selfie verification */}
+        <section className="rounded-2xl border border-line bg-white p-4" aria-labelledby="selfie-heading">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={19} className="shrink-0 text-verified" aria-hidden />
+              <div>
+                <p id="selfie-heading" className="text-[13px] font-semibold text-ink">Selfie verification</p>
+                <p className="text-[10px] text-muted">Green check everywhere once approved</p>
+              </div>
+            </div>
+            {profile?.verification_status === 'verified' ? (
+              <span className="pill bg-verified/15 text-verified">Verified</span>
+            ) : submitted ? (
+              <span className="pill bg-sun/25 text-amber">Under review</span>
+            ) : (
+              <span className="pill bg-line text-muted">Not verified</span>
+            )}
+          </div>
+          {profile?.verification_status !== 'verified' && (
+            <div className="mt-3">
+              <p className="text-[11px] leading-relaxed text-muted">
+                Send a clear selfie holding anything small in frame. You don't have to post it publicly — only moderators see it.
+              </p>
+              <label className="btn-ghost btn-sm mt-2 cursor-pointer">
+                {verifyBusy ? (<><Loader2 size={14} className="animate-spin" aria-hidden /> Uploading…</>) : submitted ? 'Re-send selfie' : 'Send selfie'}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  capture="user"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) void sendSelfie(f)
+                  }}
+                />
+              </label>
+              {verifyError && <p className="mt-2 text-[11px] font-medium text-alert">{verifyError}</p>}
+            </div>
+          )}
+        </section>
+
         <div>
           <label className="label" htmlFor="name">Display name</label>
           <input id="name" className="field" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} />

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 import type { JoinStatus, Task } from '../types'
+import { fetchVerificationStatuses } from '../lib/api'
 import Spinner from '../components/Spinner'
 import TaskCard from '../components/TaskCard'
 
@@ -15,6 +16,7 @@ export default function MyTasks() {
   const [hosted, setHosted] = useState<Task[]>([])
   const [joined, setJoined] = useState<Task[]>([])
   const [applicationStatuses, setApplicationStatuses] = useState<Record<string, JoinStatus>>({})
+  const [verifiedMap, setVerifiedMap] = useState<Record<string, 'unverified' | 'pending' | 'verified'>>({})
   const [tab, setTab] = useState<'hosting' | 'going'>('hosting')
   const [pendingApplicants, setPendingApplicants] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
@@ -56,10 +58,13 @@ export default function MyTasks() {
     ])
       .then(async ([hostRes, joinRes]) => {
         if (!alive) return
-      if (hostRes.error) throw hostRes.error
-      if (joinRes.error) throw joinRes.error
-      const h = (hostRes.data ?? []) as Task[]
+        if (hostRes.error) throw hostRes.error
+        if (joinRes.error) throw joinRes.error
+        const h = (hostRes.data ?? []) as Task[]
         setHosted(h)
+        // Verification map for hosted (own tasks) + joined (other hosts)
+        const ownHostIds = Array.from(new Set(h.map((t) => t.host_id)))
+        const hostMap = ownHostIds.length > 0 ? await fetchVerificationStatuses(ownHostIds) : {} as Record<string, 'unverified' | 'pending' | 'verified'>
 
         const hostIds = h.map((task) => task.id)
         if (hostIds.length > 0) {
@@ -93,10 +98,15 @@ export default function MyTasks() {
             .order('date_time', { ascending: false })
           if (error) throw error
           if (alive) setJoined((data ?? []) as Task[])
+          // Extend verification map with the hosts of joined activities (other hosts)
+          const joinedHostIds = Array.from(new Set((data ?? []).map((t) => t.host_id)))
+          const joinedVerified = joinedHostIds.length > 0 ? await fetchVerificationStatuses(joinedHostIds) : {} as Record<string, 'unverified' | 'pending' | 'verified'>
+          if (alive) setVerifiedMap({ ...hostMap, ...joinedVerified })
         } else {
           if (alive) {
             setJoined([])
             setApplicationStatuses({})
+            setVerifiedMap(hostMap)
           }
         }
       })
@@ -194,7 +204,7 @@ export default function MyTasks() {
               id={`task-${t.id}`}
               className={targetTaskId === t.id ? 'task-reminder-highlight rounded-[22px]' : ''}
             >
-              <TaskCard task={t} applicationStatus={tab === 'going' ? applicationStatus : undefined} reviewBadge={tab === 'hosting' ? pendingApplicants[t.id] ?? 0 : 0} />
+              <TaskCard task={t} verified={verifiedMap[t.host_id] === 'verified'} applicationStatus={tab === 'going' ? applicationStatus : undefined} reviewBadge={tab === 'hosting' ? pendingApplicants[t.id] ?? 0 : 0} />
               <div className="mt-2 flex items-center justify-between gap-2 px-1">
                 <span className="text-[12px] font-semibold text-muted">
                   {tab === 'hosting'

@@ -629,6 +629,27 @@ export async function acknowledgeViolationWarning(violationId: string): Promise<
 }
 
 /* ------------------------------------------------------------------ */
+/* Verification status batch fetch                                    */
+/* ------------------------------------------------------------------ */
+
+export async function fetchVerificationStatuses(
+  ids: string[],
+): Promise<Record<string, 'unverified' | 'pending' | 'verified'>> {
+  const unique = Array.from(new Set(ids.filter(Boolean)))
+  if (unique.length === 0) return {}
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, verification_status')
+    .in('id', unique)
+  if (error) return {}
+  const map: Record<string, 'unverified' | 'pending' | 'verified'> = {}
+  for (const row of data ?? []) {
+    map[(row as { id: string; verification_status: 'unverified' | 'pending' | 'verified' }).id] =
+      (row as { verification_status: 'unverified' | 'pending' | 'verified' }).verification_status
+  }
+  return map
+}
+
 /* Verification                                                        */
 /* ------------------------------------------------------------------ */
 

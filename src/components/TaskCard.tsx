@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { CheckCircle2, ChevronDown, Clock3, MapPin, UsersRound } from 'lucide-react'
+import { ChevronDown, Clock3, MapPin, UsersRound } from 'lucide-react'
+import { VerifiedBadge } from './Badges'
 import { Link } from 'react-router-dom'
-import type { Category, JoinStatus, Task, VerificationStatus } from '../types'
+import type { Category, JoinStatus, Task } from '../types'
 import { categoryLabel, CATEGORIES } from '../types'
 import { formatDateTime } from '../lib/format'
 import { useAuth } from '../context/AuthContext'
@@ -66,18 +67,21 @@ function statusLabel(t: Task): { label: string; tone: string } {
   return { label: 'Open', tone: 'text-verified' }
 }
 
+interface Props {
+  /** True when the host has completed selfie verification. */
+  verified?: boolean
+}
+
 export default function TaskCard({
   task,
-  verificationStatus,
+  verified,
   applicationStatus,
   reviewBadge,
 }: {
   task: Task
-  verificationStatus?: VerificationStatus
   applicationStatus?: JoinStatus
-  /** Number of pending join requests on this task (host view only) — rendered as a red badge. */
   reviewBadge?: number
-}) {
+} & Props) {
   const { profile } = useAuth()
   const isOwnTask = Boolean(profile && profile.id === task.host_id)
   const [expanded, setExpanded] = useState(false)
@@ -119,8 +123,8 @@ export default function TaskCard({
             <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted">
               <Avatar src={task.host_avatar_url} name={task.host_name} size={18} />
               <span className="truncate max-w-[45%]">{isOwnTask ? 'You' : task.host_name}</span>
-              {verificationStatus === 'verified' && (
-                <CheckCircle2 size={11} className="shrink-0 text-amber" aria-label="Verified member" />
+              {verified && (
+                <VerifiedBadge status="verified" size={13} />
               )}
               <span className="shrink-0 text-[10px] text-line">|</span>
               <span className={`pill shrink-0 ${categoryStyles[task.category]}`}>{categoryLabel(task.category)}</span>

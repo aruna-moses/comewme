@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { Moon, Sun, Megaphone, ShieldCheck, BookOpen, FileText, ChevronRight, Pencil } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import ConfirmDialog from '../components/ConfirmDialog'
-import { fetchMyVerification, submitVerification, updateProfile } from '../lib/api'
+import { updateProfile } from '../lib/api'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 
@@ -20,17 +20,9 @@ export default function Settings() {
   const { theme, setTheme } = useTheme()
 
   const [avatarBusy, setAvatarBusy] = useState(false)
-  const [verifyBusy, setVerifyBusy] = useState(false)
-  const [verifyError, setVerifyError] = useState<string | null>(null)
-  const [submitted, setSubmitted] = useState(false)
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const { moderation } = useNotifications()
-
-  useEffect(() => {
-    if (!profile?.id) return
-    fetchMyVerification(profile.id).then((v) => setSubmitted(Boolean(v)))
-  }, [profile?.id])
 
   if (!profile || !session) return null
 
@@ -54,25 +46,6 @@ export default function Settings() {
     }
   }
 
-  async function uploadSelfie(file: File) {
-    if (!profile) return
-    setVerifyError(null)
-    setVerifyBusy(true)
-    try {
-      await submitVerification(profile.id, file)
-      setSubmitted(true)
-    } catch (e) {
-      const message = e instanceof Error ? e.message : 'Could not submit'
-      setVerifyError(
-        /duplicate|unique/i.test(message)
-          ? 'You have already sent one. We are still looking at it.'
-          : message,
-      )
-    } finally {
-      setVerifyBusy(false)
-    }
-  }
-
   async function confirmSignOut() {
     setSigningOut(true)
     try {
@@ -84,27 +57,6 @@ export default function Settings() {
       setSignOutOpen(false)
     }
   }
-
-  const verificationCopy: Record<string, { title: string; body: string }> = {
-    unverified: submitted
-      ? {
-          title: 'Under review',
-          body: 'We have your photo. Most checks are done within a day.',
-        }
-      : {
-          title: 'Get verified',
-          body: 'Send a selfie holding a note with your username. We check it by hand and flip the badge.',
-        },
-    pending: {
-      title: 'Under review',
-      body: "We've got your photo. Most checks are done within a day.",
-    },
-    verified: {
-      title: 'Verified',
-      body: 'People can see the green badge on your profile and your activities.',
-    },
-  }
-  const vc = verificationCopy[profile.verification_status]
 
   return (
     <div className="px-4 pb-10 pt-4">
@@ -204,37 +156,26 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* verification */}
-      <SectionLabel className="mt-5">Verification</SectionLabel>
-      <div className="card mt-2 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[14px] font-semibold">{vc.title}</p>
-            <p className="mt-0.5 text-[12px] leading-relaxed text-muted">{vc.body}</p>
+      <SectionLabel className="mt-5">Selfie verification</SectionLabel>
+
+      <Link to={`/profile/${profile.id}`} className="card mt-2 flex items-center justify-between gap-3 p-4 transition hover:bg-canvas" aria-label="Open profile details and selfie verification">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
+            <ShieldCheck size={17} aria-hidden />
           </div>
-          {profile.verification_status === 'verified' && (
-            <span className="pill bg-verified/15 text-verified">Verified</span>
-          )}
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-ink">Selfie verification</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+              {profile.verification_status === 'verified'
+                ? 'Green check confirmed — verified everywhere.'
+                : profile.verification_status === 'pending'
+                  ? 'Under review. We’ll notify you when the badge is decided.'
+                  : 'Send a selfie to flip on the green check everywhere.'}
+            </p>
+          </div>
         </div>
-
-        {profile.verification_status === 'unverified' && !submitted && (
-          <label className="btn-ghost btn-sm mt-3 cursor-pointer">
-            {verifyBusy ? 'Uploading…' : 'Send selfie'}
-            <input
-              type="file"
-              accept="image/*"
-              capture="user"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) void uploadSelfie(f)
-              }}
-            />
-          </label>
-        )}
-
-        {verifyError && <p className="mt-2 text-[12px] font-medium text-alert">{verifyError}</p>}
-      </div>
+        <ChevronRight size={18} className="mt-0.5 shrink-0 text-muted" aria-hidden />
+      </Link>
 
       <SectionLabel className="mt-5">For business</SectionLabel>
 

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Search, ShieldCheck, SlidersHorizontal, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Spinner from '../components/Spinner'
-import { fetchFeed, fetchUpcomingForUser } from '../lib/api'
+import { fetchFeed, fetchUpcomingForUser, fetchVerificationStatuses } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category, JoinStatus, Task } from '../types'
@@ -31,6 +31,7 @@ export default function Discover() {
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [applicationStatuses, setApplicationStatuses] = useState<Record<string, JoinStatus>>({})
+  const [verifiedMap, setVerifiedMap] = useState<Record<string, 'unverified' | 'pending' | 'verified'>>({})
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -68,6 +69,7 @@ export default function Discover() {
           limit: PAGE,
           offset,
         })
+        const hostVerification = await fetchVerificationStatuses(rows.map((r) => r.host_id))
 
         let statuses: Record<string, JoinStatus> = {}
         if (profile && rows.length > 0) {
@@ -83,6 +85,7 @@ export default function Discover() {
           )
         }
 
+        setVerifiedMap((prev) => (offset === 0 ? hostVerification : { ...prev, ...hostVerification }))
         setTasks((prev) => (offset === 0 ? rows : [...prev, ...rows]))
         setApplicationStatuses((prev) => (offset === 0 ? statuses : { ...prev, ...statuses }))
         setHasMore(rows.length === PAGE)
@@ -350,7 +353,7 @@ export default function Discover() {
         {!loading &&
           !error &&
           tasks.map((t) => (
-            <TaskCard key={t.id} task={t} applicationStatus={applicationStatuses[t.id]} />
+            <TaskCard key={t.id} task={t} verified={verifiedMap[t.host_id] === 'verified'} applicationStatus={applicationStatuses[t.id]} />
           ))}
 
         {!loading && !error && tasks.length === 0 && (

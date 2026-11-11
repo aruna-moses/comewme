@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, MapPin, ShieldCheck, Sparkles } from 'lucide-react'
-import { fetchFeed } from '../lib/api'
+import { fetchFeed, fetchVerificationStatuses } from '../lib/api'
 import type { Task } from '../types'
 import TaskCard from './TaskCard'
 import Spinner from './Spinner'
@@ -15,20 +15,22 @@ const VALUE_PROPS = [
 export default function PublicHome() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
+  const [verifiedMap, setVerifiedMap] = useState<Record<string, 'unverified' | 'pending' | 'verified'>>({})
 
   useEffect(() => {
     let active = true
     fetchFeed({ limit: 10 })
-      .then((rows) => {
-        if (active) setTasks(rows)
+      .then(async (rows) => {
+        if (!active) return
+        setTasks(rows)
+        const map = await fetchVerificationStatuses(rows.map((r) => r.host_id))
+        if (active) setVerifiedMap(map)
       })
       .catch(() => {})
       .finally(() => {
         if (active) setLoading(false)
       })
-    return () => {
-      active = false
-    }
+    return () => { active = false }
   }, [])
 
   return (
@@ -91,7 +93,7 @@ export default function PublicHome() {
         ) : (
           <div className="space-y-3">
             {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task.id} task={task} verified={verifiedMap[task.host_id] === 'verified'} />
             ))}
             {tasks.length === 0 && (
               <p className="py-6 text-center text-[13px] text-muted">
