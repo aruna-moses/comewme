@@ -4,6 +4,7 @@ export type NotificationType = 'join_request' | 'selfie' | 'appeal' | 'violation
 
 export interface InAppNotification {
   id: string
+  user_id: string
   type: NotificationType
   title: string
   body: string
@@ -15,7 +16,7 @@ export interface InAppNotification {
 export async function fetchNotifications(limit = 30): Promise<InAppNotification[]> {
   const { data, error } = await supabase
     .from('notifications')
-    .select('id, type, title, body, link_path, created_at, read_at')
+    .select('id, user_id, type, title, body, link_path, created_at, read_at')
     .order('created_at', { ascending: false })
     .limit(limit)
   if (error) throw error
