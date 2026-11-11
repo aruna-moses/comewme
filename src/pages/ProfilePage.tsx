@@ -182,20 +182,6 @@ export default function ProfilePage() {
           />
         )}
 
-        {isMe && profile.verification_status !== 'verified' && (
-          <Link to="/settings" className="card mt-3 flex items-center justify-between p-4">
-            <div>
-              <p className="text-[14px] font-semibold">
-                {profile.verification_status === 'pending' ? 'Verification under review' : 'Get verified'}
-              </p>
-              <p className="mt-0.5 text-[12px] text-muted">
-                A verified face means people trust you faster.
-              </p>
-            </div>
-            <span className="pill bg-sun/30 text-ink">Verify</span>
-          </Link>
-        )}
-
         <ProfileMediaGallery profileId={profile.id} isOwner={isMe} />
 
         {!isMe && me && (
