@@ -24,7 +24,9 @@ export default function ProfileDetailsSheet({
   const [submitted, setSubmitted] = useState<boolean | null>(null)
   const [verifyBusy, setVerifyBusy] = useState(false)
   const [verifyError, setVerifyError] = useState<string | null>(null)
+  const [avatarBusy, setAvatarBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!profile || !open) return
@@ -51,6 +53,26 @@ export default function ProfileDetailsSheet({
       setVerifyError(/duplicate|unique/i.test(message) ? 'We have one already — we are looking at it.' : message)
     } finally {
       setVerifyBusy(false)
+    }
+  }
+
+  async function uploadAvatar(file: File) {
+    if (!profile?.id) return
+    setAvatarBusy(true)
+    try {
+      const path = `${profile.id}/avatar-${Date.now()}.jpg`
+      const { error } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (error) throw error
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      await updateProfile(profile.id, { avatar_url: data.publicUrl })
+      await refreshProfile()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not upload photo.'
+      alert(message)
+    } finally {
+      setAvatarBusy(false)
     }
   }
 
@@ -116,13 +138,49 @@ export default function ProfileDetailsSheet({
                   <li>If they don&apos;t match, your review will likely be <strong>declined</strong>. You can edit your avatar first if it&apos;s hard to recognise you.</li>
                 </ul>
               </div>
-              {profile?.avatar_url && (
+              {profile?.avatar_url ? (
                 <div className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-canvas p-2">
-                  <img src={profile.avatar_url} alt="Current profile photo" className="h-12 w-12 rounded-xl object-cover" loading="lazy" />
-                  <p className="text-[11px] leading-snug text-muted">
-                    This is what moderators will compare your selfie to. If it&apos;s hard to recognise you, update your avatar first (Profile → Settings → photo).
-                  </p>
+                  <img src={profile.avatar_url} alt="Current profile photo" className="h-14 w-14 rounded-xl object-cover" loading="lazy" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] leading-snug text-muted">
+                      This is what moderators will compare your selfie to.
+                    </p>
+                    <label className="btn-ghost btn-sm mt-1.5 cursor-pointer">
+                      {avatarBusy ? (<><Loader2 size={12} className="animate-spin" aria-hidden /> Uploading…</>) : 'Update avatar'}
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          if (f) void uploadAvatar(f)
+                        }}
+                      />
+                    </label>
+                  </div>
                 </div>
+              ) : (
+                <label className="mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-line bg-canvas p-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-line text-muted" aria-hidden>
+                    <Camera size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[12px] font-semibold text-ink">No avatar yet</p>
+                    <p className="text-[11px] leading-relaxed text-muted">Upload a clear face photo — this plays the role of your ID for selfie verification.</p>
+                  </div>
+                  {avatarBusy ? <Loader2 size={16} className="shrink-0 animate-spin text-muted" aria-hidden /> : null}
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) void uploadAvatar(f)
+                    }}
+                  />
+                </label>
               )}
               <label className="btn-ghost btn-sm mt-2 cursor-pointer">
                 {verifyBusy ? (<><Loader2 size={14} className="animate-spin" aria-hidden /> Uploading…</>) : submitted ? 'Re-send selfie' : 'Send selfie'}
