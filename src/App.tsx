@@ -25,6 +25,7 @@ import NotificationsPage from './pages/NotificationsPage'
 import GuidelinesModal from './components/GuidelinesModal'
 import WarningModal, { activeRestriction, unacknowledgedWarning } from './components/WarningModal'
 import ModerationAlert from './components/ModerationAlert'
+import InAppToast from './components/InAppToast'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth()
@@ -174,6 +175,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <ModerationAlert />
+      <InAppToast />
       <BottomNav />
       {session && restriction && <WarningModal violation={restriction} onAcknowledge={async () => undefined} />}
       {session && !restriction && warning && <WarningModal violation={warning} onAcknowledge={() => acknowledgeWarning(warning.id)} />}

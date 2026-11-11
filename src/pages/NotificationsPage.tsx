@@ -45,7 +45,7 @@ export default function NotificationsPage() {
   }, [notifications])
 
   return (
-    <div className="min-h-screen bg-canvas pb-10">
+    <div className="page-slide-in min-h-screen bg-canvas pb-10">
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="-ml-1 inline-flex items-center gap-1.5 text-amber" aria-label="Back to Discover">
           <ArrowLeft size={20} aria-hidden />
