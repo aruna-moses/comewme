@@ -10,7 +10,7 @@ import Spinner from '../components/Spinner'
 
 export default function ChatList() {
   const { profile } = useAuth()
-  const { unreadByTask, unreadMessages, error: notificationError } = useNotifications()
+  const { unreadByTask, error: notificationError } = useNotifications()
   const [chats, setChats] = useState<
     Array<{
       task: Task
@@ -101,11 +101,6 @@ export default function ChatList() {
       <header className="px-5 pb-2 pt-8">
         <h1 className="font-display text-[24px] font-bold leading-tight">Chats</h1>
         <p className="mt-1 text-[14px] text-muted">Coordinate with your task group before you meet.</p>
-        {unreadMessages > 0 && (
-          <p role="status" className="mt-3 rounded-xl border border-[#f1c4c1] bg-[#fff1f0] p-3 text-[13px] font-semibold text-[#b3261e]">
-            {unreadMessages} new {unreadMessages === 1 ? 'message' : 'messages'} across your activity chats
-          </p>
-        )}
       </header>
 
       <div className="px-5 pt-4">

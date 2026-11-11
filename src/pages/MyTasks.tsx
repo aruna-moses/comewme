@@ -143,21 +143,6 @@ export default function MyTasks() {
       <header className="px-5 pb-2 pt-8">
         <h1 className="font-display text-[24px] font-bold leading-tight">My tasks</h1>
         <p className="mt-1 text-[14px] text-muted">Everything you&apos;ve posted and applied to.</p>
-        {pendingApplications > 0 && (
-          <button
-            type="button"
-            className="mt-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-[#f1c4c1] bg-[#fff1f0] p-3 text-left"
-            onClick={() => setTab('hosting')}
-          >
-            <span className="flex items-center gap-2 text-[13px] font-semibold text-[#b3261e]">
-              <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-[#e53935] px-1 text-[11px] text-white">
-                {pendingApplications > 99 ? '99+' : pendingApplications}
-              </span>
-              {pendingApplications === 1 ? 'person is waiting for your review' : 'people are waiting for your review'}
-            </span>
-            <span className="shrink-0 text-[12px] font-bold text-[#b3261e]">Review</span>
-          </button>
-        )}
       </header>
 
       <div className="px-5 pt-4">
