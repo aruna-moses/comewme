@@ -361,6 +361,9 @@ export default function Settings() {
           <Link to="/feedback" className="btn-primary btn-sm mt-3 w-full">
             Send feedback
           </Link>
+          <Link to="/violations" className="btn-ghost btn-sm mt-2 w-full">
+            Your reports &amp; decisions — warnings, actions, appeals, all in one place
+          </Link>
         </div>
 
         <button

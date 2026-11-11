@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Flag,
   History,
+  Download,
   MapPin,
   MessageCircle,
   Megaphone,
@@ -39,6 +40,31 @@ const SEVERITY_LABELS: Record<string, string> = {
   suspension_7d: 'a 7-day suspension',
   suspension_30d: 'a 30-day suspension',
   permanent_ban: 'a permanent ban',
+}
+
+function csvEscape(value: string) {
+  return `"${String(value ?? '').replace(/"/g, '""')}"`
+}
+
+function toCsv(items: Array<RecentReview & { summary: string }>) {
+  const header = ['Kind', 'Title', 'Status', 'Member', 'Username', 'Note', 'Reviewed at']
+  const body = items.map((item) =>
+    [item.kind, item.summary, item.status, item.display_name ?? '', item.username ?? '', item.note ?? '', item.reviewed_at]
+      .map(csvEscape)
+      .join(','),
+  )
+  return [header.map(csvEscape).join(','), ...body].join('\r\n')
+}
+
+function downloadCsv(items: Array<RecentReview & { summary: string }>) {
+  const blob = new Blob([`\ufeff${toCsv(items)}`], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  const date = new Date().toISOString().slice(0, 10)
+  a.download = `comewme-reviews-${date}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 type PendingAppeal = Awaited<ReturnType<typeof getPendingViolationAppeals>>[number]
@@ -200,6 +226,11 @@ export default function AdminModeration() {
       return [item.title, item.display_name ?? '', item.username ?? '', item.note ?? '', item.status, item.kind].join(' ').toLowerCase().includes(q)
     })
   }, [recent, recentQuery, recentFilter])
+
+  const exportable = useMemo(
+    () => filteredRecent.map((item) => ({ ...item, summary: prettyTitle(item) })),
+    [filteredRecent],
+  )
 
   const recentCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -648,6 +679,16 @@ export default function AdminModeration() {
                         </button>
                       )
                     })}
+                    <button
+                      type="button"
+                      className="ml-auto flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1.5 text-[11px] font-semibold text-muted transition hover:text-ink"
+                      onClick={() => downloadCsv(exportable)}
+                      aria-label="Export filtered reviews as CSV"
+                      title="Download the currently filtered list as CSV"
+                    >
+                      <Download size={12} aria-hidden />
+                      Export
+                    </button>
                   </div>
                   <div className="flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2">
                     <Search size={14} className="shrink-0 text-muted" aria-hidden />
