@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { useNotifications } from '../context/NotificationContext'
-import { markNotificationRead } from '../lib/notifications'
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
@@ -15,37 +14,40 @@ function timeAgo(iso: string) {
 }
 
 export default function InAppToast() {
-  const { notifications } = useNotifications()
+  const { notifications, markNotificationRead } = useNotifications()
   const location = useLocation()
-  const [visible, setVisible] = useState<string | null>(null)
+  const [visible, setVisible] = useState(false)
+  const [activeId, setActiveId] = useState<string | null>(null)
 
-  // Show one toast at a time — the newest unread, suppressed on the inbox page and on the matching chat.
+  // Newest unread notification for this moment — keyed by id so refreshes don't re-fire it.
   const pathname = location.pathname
   const candidate = notifications.find((n) => !n.read_at) ?? null
+  const candidateId = candidate?.id ?? null
 
   useEffect(() => {
-    if (!candidate || pathname === '/notifications' || (candidate.link_path && candidate.link_path === pathname)) return
-    const current = candidate
-    setVisible((currentId) => (currentId === current.id ? currentId : current.id))
-    const timer = window.setTimeout(() => setVisible(null), 6000)
+    if (!candidateId || pathname === '/notifications') return
+    if (candidate?.link_path && candidate.link_path === pathname) return
+    setActiveId(candidateId)
+    setVisible(true)
+    const timer = window.setTimeout(() => setVisible(false), 6000)
     return () => window.clearTimeout(timer)
-  }, [candidate, pathname])
+  }, [candidateId, pathname])
 
-  if (!candidate || visible !== candidate.id) return null
-  const n = candidate
+  const n = activeId ? notifications.find((item) => item.id === activeId) ?? null : null
+  if (!visible || !n) return null
 
   return (
     <div
       aria-live="polite"
       role="status"
       className="toast-slide-down fixed left-1/2 top-3 z-[70] w-[92%] max-w-sm"
-      onClick={() => setVisible(null)}
+      onClick={() => setVisible(false)}
     >
       <Link
         to={n.link_path ?? '/notifications'}
         onClick={() => {
           void markNotificationRead(n.id)
-          setVisible(null)
+          setVisible(false)
         }}
         className="flex items-start gap-3 rounded-2xl border border-line bg-white/95 p-3.5 shadow-lift backdrop-blur dark:bg-[#1b2029]/95"
       >
@@ -71,7 +73,7 @@ export default function InAppToast() {
             e.preventDefault()
             e.stopPropagation()
             void markNotificationRead(n.id)
-            setVisible(null)
+            setVisible(false)
           }}
           className="shrink-0 rounded-full p-1 text-muted hover:bg-line hover:text-ink"
         >
