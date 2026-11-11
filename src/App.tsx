@@ -22,6 +22,7 @@ import Advertise from './pages/Advertise'
 import Spinner from './components/Spinner'
 import ResetPassword from './pages/ResetPassword'
 import NotificationsPage from './pages/NotificationsPage'
+import CommunityGuidelines from './pages/CommunityGuidelines'
 import GuidelinesModal from './components/GuidelinesModal'
 import WarningModal, { activeRestriction, unacknowledgedWarning } from './components/WarningModal'
 import ModerationAlert from './components/ModerationAlert'
@@ -122,6 +123,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
+        <Route path="/community-guidelines" element={<CommunityGuidelines />} />
         <Route path="/accept-guidelines" element={<RequireAuth><AcceptGuidelinesRoute /></RequireAuth>} />
         <Route path="/violations" element={<RequireAuth><Violations /></RequireAuth>} />
         <Route path="/admin/moderation" element={<RequireAuth><AdminModeration /></RequireAuth>} />

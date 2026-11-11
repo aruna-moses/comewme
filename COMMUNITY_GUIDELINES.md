@@ -1,6 +1,6 @@
 # Come w' me — Community Guidelines
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Applies to:** All users of Come w' me (web and mobile)
 
 ## 1. Purpose
@@ -32,13 +32,13 @@ Every registered user, every activity poster, every join requester, and every pe
 
 ### D. Respect Everyone
 - No harassment, hate speech, threats, or intimidation based on race, ethnicity, religion, gender, sexual orientation, disability, or nationality.
-- No sexual content, nudity, or sexually explicit messages in profiles or chats.
+- No sexual content, nudity, or sexually explicit messages in profiles, activities, or chats.
 - No bullying, doxxing, or sharing someone's private information without consent.
 
 ### E. No Scams or Illegal Activity
 - Do not use Come w' me to sell illegal goods, offer illegal services, or promote criminal activity.
 - Do not run pyramid schemes, investment scams, or fake giveaways.
-- Do not use the app to facilitate underage meetings or exploitation.
+- Do not use the app to facilitate under-age meetings or exploitation.
 
 ### F. Keep It Real
 - One account per person. Do not create fake accounts to evade bans or manipulate activity counts.
@@ -49,47 +49,78 @@ Every registered user, every activity poster, every join requester, and every pe
 - If you cannot come, withdraw from the activity or message the group as early as possible.
 - Repeated no-shows damage your trust score and may lead to restrictions.
 
-## 4. Content Standards
+## 4. What Kind of Activities Are Allowed?
 
-- **Profile photos:** Must be a clear photo of you. Illustrated or celebrity avatars are not allowed.
-- **Activity titles:** Clear, specific, and relevant. No clickbait, all-caps shouting, or unrelated keywords.
-- **Chat:** Keep messages on-topic for the activity. No hate speech, threats, or sexual content.
+Come w' me is for **lawful, non-sexual, non-political social activities** that two or more people can share in public. If you are unsure whether something is okay, it probably isn’t on here unless it is explicitly listed below.
 
-## 5. Reporting and Moderation
+### Allowed
+- Errands: market runs, grocery pickup, dry-cleaning collection, delivery assistance.
+- Food: breakfast, lunch, dinner, brunch, suya nights, restaurant recommendations.
+- Learning: study meetups, coding jams, book clubs, language exchange.
+- Sports: basketball, football pickup games, walks, gym partners.
+- Culture: gallery visits, open-mic nights, comedy shows, music events, food fairs.
+- Utilities: shared rides (same destination, public transport), moving help.
+- Casual social: seeing a film, grabbing coffee, event networking.
+
+### Not Allowed — ever
+- **Sexual, romantic, or "companionship for pay" tasks.** No sugar daddy / sugar mummy offers, escort bookings, "private fun," or any listing that implies sex, nudity, dating for compensation, or adult entertainment.
+- **Substance-related activities.** No "come drink with me," "come smoke," "come take drugs," or any gathering arranged around alcohol or drugs.
+- **Illegal or violent activities.** No weapon handling, gambling dens, theft, fraud, arson, or violence-anything.
+- **Exploitation of minors.** No meetups designed for under-18s. Users 18+ only.
+- **Hate or extremist gatherings.** No rallies for hate groups, cult coordination, or anything that promotes harm.
+- **Privacy invasions.** No stalking, harassment of specific private individuals, or doxxing.
+- **Commercial solicitation disguised as an activity.** No posting "free consultation" or product-pushing events that are really sales pitches. Small paid advertisers go through the /advertise flow, not task posts.
+- **Isolated, one-on-one meetups in private locations.** The first meet must be public, and the group should be larger than two where reasonable.
+
+If you see a task that crosses any of these, use the **Report** button. Reports go to a human reviewer, not an algorithm.
+
+## 5. Content Standards
+
+- **Profile photos:** Must be a clear photo of you. Illustrated or celebrity avatars are accepted as defaults only until you upload a real one.
+- **Activity titles:** Clear, specific, and relevant. No clickbait, full-caps shouting, or unrelated keywords.
+- **Activity descriptions:** State what the event is, where, when, who it's for, and what (if anything) to bring.
+- **Chat:** Keep messages on-topic for the activity. No hate speech, threats, or sexual content — even if "just joking."
+- **Feedback:** When you disagree, stay calm. Moderators are human; frustration does not excuse abuse.
+
+## 6. Reporting and Moderation
 
 If you see a violation:
-- Use the **"Report"** button on any activity or profile.
+- Use the **Report** button on any activity, profile, or chat message.
 - Reports go to a human reviewer, not an algorithm.
 - You can report a user even after an activity is complete.
 
-Reports are reviewed by the moderation team. Reports are private; you will not be
-notified of the outcome of every report, but serious violations are acted on quickly.
+Reports are reviewed by the moderation team. Reports are private; you will not be notified of the outcome of every report, but serious violations are acted on quickly.
 
-## 6. Enforcement & Violations
+## 7. Enforcement & Violations
 
 | Violation Level | Examples | Consequence |
 |---|---|---|
-| **Warning** | A reviewed violation that needs to be addressed | In-app notice. Acknowledgment is required before using community features. |
+| **Warning** | A reviewed violation that needs to be addressed | In-app notice. Acknowledgement is required before using community features again. |
 | **Temporary suspension** | A serious or repeated violation | 24 hours, 7 days, or 30 days. Posting, messaging, and joining are blocked while active. |
-| **Permanent ban** | A severe or repeated violation | Community access is blocked. Contact hello@comewme.app or appeal in the app. |
+| **Permanent ban** | A severe or repeated violation | Community access is blocked. Contact comewme.app@gmail.com or appeal in the app. |
 
-Moderators determine the appropriate action based on the circumstances. Severe
-violations may result in immediate suspension or a permanent ban without a prior
-warning. A ban does not automatically delete account data.
+Specific violations that trigger minimum immediate responses:
+| Violation | Minimum | Why |
+|---|---|---|
+| Posting sexual / illegal / drug-related tasks | Permanent ban | Immediate community harm. |
+| Conducting meetups meant to exploit minors | Permanent ban | Non-negotiable. |
+| Repeated no-shows (3+ unexcused) | Warning → suspension | Erodes trust for everyone. |
+| Sharing contact details or private info in public chat to evade moderation | Warning | Privacy / TOS breach. |
+| Impersonation of a business or public figure | Warning or suspension | Fraud exposure. |
 
-## 7. Appeals
+Moderators determine the appropriate action based on the circumstances. Severe violations may result in immediate suspension or a permanent ban without a prior warning. A ban does not automatically delete account data.
 
-If you believe a decision was made in error, use **Your reports & decisions** in the
-app to submit an appeal, or email hello@comewme.app. Appeals are reviewed by a
-moderator. Include the incident date and why you believe the decision was wrong.
+## 8. Appeals
 
-## 8. Changes to These Guidelines
+If you believe a decision was made in error, use **Your reports & decisions** in the app to submit an appeal, or email comewme.app@gmail.com. Appeals are reviewed by a moderator. Include the incident date and why you believe the decision was wrong.
+
+## 9. Changes to These Guidelines
 
 We may update these guidelines from time to time. When we do, we will notify you in the app and ask you to accept the updated version before continuing.
 
-## 9. Contact
+## 10. Contact
 
-Questions or reports: hello@comewme.app  
+Questions or reports: comewme.app@gmail.com  
 Emergencies: Always contact local police first if you feel unsafe.
 
 ---

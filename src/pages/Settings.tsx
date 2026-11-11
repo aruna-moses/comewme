@@ -364,6 +364,9 @@ export default function Settings() {
           <Link to="/violations" className="btn-ghost btn-sm mt-2 w-full">
             Your reports &amp; decisions — warnings, actions, appeals, all in one place
           </Link>
+          <Link to="/community-guidelines" className="btn-ghost btn-sm mt-2 w-full">
+            Community Guidelines — what\u2019s allowed, what isn\u2019t, and what happens if you break them
+          </Link>
         </div>
 
         <button
