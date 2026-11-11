@@ -25,8 +25,8 @@ import {
   reviewViolation,
   reviewViolationAppeal,
 } from '../lib/api'
-import { fetchSOSAlerts, fetchPendingVerifications, fetchRecentReviews, mapLink, reviewSOSAlert, reviewVerification } from '../lib/moderation'
-import type { SOSAlert, SOSStatus, VerificationSubmission, RecentReview } from '../lib/moderation'
+import { fetchSOSAlerts, fetchPendingVerifications, fetchRecentReviews, fetchFeedbackForModerator, reviewFeedback, mapLink, reviewSOSAlert, reviewVerification } from '../lib/moderation'
+import type { SOSAlert, SOSStatus, VerificationSubmission, RecentReview, ReportForAdmin } from '../lib/moderation'
 import type { Violation, ViolationSeverity } from '../types'
 import { VIOLATION_CATEGORIES } from '../types'
 import { useNotifications } from '../context/NotificationContext'
@@ -93,6 +93,8 @@ export default function AdminModeration() {
   const [appeals, setAppeals] = useState<PendingAppeal[]>([])
   const [alerts, setAlerts] = useState<SOSAlert[]>([])
   const [verifications, setVerifications] = useState<VerificationSubmission[]>([])
+  const [feedback, setFeedback] = useState<ReportForAdmin[]>([])
+  const [feedbackNotes, setFeedbackNotes] = useState<Record<string, string>>({})
   const [recent, setRecent] = useState<RecentReview[]>([])
   const [recentOpen, setRecentOpen] = useState(false)
   const [detailItem, setDetailItem] = useState<RecentReview | null>(null)
@@ -117,18 +119,20 @@ export default function AdminModeration() {
       const allowed = await isModerator()
       setModerator(allowed)
       if (!allowed) return
-      const [pendingReports, pendingAppeals, sos, pendingVerifications, recentReviews] = await Promise.all([
+      const [pendingReports, pendingAppeals, sos, pendingVerifications, recentReviews, pendingFeedback] = await Promise.all([
         getPendingReports(),
         getPendingViolationAppeals(),
         fetchSOSAlerts().catch(() => [] as SOSAlert[]),
         fetchPendingVerifications().catch(() => [] as VerificationSubmission[]),
         fetchRecentReviews(30).catch(() => [] as RecentReview[]),
+        fetchFeedbackForModerator().catch(() => [] as ReportForAdmin[]),
       ])
       setReports(pendingReports)
       setAppeals(pendingAppeals)
       setAlerts(sos)
       setVerifications(pendingVerifications)
       setRecent(recentReviews)
+      setFeedback(pendingFeedback)
       // Selection is anchored to the pending list — after a refresh, drop ids that are no longer pending
       setSelectedReports((prev) => new Set(pendingReports.filter((r) => prev.has(r.id)).map((r) => r.id)))
     } catch (e) {
@@ -266,6 +270,20 @@ export default function AdminModeration() {
     }
   }
 
+  async function handleFeedback(id: string, status: 'reviewing' | 'resolved') {
+    setBusy(id)
+    setError(null)
+    try {
+      await reviewFeedback(id, status, feedbackNotes[id] ?? null)
+      await load()
+      void refreshBadges()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not update this feedback item.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   const pendingSOS = alerts.filter((a) => a.status === 'pending')
 
   if (loading) return <Spinner />
@@ -289,12 +307,13 @@ export default function AdminModeration() {
         ) : (
           <>
             {/* Counters */}
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-6 gap-2">
               <Tile label="SOS" value={moderation.sos} tone={moderation.sos > 0 ? 'alert' : 'plain'} />
               <Tile label="Reports" value={moderation.reports} tone="plain" />
               <Tile label="Appeals" value={moderation.appeals} tone="plain" />
               <Tile label="Ads" value={moderation.ads} tone="plain" />
               <Tile label="Selfies" value={moderation.verifications} tone={moderation.verifications > 0 ? 'alert' : 'plain'} />
+              <Tile label="Feedback" value={moderation.feedback} tone={moderation.feedback > 0 ? 'alert' : 'plain'} />
             </div>
 
             {/* SOS */}
@@ -406,6 +425,84 @@ export default function AdminModeration() {
                           </div>
                         </>
                       )}
+                    </article>
+                  )
+                })}
+              </div>
+            </section>
+
+            {/* Member feedback */}
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 font-display text-[18px] font-bold">
+                  <Flag size={18} className={feedback.length > 0 ? 'text-amber' : 'text-muted'} aria-hidden />
+                  Member feedback
+                </h2>
+                <span className="text-[12px] text-muted">{feedback.length} total</span>
+              </div>
+
+              {feedback.length === 0 && (
+                <p className="rounded-xl border border-line bg-white p-4 text-[13px] text-muted">
+                  Nothing yet. Bug reports, complaints and suggestions arrive here — you read them, decide what to do, and optionally send a short note back.
+                </p>
+              )}
+
+              <div className="space-y-3">
+                {feedback.map((item) => {
+                  const name = item.reporter_name || 'Member'
+                  const handle = item.reporter_username ? `@${item.reporter_username}` : null
+                  const STATUS_TONE: Record<string, string> = {
+                    open: 'bg-sun/25 text-amber',
+                    reviewing: 'bg-[#eef4fb] text-[#4273a8]',
+                    resolved: 'bg-verified/15 text-verified',
+                  }
+                  return (
+                    <article key={item.id} className="card rounded-2xl p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold">{name}</p>
+                          <p className="text-[11px] text-muted">
+                            {handle ? `${handle} · ` : ''}{new Date(item.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
+                            {item.task_title && ` · on "${item.task_title}"`}
+                          </p>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_TONE[item.status] ?? 'bg-line text-muted'}`}>
+                          {item.status === 'open' ? 'New' : item.status}
+                        </span>
+                      </div>
+
+                      <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed">{item.details}</p>
+                      {item.reported_name && (
+                        <p className="mt-1 text-[11px] text-muted">About: <span className="font-semibold text-ink">{item.reported_name}</span></p>
+                      )}
+
+                      {item.admin_note && (
+                        <p className="mt-2 rounded-lg bg-canvas p-2 text-[11px] text-muted">Your reply: {item.admin_note}</p>
+                      )}
+
+                      <textarea
+                        className="field mt-3 min-h-[60px] py-2 text-[12px]"
+                        placeholder="Reply to this member (optional)"
+                        value={feedbackNotes[item.id] ?? ''}
+                        onChange={(e) => setFeedbackNotes({ ...feedbackNotes, [item.id]: e.target.value })}
+                        maxLength={500}
+                      />
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          className="btn-ghost btn-sm flex-1"
+                          disabled={busy !== null}
+                          onClick={() => void handleFeedback(item.id, 'reviewing')}
+                        >
+                          Mark reviewing
+                        </button>
+                        <button
+                          className="btn-primary btn-sm flex-1"
+                          disabled={busy !== null}
+                          onClick={() => void handleFeedback(item.id, 'resolved')}
+                        >
+                          Done & reply
+                        </button>
+                      </div>
                     </article>
                   )
                 })}
@@ -661,6 +758,7 @@ export default function AdminModeration() {
                       { id: 'appeal', label: 'Appeals' },
                       { id: 'ad', label: 'Ads' },
                       { id: 'verification', label: 'Selfies' },
+                      { id: 'feedback', label: 'Feedback' },
                     ] as Array<{ id: 'all' | RecentReview['kind']; label: string }>).map(({ id, label }) => {
                       const active = recentFilter === id
                       const n = id === 'all' ? recent.length : recentCounts[id] ?? 0
@@ -772,6 +870,7 @@ const KIND_ICON = {
   appeal: MessageCircle,
   ad: Megaphone,
   verification: ShieldCheck,
+  feedback: MessageCircle,
 } as const
 
 const RECENT_STATUS_STYLE: Record<string, string> = {

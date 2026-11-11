@@ -116,7 +116,7 @@ export default function BottomNav() {
             profileTo,
             'Profile',
             (a) => <IconProfile active={a} />,
-            moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications,
+            moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications + moderation.feedback,
             'items need review',
           )}
         </div>

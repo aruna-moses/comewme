@@ -7,6 +7,7 @@ export interface ModerationCounts {
   appeals: number
   ads: number
   verifications: number
+  feedback: number
   latest_sos: {
     id: string
     created_at: string
@@ -23,6 +24,7 @@ export const EMPTY_MODERATION: ModerationCounts = {
   appeals: 0,
   ads: 0,
   verifications: 0,
+  feedback: 0,
   latest_sos: null,
 }
 
@@ -167,6 +169,41 @@ export async function fetchRecentReviews(limit = 30): Promise<RecentReview[]> {
   const { data, error } = await supabase.rpc('list_recent_reviews', { p_limit: limit })
   if (error) throw error
   return (data ?? []) as RecentReview[]
+}
+
+export interface ReportForAdmin {
+  id: string
+  reporter_id: string | null
+  reporter_name: string | null
+  reporter_username: string | null
+  category: string
+  details: string
+  reported_user_id: string | null
+  reported_name: string | null
+  task_id: string | null
+  task_title: string | null
+  status: 'open' | 'reviewing' | 'resolved'
+  admin_note: string | null
+  created_at: string
+}
+
+export async function fetchFeedbackForModerator(): Promise<ReportForAdmin[]> {
+  const { data, error } = await supabase.rpc('list_feedback_for_moderator')
+  if (error) throw error
+  return (data ?? []) as ReportForAdmin[]
+}
+
+export async function reviewFeedback(
+  id: string,
+  status: 'reviewing' | 'resolved',
+  note: string | null,
+) {
+  const { error } = await supabase.rpc('review_feedback', {
+    p_id: id,
+    p_status: status,
+    p_note: note?.trim() || null,
+  })
+  if (error) throw error
 }
 
 export function mapLink(lat: number | null, lng: number | null, address: string | null) {

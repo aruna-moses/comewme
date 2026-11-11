@@ -107,7 +107,7 @@ export default function WarningModal({
                 ? 'This decision prevents access to community features. If you think we got something wrong, you can appeal.'
                 : 'You won’t be able to post, message or request to join activities while this suspension is active.'}
             </p>
-            {permanent && <a className="mt-3 inline-block text-[13px] font-semibold text-amber underline" href="mailto:hello@comewme.app">Contact hello@comewme.app</a>}
+            {permanent && <a className="mt-3 inline-block text-[13px] font-semibold text-amber underline" href="mailto:comewme.app@gmail.com">Contact comewme.app@gmail.com</a>}
             <h2 className="mt-5 font-semibold">Appeal this decision</h2>
             {appealLoadError ? (
               <p role="alert" className="mt-3 text-[12px] text-alert">{appealLoadError}</p>

@@ -332,9 +332,9 @@ export default function Settings() {
                 SOS alerts, member reports and advertiser ads all land in one inbox.
               </p>
             </div>
-            {moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications > 0 && (
+            {moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications + moderation.feedback > 0 && (
               <span className="shrink-0 rounded-full bg-[#e53935] px-2 py-0.5 text-[10px] font-bold text-white">
-                {moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications}
+                {moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications + moderation.feedback}
               </span>
             )}
           </div>
@@ -356,7 +356,7 @@ export default function Settings() {
           <p className="text-[14px] font-semibold">Help &amp; support</p>
           <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
             A bug, a complaint, or a suggestion? A human reads every message. Tell us here, or email{' '}
-            <span className="font-semibold text-ink">hello@comewme.app</span>.
+            <span className="font-semibold text-ink">comewme.app@gmail.com</span>.
           </p>
           <Link to="/feedback" className="btn-primary btn-sm mt-3 w-full">
             Send feedback
