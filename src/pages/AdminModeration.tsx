@@ -366,35 +366,6 @@ export default function AdminModeration() {
           </div>
         ) : (
           <>
-            {/* Counters — tap to jump to a section below */}
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: 'sos', label: 'SOS', value: moderation.sos, urgent: true },
-                { id: 'reports', label: 'Reports', value: moderation.reports, urgent: true },
-                { id: 'appeals', label: 'Appeals', value: moderation.appeals, urgent: true },
-                { id: 'ads', label: 'Ads', value: moderation.ads, urgent: true },
-                { id: 'verifications', label: 'Selfies', value: moderation.verifications, urgent: true },
-                { id: 'feedback', label: 'Feedback', value: moderation.feedback, urgent: true },
-              ].map(({ id, label, value, urgent }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => toggleSection(id)}
-                  aria-label={`${label}: ${value} — open section`}
-                  className={`flex flex-col items-center justify-center gap-1 rounded-xl border p-2.5 transition active:scale-[0.98] ${
-                    value > 0
-                      ? urgent
-                        ? 'border-alert/40 bg-alert/5 text-alert'
-                        : 'border-amber/30 bg-sun/10 text-amber'
-                      : 'border-line bg-white text-muted'
-                  }`}
-                >
-                  <span className="text-[22px] font-extrabold leading-none tabular-nums">{value}</span>
-                  <span className="whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.18em] text-current">{label}</span>
-                </button>
-              ))}
-            </div>
-
             {/* SOS */}
             <CollapsibleSection
               title="SOS alerts"
