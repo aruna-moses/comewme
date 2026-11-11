@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -11,6 +11,7 @@ import {
   MapPin,
   MessageCircle,
   Megaphone,
+  Search,
   ShieldAlert,
   ShieldCheck,
   X,
@@ -76,6 +77,10 @@ export default function AdminModeration() {
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirmAction, setConfirmAction] = useState<{ kind: 'review' | 'dismiss'; id: string } | null>(null)
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
+  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [recentQuery, setRecentQuery] = useState('')
 
   const load = useCallback(async () => {
     setError(null)
@@ -95,6 +100,8 @@ export default function AdminModeration() {
       setAlerts(sos)
       setVerifications(pendingVerifications)
       setRecent(recentReviews)
+      // Selection is anchored to the pending list — after a refresh, drop ids that are no longer pending
+      setSelectedReports((prev) => new Set(pendingReports.filter((r) => prev.has(r.id)).map((r) => r.id)))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load the moderation queue.')
     } finally {
@@ -147,6 +154,48 @@ export default function AdminModeration() {
       setBusy(null)
     }
   }
+
+  const selectedCount = selectedReports.size
+  const allReportsSelected = reports.length > 0 && selectedCount === reports.length
+
+  function toggleAllReports() {
+    setSelectedReports(allReportsSelected ? new Set() : new Set(reports.map((r) => r.id)))
+  }
+
+  function toggleReport(id: string) {
+    setSelectedReports((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  async function handleBulkDismiss() {
+    setBulkConfirmOpen(false)
+    setBulkBusy(true)
+    setError(null)
+    try {
+      for (const id of selectedReports) {
+        await dismissViolation(id, 'Bulk dismissal — no action warranted')
+      }
+      setSelectedReports(new Set())
+      await load()
+      void refreshBadges()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not dismiss the selected reports.')
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
+  const filteredRecent = useMemo(() => {
+    const q = recentQuery.trim().toLowerCase()
+    if (!q) return recent
+    return recent.filter((item) =>
+      [item.title, item.display_name ?? '', item.username ?? '', item.note ?? '', item.status, item.kind].join(' ').toLowerCase().includes(q),
+    )
+  }, [recent, recentQuery])
 
   async function handleSOS(alert: SOSAlert, status: SOSStatus) {
     setBusy(alert.id)
@@ -429,11 +478,28 @@ export default function AdminModeration() {
 
             {/* Reports */}
             <section>
-              <h2 className="mb-3 font-display text-[18px] font-bold">Pending reports ({reports.length})</h2>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="font-display text-[18px] font-bold">Pending reports ({reports.length})</h2>
+                {reports.length > 0 && (
+                  <button type="button" className="btn-ghost btn-sm" onClick={toggleAllReports}>
+                    {allReportsSelected ? 'Clear selection' : 'Select all'}
+                  </button>
+                )}
+              </div>
               <div className="space-y-3">
                 {reports.length === 0 && <p className="text-[13px] text-muted">No reports waiting for review.</p>}
                 {reports.map((report) => (
                   <article key={report.id} className="card rounded-2xl p-4">
+                    <label className="mb-2 flex cursor-pointer items-center gap-2 text-[11px] font-semibold text-muted">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-[#ff9f1c]"
+                        checked={selectedReports.has(report.id)}
+                        onChange={() => toggleReport(report.id)}
+                        aria-label="Select this report"
+                      />
+                      Select this report
+                    </label>
                     <p className="text-[12px] text-muted">
                       {VIOLATION_CATEGORIES.find((item) => item.value === report.category)?.label} ·{' '}
                       {new Date(report.created_at).toLocaleString()}
@@ -475,6 +541,18 @@ export default function AdminModeration() {
                   </article>
                 ))}
               </div>
+              {selectedCount > 0 && (
+                <div className="sticky bottom-[76px] z-20 mt-3 flex items-center justify-between gap-2 rounded-xl border border-alert/30 bg-white p-2 shadow-sm">
+                  <p className="pl-1 text-[12px] font-semibold text-ink">{selectedCount} selected</p>
+                  <button
+                    className="btn-ghost btn-sm text-alert"
+                    disabled={bulkBusy}
+                    onClick={() => setBulkConfirmOpen(true)}
+                  >
+                    {bulkBusy ? 'Dismissing…' : 'Dismiss selected'}
+                  </button>
+                </div>
+              )}
             </section>
 
             {/* Appeals */}
@@ -502,12 +580,15 @@ export default function AdminModeration() {
                     />
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <button className="btn-primary" disabled={busy !== null} onClick={() => void handleAppeal(appeal.id, 'granted')}>
-                        {busy === appeal.id ? 'Saving…' : 'Grant appeal'}
+                        {busy === appeal.id ? 'Saving…' : 'Grant & reinstate'}
                       </button>
                       <button className="btn-ghost" disabled={busy !== null} onClick={() => void handleAppeal(appeal.id, 'denied')}>
                         Deny appeal
                       </button>
                     </div>
+                    <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                      Granting immediately restores their posting and joining rights.
+                    </p>
                   </article>
                 ))}
               </div>
@@ -524,18 +605,33 @@ export default function AdminModeration() {
               >
                 <span className="flex items-center gap-2 text-[13px] font-semibold">
                   <History size={16} className="text-amber" aria-hidden />
-                  Recently reviewed{recent.length > 0 ? ` (${recent.length})` : ''}
+                  Recently reviewed{filteredRecent.length > 0 ? ` (${filteredRecent.length}${recentQuery ? ` of ${recent.length}` : ''})` : ''}
                 </span>
                 <ChevronDown size={18} className={`shrink-0 transition-transform duration-200 ${recentOpen ? 'rotate-180' : ''}`} aria-hidden />
               </button>
               {recentOpen && (
                 <div id="reviewed-panel" className="mt-2 space-y-2">
-                  {recent.length === 0 && (
+                  <div className="flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2">
+                    <Search size={14} className="shrink-0 text-muted" aria-hidden />
+                    <input
+                      className="min-w-0 flex-1 bg-transparent py-1 text-[12px] outline-none placeholder:text-muted"
+                      placeholder="Search name, @handle, keyword, note…"
+                      aria-label="Search reviewed history"
+                      value={recentQuery}
+                      onChange={(event) => setRecentQuery(event.target.value)}
+                    />
+                    {recentQuery && (
+                      <button type="button" className="text-[11px] font-semibold text-muted underline underline-offset-2" onClick={() => setRecentQuery('')}>
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  {filteredRecent.length === 0 && (
                     <p className="rounded-xl border border-line bg-white p-4 text-[12px] leading-relaxed text-muted">
-                      Nothing here yet. Everything you approve, reject, dismiss or resolve gathers here for later — nothing is ever thrown away.
+                      {recentQuery ? 'No reviewed items match that search.' : 'Nothing here yet. Everything you approve, reject, dismiss or resolve gathers here for later — nothing is ever thrown away.'}
                     </p>
                   )}
-                  {recent.map((item) => (
+                  {filteredRecent.map((item) => (
                     <RecentItem key={`${item.kind}:${item.id}`} item={item} />
                   ))}
                 </div>
@@ -564,6 +660,20 @@ export default function AdminModeration() {
             if (target.kind === 'dismiss') void handleDismiss(target.id)
             else void handleReview(target.id)
           }}
+        />
+      )}
+
+      {bulkConfirmOpen && (
+        <ConfirmDialog
+          open
+          destructive
+          busy={bulkBusy}
+          title={`Dismiss ${selectedCount} report${selectedCount === 1 ? '' : 's'}?`}
+          message="No action is taken and the members are never notified. Each report is marked resolved and disappears from the queue for good."
+          cancelLabel="Keep reviewing"
+          confirmLabel={`Dismiss ${selectedCount}`}
+          onCancel={() => setBulkConfirmOpen(false)}
+          onConfirm={() => void handleBulkDismiss()}
         />
       )}
 
