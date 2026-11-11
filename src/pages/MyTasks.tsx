@@ -171,6 +171,11 @@ export default function MyTasks() {
             }`}
           >
             Posted ({hosted.length})
+            {pendingApplications > 0 && (
+              <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#e53935] px-1.5 align-middle text-[10px] font-bold leading-none text-white">
+                {pendingApplications > 99 ? '99+' : pendingApplications}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setTab('going')}

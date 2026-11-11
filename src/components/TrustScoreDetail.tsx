@@ -11,6 +11,8 @@ interface Props {
   has_reports?: boolean;
   open: boolean;
   onClose: () => void;
+  /** Owner's display name — pass only when someone else is viewing this profile. */
+  name?: string;
 }
 
 export default function TrustScoreDetail({
@@ -23,6 +25,7 @@ export default function TrustScoreDetail({
   has_reports = false,
   open,
   onClose,
+  name,
 }: Props) {
   const result = calculateTrustScore({
     tasks_completed,
@@ -37,7 +40,7 @@ export default function TrustScoreDetail({
     <Sheet open={open} onClose={onClose} title="Trust score details">
       <div className="space-y-4">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="font-display text-lg font-bold">Your trust score</h2>
+          <h2 className="font-display text-lg font-bold">{name ? `${name}'s trust score` : 'Your trust score'}</h2>
           <span className="font-display text-[24px] font-bold">{result.score}%</span>
         </div>
 
@@ -53,7 +56,9 @@ export default function TrustScoreDetail({
 
         <p className="text-[13px] font-semibold text-ink">{result.level}</p>
         <p className="text-[12px] text-muted mb-4">
-          Based on your activity, verification, and history on Come w' me.
+          {name
+            ? 'Based on their activity, verification, and history on Come w\u2019 me.'
+            : 'Based on your activity, verification, and history on Come w\u2019 me.'}
         </p>
 
         <div className="space-y-2">
@@ -82,8 +87,9 @@ export default function TrustScoreDetail({
         </div>
 
         <div className="pt-4 border-t border-line text-[12px] text-muted">
-          Your score can go up by completing more activities and keeping a clean record.
-          It can go down if you are reported or break the community guidelines.
+          {name
+            ? 'A high score means they show up, follow the rules and keep a clean record — the same three things we check every time.'
+            : 'Your score can go up by completing more activities and keeping a clean record. It can go down if you are reported or break the community guidelines.'}
         </div>
       </div>
     </Sheet>

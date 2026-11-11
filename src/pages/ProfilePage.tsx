@@ -215,6 +215,7 @@ export default function ProfilePage() {
           tasks_completed={profile.tasks_completed}
           verification_status={profile.verification_status}
           avatar_url={profile.avatar_url}
+          name={isMe ? undefined : profile.display_name}
           phone={profile.phone}
           has_good_reviews={avg ? Number(avg) >= 4 : true}
           has_reports={false}
