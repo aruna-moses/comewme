@@ -158,6 +158,8 @@ export interface RecentReview {
   display_name: string | null
   username: string | null
   detail?: RecentReviewDetail | null
+  related_kind?: 'task' | 'profile' | 'admin_ads' | null
+  related_id?: string | null
 }
 
 /** Everything the reviewer has finished in the last while, newest first — for later reference. */

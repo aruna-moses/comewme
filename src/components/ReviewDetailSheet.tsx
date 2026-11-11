@@ -71,6 +71,28 @@ export default function ReviewDetailSheet({
           </p>
         </div>
 
+        {(() => {
+          const related =
+            item.related_kind === 'task' && item.related_id
+              ? { label: 'Open activity', href: `/task/${item.related_id}` }
+              : item.related_kind === 'profile' && item.related_id
+                ? { label: 'Open member profile', href: `/profile/${item.related_id}` }
+                : item.related_kind === 'admin_ads'
+                  ? { label: 'Open ad review', href: '/admin/ads' }
+                  : null
+          return related ? (
+            <a
+              href={related.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-[12px] font-semibold text-ink transition hover:border-amber/40 hover:text-amber"
+            >
+              {related.label}
+              <ExternalLink size={12} aria-hidden />
+            </a>
+          ) : null
+        })()}
+
         {/* SOS detail */}
         {item.kind === 'sos' && (
           <div className="space-y-2">
