@@ -108,9 +108,22 @@ export default function ProfileDetailsSheet({
           </div>
           {profile?.verification_status !== 'verified' && (
             <div className="mt-3">
-              <p className="text-[11px] leading-relaxed text-muted">
-                Send a clear selfie holding anything small in frame. You don't have to post it publicly — only moderators see it.
-              </p>
+              <div className="rounded-xl border border-amber/25 bg-sun/15 p-3 text-[11px] leading-relaxed text-ink/85">
+                <p className="font-bold text-ink">Before you tap — three quick rules</p>
+                <ul className="mt-1.5 list-disc space-y-1 pl-4">
+                  <li>Your selfie and your public avatar must be <strong>the same person</strong> — clear face, no sunglasses or hat.</li>
+                  <li>Lighting can be whatever you have — just <strong>you, clearly visible</strong> in both.</li>
+                  <li>If they don&apos;t match, your review will likely be <strong>declined</strong>. You can edit your avatar first if it&apos;s hard to recognise you.</li>
+                </ul>
+              </div>
+              {profile?.avatar_url && (
+                <div className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-canvas p-2">
+                  <img src={profile.avatar_url} alt="Current profile photo" className="h-12 w-12 rounded-xl object-cover" loading="lazy" />
+                  <p className="text-[11px] leading-snug text-muted">
+                    This is what moderators will compare your selfie to. If it&apos;s hard to recognise you, update your avatar first (Profile → Settings → photo).
+                  </p>
+                </div>
+              )}
               <label className="btn-ghost btn-sm mt-2 cursor-pointer">
                 {verifyBusy ? (<><Loader2 size={14} className="animate-spin" aria-hidden /> Uploading…</>) : submitted ? 'Re-send selfie' : 'Send selfie'}
                 <input
