@@ -6,6 +6,7 @@ export interface ModerationCounts {
   reports: number
   appeals: number
   ads: number
+  verifications: number
   latest_sos: {
     id: string
     created_at: string
@@ -21,6 +22,7 @@ export const EMPTY_MODERATION: ModerationCounts = {
   reports: 0,
   appeals: 0,
   ads: 0,
+  verifications: 0,
   latest_sos: null,
 }
 
@@ -32,6 +34,56 @@ export async function fetchModerationCounts(): Promise<ModerationCounts> {
 }
 
 export type SOSStatus = 'pending' | 'reviewed' | 'resolved' | 'false_alarm'
+
+export interface VerificationSubmission {
+  id: string
+  user_id: string
+  display_name: string | null
+  username: string | null
+  avatar_url: string | null
+  selfie_path: string
+  /** Signed by the moderator on read — only valid for an hour. */
+  selfie_url: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+}
+
+export async function fetchPendingVerifications(): Promise<VerificationSubmission[]> {
+  const { data, error } = await supabase.rpc('list_pending_verifications')
+  if (error) throw error
+  const rows = (data ?? []) as Array<{
+    id: string
+    user_id: string
+    display_name: string | null
+    username: string | null
+    avatar_url: string | null
+    selfie_path: string
+    status: 'pending'
+    created_at: string
+  }>
+  const enriched = await Promise.all(
+    rows.map(async (row) => {
+      const { data: signed } = await supabase.storage
+        .from('verifications')
+        .createSignedUrl(row.selfie_path, 60 * 60)
+      return { ...row, selfie_url: signed?.signedUrl ?? null }
+    }),
+  )
+  return enriched
+}
+
+export async function reviewVerification(
+  id: string,
+  status: 'approved' | 'rejected',
+  note: string | null,
+) {
+  const { error } = await supabase.rpc('review_verification', {
+    p_id: id,
+    p_status: status,
+    p_note: note?.trim() || null,
+  })
+  if (error) throw error
+}
 
 export interface SOSAlert {
   id: string

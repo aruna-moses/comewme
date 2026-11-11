@@ -332,9 +332,9 @@ export default function Settings() {
                 SOS alerts, member reports and advertiser ads all land in one inbox.
               </p>
             </div>
-            {moderation.sos + moderation.reports + moderation.appeals + moderation.ads > 0 && (
+            {moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications > 0 && (
               <span className="shrink-0 rounded-full bg-[#e53935] px-2 py-0.5 text-[10px] font-bold text-white">
-                {moderation.sos + moderation.reports + moderation.appeals + moderation.ads}
+                {moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications}
               </span>
             )}
           </div>

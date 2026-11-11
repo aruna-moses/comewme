@@ -7,6 +7,7 @@ import {
   ExternalLink,
   MapPin,
   ShieldAlert,
+  ShieldCheck,
   X,
 } from 'lucide-react'
 import {
@@ -17,8 +18,8 @@ import {
   reviewViolation,
   reviewViolationAppeal,
 } from '../lib/api'
-import { fetchSOSAlerts, mapLink, reviewSOSAlert } from '../lib/moderation'
-import type { SOSAlert, SOSStatus } from '../lib/moderation'
+import { fetchSOSAlerts, fetchPendingVerifications, mapLink, reviewSOSAlert, reviewVerification } from '../lib/moderation'
+import type { SOSAlert, SOSStatus, VerificationSubmission } from '../lib/moderation'
 import type { Violation, ViolationSeverity } from '../types'
 import { VIOLATION_CATEGORIES } from '../types'
 import { useNotifications } from '../context/NotificationContext'
@@ -58,10 +59,12 @@ export default function AdminModeration() {
   const [reports, setReports] = useState<Violation[]>([])
   const [appeals, setAppeals] = useState<PendingAppeal[]>([])
   const [alerts, setAlerts] = useState<SOSAlert[]>([])
+  const [verifications, setVerifications] = useState<VerificationSubmission[]>([])
   const [severity, setSeverity] = useState<Record<string, ViolationSeverity>>({})
   const [actions, setActions] = useState<Record<string, string>>({})
   const [responses, setResponses] = useState<Record<string, string>>({})
   const [sosNotes, setSosNotes] = useState<Record<string, string>>({})
+  const [verificationNotes, setVerificationNotes] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -73,14 +76,16 @@ export default function AdminModeration() {
       const allowed = await isModerator()
       setModerator(allowed)
       if (!allowed) return
-      const [pendingReports, pendingAppeals, sos] = await Promise.all([
+      const [pendingReports, pendingAppeals, sos, pendingVerifications] = await Promise.all([
         getPendingReports(),
         getPendingViolationAppeals(),
         fetchSOSAlerts().catch(() => [] as SOSAlert[]),
+        fetchPendingVerifications().catch(() => [] as VerificationSubmission[]),
       ])
       setReports(pendingReports)
       setAppeals(pendingAppeals)
       setAlerts(sos)
+      setVerifications(pendingVerifications)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load the moderation queue.')
     } finally {
@@ -148,6 +153,20 @@ export default function AdminModeration() {
     }
   }
 
+  async function handleVerification(id: string, status: 'approved' | 'rejected') {
+    setBusy(id)
+    setError(null)
+    try {
+      await reviewVerification(id, status, verificationNotes[id] ?? null)
+      await load()
+      void refreshBadges()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not update this verification.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   const pendingSOS = alerts.filter((a) => a.status === 'pending')
 
   if (loading) return <Spinner />
@@ -171,11 +190,12 @@ export default function AdminModeration() {
         ) : (
           <>
             {/* Counters */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-2">
               <Tile label="SOS" value={moderation.sos} tone={moderation.sos > 0 ? 'alert' : 'plain'} />
               <Tile label="Reports" value={moderation.reports} tone="plain" />
               <Tile label="Appeals" value={moderation.appeals} tone="plain" />
               <Tile label="Ads" value={moderation.ads} tone="plain" />
+              <Tile label="Selfies" value={moderation.verifications} tone={moderation.verifications > 0 ? 'alert' : 'plain'} />
             </div>
 
             {/* SOS */}
@@ -287,6 +307,98 @@ export default function AdminModeration() {
                           </div>
                         </>
                       )}
+                    </article>
+                  )
+                })}
+              </div>
+            </section>
+
+            {/* Selfie verification queue */}
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 font-display text-[18px] font-bold">
+                  <ShieldCheck size={18} className={verifications.length > 0 ? 'text-verified' : 'text-muted'} aria-hidden />
+                  Selfie verification
+                </h2>
+                <span className="text-[12px] text-muted">{verifications.length} waiting</span>
+              </div>
+
+              {verifications.length === 0 && (
+                <p className="rounded-xl border border-line bg-white p-4 text-[13px] text-muted">
+                  Nothing waiting. When a member sends a selfie, match it against their profile photo and approve — the green check flips on instantly.
+                </p>
+              )}
+
+              <div className="space-y-3">
+                {verifications.map((sub) => {
+                  const name = sub.display_name || 'Member'
+                  return (
+                    <article key={sub.id} className="card rounded-2xl p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold">{name}</p>
+                          <p className="text-[11px] text-muted">
+                            {sub.username ? `@${sub.username} · ` : ''}
+                            Sent {timeAgo(sub.created_at)}
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-sun/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber">
+                          Pending
+                        </span>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <figure className="overflow-hidden rounded-xl border border-line bg-canvas">
+                          <p className="border-b border-line bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                            Profile photo
+                          </p>
+                          {sub.avatar_url ? (
+                            <img src={sub.avatar_url} alt="" className="h-40 w-full object-cover" loading="lazy" />
+                          ) : (
+                            <div className="flex h-40 items-center justify-center text-[11px] text-muted">No profile photo</div>
+                          )}
+                        </figure>
+                        <figure className="overflow-hidden rounded-xl border border-line bg-canvas">
+                          <p className="border-b border-line bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                            Selfie
+                          </p>
+                          {sub.selfie_url ? (
+                            <a href={sub.selfie_url} target="_blank" rel="noopener noreferrer">
+                              <img src={sub.selfie_url} alt="" className="h-40 w-full object-cover" loading="lazy" />
+                            </a>
+                          ) : (
+                            <div className="flex h-40 items-center justify-center text-[11px] text-muted">Could not load</div>
+                          )}
+                        </figure>
+                      </div>
+
+                      <input
+                        className="field mt-3 py-2 text-[12px]"
+                        placeholder="Note to the member (optional)"
+                        value={verificationNotes[sub.id] ?? ''}
+                        onChange={(e) => setVerificationNotes({ ...verificationNotes, [sub.id]: e.target.value })}
+                      />
+
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          className="btn-primary btn-sm flex-1"
+                          disabled={busy !== null}
+                          onClick={() => void handleVerification(sub.id, 'approved')}
+                        >
+                          <Check size={14} />
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-ghost btn-sm flex-1 text-alert"
+                          disabled={busy !== null}
+                          onClick={() => void handleVerification(sub.id, 'rejected')}
+                        >
+                          <X size={14} />
+                          Reject
+                        </button>
+                      </div>
                     </article>
                   )
                 })}
