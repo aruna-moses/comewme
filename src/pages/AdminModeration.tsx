@@ -31,6 +31,7 @@ import { VIOLATION_CATEGORIES } from '../types'
 import { useNotifications } from '../context/NotificationContext'
 import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
+import ReviewDetailSheet from '../components/ReviewDetailSheet'
 
 const SEVERITY_LABELS: Record<string, string> = {
   warning: 'a warning',
@@ -68,6 +69,7 @@ export default function AdminModeration() {
   const [verifications, setVerifications] = useState<VerificationSubmission[]>([])
   const [recent, setRecent] = useState<RecentReview[]>([])
   const [recentOpen, setRecentOpen] = useState(false)
+  const [detailItem, setDetailItem] = useState<RecentReview | null>(null)
   const [severity, setSeverity] = useState<Record<string, ViolationSeverity>>({})
   const [actions, setActions] = useState<Record<string, string>>({})
   const [responses, setResponses] = useState<Record<string, string>>({})
@@ -632,7 +634,7 @@ export default function AdminModeration() {
                     </p>
                   )}
                   {filteredRecent.map((item) => (
-                    <RecentItem key={`${item.kind}:${item.id}`} item={item} />
+                    <RecentItem key={`${item.kind}:${item.id}`} item={item} onSelect={() => setDetailItem(item)} />
                   ))}
                 </div>
               )}
@@ -677,6 +679,8 @@ export default function AdminModeration() {
         />
       )}
 
+      <ReviewDetailSheet item={detailItem} onClose={() => setDetailItem(null)} />
+
         {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] text-alert">{error}</p>}
       </main>
     </div>
@@ -714,13 +718,18 @@ function prettyTitle(item: RecentReview) {
   return item.title
 }
 
-function RecentItem({ item }: { item: RecentReview }) {
+function RecentItem({ item, onSelect }: { item: RecentReview; onSelect: () => void }) {
   const Icon = KIND_ICON[item.kind]
   const name = item.display_name || 'Member'
   const status = item.status.toUpperCase()
   const tone = RECENT_STATUS_STYLE[item.status] ?? 'bg-line text-muted'
   return (
-    <article className="card flex items-start gap-3 rounded-2xl p-3">
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-label={`Open details for ${prettyTitle(item)}`}
+      className="card flex w-full items-start gap-3 rounded-2xl p-3 text-left transition hover:border-amber/40"
+    >
       <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-canvas text-muted" aria-hidden>
         <Icon size={16} />
       </span>
@@ -737,7 +746,7 @@ function RecentItem({ item }: { item: RecentReview }) {
       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${tone}`}>
         {status}
       </span>
-    </article>
+    </button>
   )
 }
 

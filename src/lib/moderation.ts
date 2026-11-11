@@ -120,6 +120,34 @@ export async function reviewSOSAlert(id: string, status: SOSStatus, note: string
 
 export type ReviewKind = 'sos' | 'report' | 'appeal' | 'ad' | 'verification'
 
+export interface RecentReviewDetail {
+  task_title?: string | null
+  location_lat?: number | null
+  location_lng?: number | null
+  location_address?: string | null
+  media_url?: string | null
+  media_type?: 'image' | 'video' | null
+  description?: string | null
+  severity?: string | null
+  action_taken?: string | null
+  reported_by?: string | null
+  appeal_reason?: string | null
+  admin_response?: string | null
+  violation_description?: string | null
+  violation_category?: string | null
+  violation_severity?: string | null
+  brand_name?: string | null
+  cta_text?: string | null
+  destination_url?: string | null
+  image_url?: string | null
+  brand_color?: string | null
+  start_date?: string | null
+  end_date?: string | null
+  selfie_path?: string | null
+  avatar_url?: string | null
+  username?: string | null
+}
+
 export interface RecentReview {
   kind: ReviewKind
   id: string
@@ -129,6 +157,7 @@ export interface RecentReview {
   reviewed_at: string
   display_name: string | null
   username: string | null
+  detail?: RecentReviewDetail | null
 }
 
 /** Everything the reviewer has finished in the last while, newest first — for later reference. */
