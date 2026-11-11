@@ -94,6 +94,7 @@ function CollapsibleSection({
   open,
   onToggle,
   children,
+  preview,
 }: {
   title: string
   count: number
@@ -102,6 +103,8 @@ function CollapsibleSection({
   open: boolean
   onToggle: () => void
   children: ReactNode
+  /** One-line context shown when collapsed and count > 0. */
+  preview?: ReactNode
 }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
@@ -120,7 +123,12 @@ function CollapsibleSection({
         </span>
         <span className="min-w-0 flex-1">
           <span className="font-display text-[15px] font-bold leading-tight text-ink">{title}</span>
-          {sub && (
+          {!open && count > 0 && preview ? (
+            <span className="mt-1 block truncate text-[11px] leading-tight text-muted">
+              <span aria-hidden="true" className="mr-1 text-amber">▸</span>
+              {preview}
+            </span>
+          ) : sub && (
             <span className="mt-0.5 block truncate text-[11px] text-muted">{sub}</span>
           )}
         </span>
@@ -374,6 +382,7 @@ export default function AdminModeration() {
               urgent
               open={openSection.sos}
               onToggle={() => toggleSection('sos')}
+              preview={pendingSOS.length > 0 ? `${pendingSOS[0].display_name || 'Member'} · ${timeAgo(pendingSOS[0].created_at)}` : undefined}
             >
               {alerts.length === 0 && (
                 <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
@@ -488,6 +497,15 @@ export default function AdminModeration() {
               urgent={feedback.some((f) => f.status === 'open')}
               open={openSection.feedback}
               onToggle={() => toggleSection('feedback')}
+              preview={
+                (() => {
+                  const open = feedback.filter((f) => f.status !== 'resolved')
+                  const next = open[0]
+                  if (!next) return undefined
+                  const snippet = next.details.trim().replace(/\s+/g, ' ')
+                  return `${next.reporter_name || 'Member'}: "${snippet.length > 70 ? snippet.slice(0, 70) + '…' : snippet}"`
+                })()
+              }
             >
               {feedback.length === 0 && (
                 <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
@@ -565,6 +583,7 @@ export default function AdminModeration() {
               urgent={verifications.length > 0}
               open={openSection.verifications}
               onToggle={() => toggleSection('verifications')}
+              preview={verifications.length > 0 ? `${verifications[0].display_name || 'Member'} · ${timeAgo(verifications[0].created_at)}` : undefined}
             >
               {verifications.length === 0 && (
                 <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
@@ -656,6 +675,7 @@ export default function AdminModeration() {
               urgent={moderation.ads > 0}
               open={openSection.ads}
               onToggle={() => toggleSection('ads')}
+              preview={moderation.ads > 0 ? `${moderation.ads} ad${moderation.ads === 1 ? '' : 's'} awaiting approval` : undefined}
             >
               <Link to="/admin/ads" className="flex items-center justify-between rounded-xl border border-line bg-canvas p-4 transition active:bg-line">
                 <span>
@@ -678,6 +698,7 @@ export default function AdminModeration() {
               urgent={reports.length > 0}
               open={openSection.reports}
               onToggle={() => toggleSection('reports')}
+              preview={reports.length > 0 ? `${VIOLATION_CATEGORIES.find((c) => c.value === reports[0].category)?.label ?? reports[0].category} — ${(reports[0].description || '').trim().replace(/\s+/g, ' ').slice(0, 70)}${reports[0].description.length > 70 ? '…' : ''}` : undefined}
             >
               <div className="mb-3 flex items-center justify-between gap-2">
                 <span className="text-[12px] font-semibold text-muted">{reports.length > 0 ? 'Select all to bulk-dismiss' : ''}</span>
@@ -764,6 +785,7 @@ export default function AdminModeration() {
               urgent={appeals.length > 0}
               open={openSection.appeals}
               onToggle={() => toggleSection('appeals')}
+              preview={appeals.length > 0 ? `${VIOLATION_CATEGORIES.find((c) => c.value === appeals[0].violation_category)?.label ?? appeals[0].violation_category} — "${(appeals[0].appeal_reason || '').replace(/\s+/g, ' ').slice(0, 70)}${(appeals[0].appeal_reason || '').length > 70 ? '…' : ''}"` : undefined}
             >
               <div className="space-y-3">
                 {appeals.length === 0 && <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">No appeals waiting for review.</p>}
