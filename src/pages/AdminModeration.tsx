@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -10,8 +11,8 @@ import {
   History,
   Download,
   MapPin,
-  MessageCircle,
   Megaphone,
+  MessageCircle,
   Search,
   ShieldAlert,
   ShieldCheck,
@@ -85,6 +86,55 @@ function timeAgo(iso: string) {
   return `${Math.round(hours / 24)} d ago`
 }
 
+function CollapsibleSection({
+  title,
+  count,
+  sub,
+  urgent,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  count: number
+  sub?: string
+  urgent?: boolean
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left transition active:bg-canvas"
+      >
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold leading-none tabular-nums ${
+            urgent && count > 0 ? 'bg-alert text-white' : 'bg-line text-muted'
+          }`}
+        >
+          {count}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="font-display text-[15px] font-bold leading-tight text-ink">{title}</span>
+          {sub && (
+            <span className="mt-0.5 block truncate text-[11px] text-muted">{sub}</span>
+          )}
+        </span>
+        <ChevronDown
+          size={19}
+          className={`shrink-0 text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          aria-hidden
+        />
+      </button>
+      {open && <div className="border-t border-line px-3 py-3 sm:px-4">{children}</div>}
+    </section>
+  )
+}
+
 export default function AdminModeration() {
   const { moderation, refresh: refreshBadges } = useNotifications()
 
@@ -99,6 +149,16 @@ export default function AdminModeration() {
   const [recentOpen, setRecentOpen] = useState(false)
   const [detailItem, setDetailItem] = useState<RecentReview | null>(null)
   const [recentFilter, setRecentFilter] = useState<'all' | RecentReview['kind']>('all')
+  const [openSection, setOpenSection] = useState<Record<string, boolean>>({
+    sos: true,
+    verifications: true,
+    feedback: true,
+    ads: true,
+    reports: true,
+    appeals: true,
+    recent: false,
+  })
+  const toggleSection = (id: string) => setOpenSection((prev) => ({ ...prev, [id]: !prev[id] }))
   const [severity, setSeverity] = useState<Record<string, ViolationSeverity>>({})
   const [actions, setActions] = useState<Record<string, string>>({})
   const [responses, setResponses] = useState<Record<string, string>>({})
@@ -306,28 +366,46 @@ export default function AdminModeration() {
           </div>
         ) : (
           <>
-            {/* Counters */}
-            <div className="grid grid-cols-6 gap-2">
-              <Tile label="SOS" value={moderation.sos} tone={moderation.sos > 0 ? 'alert' : 'plain'} />
-              <Tile label="Reports" value={moderation.reports} tone="plain" />
-              <Tile label="Appeals" value={moderation.appeals} tone="plain" />
-              <Tile label="Ads" value={moderation.ads} tone="plain" />
-              <Tile label="Selfies" value={moderation.verifications} tone={moderation.verifications > 0 ? 'alert' : 'plain'} />
-              <Tile label="Feedback" value={moderation.feedback} tone={moderation.feedback > 0 ? 'alert' : 'plain'} />
+            {/* Counters — tap to jump to a section below */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'sos', label: 'SOS', value: moderation.sos, urgent: true },
+                { id: 'reports', label: 'Reports', value: moderation.reports, urgent: true },
+                { id: 'appeals', label: 'Appeals', value: moderation.appeals, urgent: true },
+                { id: 'ads', label: 'Ads', value: moderation.ads, urgent: true },
+                { id: 'verifications', label: 'Selfies', value: moderation.verifications, urgent: true },
+                { id: 'feedback', label: 'Feedback', value: moderation.feedback, urgent: true },
+              ].map(({ id, label, value, urgent }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => toggleSection(id)}
+                  aria-label={`${label}: ${value} — open section`}
+                  className={`flex flex-col items-center justify-center gap-1 rounded-xl border p-2.5 transition active:scale-[0.98] ${
+                    value > 0
+                      ? urgent
+                        ? 'border-alert/40 bg-alert/5 text-alert'
+                        : 'border-amber/30 bg-sun/10 text-amber'
+                      : 'border-line bg-white text-muted'
+                  }`}
+                >
+                  <span className="text-[22px] font-extrabold leading-none tabular-nums">{value}</span>
+                  <span className="whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.18em] text-current">{label}</span>
+                </button>
+              ))}
             </div>
 
             {/* SOS */}
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="flex items-center gap-2 font-display text-[18px] font-bold">
-                  <ShieldAlert size={18} className={pendingSOS.length > 0 ? 'text-alert' : 'text-muted'} />
-                  SOS alerts
-                </h2>
-                <span className="text-[12px] text-muted">{pendingSOS.length} waiting</span>
-              </div>
-
+            <CollapsibleSection
+              title="SOS alerts"
+              count={pendingSOS.length}
+              sub={pendingSOS.length === 0 ? 'All clear' : 'Tap to review'}
+              urgent
+              open={openSection.sos}
+              onToggle={() => toggleSection('sos')}
+            >
               {alerts.length === 0 && (
-                <p className="rounded-xl border border-line bg-white p-4 text-[13px] text-muted">
+                <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
                   No SOS alerts yet. When someone presses SOS during an activity, it lands here and a
                   red banner appears on every moderator screen.
                 </p>
@@ -429,20 +507,19 @@ export default function AdminModeration() {
                   )
                 })}
               </div>
-            </section>
+            </CollapsibleSection>
 
             {/* Member feedback */}
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="flex items-center gap-2 font-display text-[18px] font-bold">
-                  <Flag size={18} className={feedback.length > 0 ? 'text-amber' : 'text-muted'} aria-hidden />
-                  Member feedback
-                </h2>
-                <span className="text-[12px] text-muted">{feedback.length} total</span>
-              </div>
-
+            <CollapsibleSection
+              title="Member feedback"
+              count={feedback.filter((f) => f.status !== 'resolved').length}
+              sub={feedback.filter((f) => f.status !== 'resolved').length > 0 ? 'Tap to review feedback' : 'No new feedback'}
+              urgent={feedback.some((f) => f.status === 'open')}
+              open={openSection.feedback}
+              onToggle={() => toggleSection('feedback')}
+            >
               {feedback.length === 0 && (
-                <p className="rounded-xl border border-line bg-white p-4 text-[13px] text-muted">
+                <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
                   Nothing yet. Bug reports, complaints and suggestions arrive here — you read them, decide what to do, and optionally send a short note back.
                 </p>
               )}
@@ -507,20 +584,19 @@ export default function AdminModeration() {
                   )
                 })}
               </div>
-            </section>
+            </CollapsibleSection>
 
             {/* Selfie verification queue */}
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="flex items-center gap-2 font-display text-[18px] font-bold">
-                  <ShieldCheck size={18} className={verifications.length > 0 ? 'text-verified' : 'text-muted'} aria-hidden />
-                  Selfie verification
-                </h2>
-                <span className="text-[12px] text-muted">{verifications.length} waiting</span>
-              </div>
-
+            <CollapsibleSection
+              title="Selfie verification"
+              count={verifications.length}
+              sub={verifications.length === 0 ? 'All clear' : 'Tap to review'}
+              urgent={verifications.length > 0}
+              open={openSection.verifications}
+              onToggle={() => toggleSection('verifications')}
+            >
               {verifications.length === 0 && (
-                <p className="rounded-xl border border-line bg-white p-4 text-[13px] text-muted">
+                <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
                   Nothing waiting. When a member sends a selfie, match it against their profile photo and approve — the green check flips on instantly.
                 </p>
               )}
@@ -599,25 +675,41 @@ export default function AdminModeration() {
                   )
                 })}
               </div>
-            </section>
+            </CollapsibleSection>
 
             {/* Ads */}
-            <Link to="/admin/ads" className="card flex items-center justify-between rounded-2xl p-4">
-              <span>
-                <span className="block text-[14px] font-semibold">Ad review</span>
-                <span className="mt-0.5 block text-[12px] text-muted">
-                  {moderation.ads > 0
-                    ? `${moderation.ads} ad${moderation.ads === 1 ? '' : 's'} waiting for approval`
-                    : 'No ads waiting'}
+            <CollapsibleSection
+              title="Ad review"
+              count={moderation.ads}
+              sub={moderation.ads > 0 ? 'Tap to approve ads' : 'No ads waiting'}
+              urgent={moderation.ads > 0}
+              open={openSection.ads}
+              onToggle={() => toggleSection('ads')}
+            >
+              <Link to="/admin/ads" className="flex items-center justify-between rounded-xl border border-line bg-canvas p-4 transition active:bg-line">
+                <span>
+                  <span className="block text-[14px] font-semibold">Open the ad review queue</span>
+                  <span className="mt-0.5 block text-[12px] text-muted">
+                    {moderation.ads > 0
+                      ? `${moderation.ads} ad${moderation.ads === 1 ? '' : 's'} waiting for approval — approve to run on Discover`
+                      : 'No ads waiting for approval'}
+                  </span>
                 </span>
-              </span>
-              <span aria-hidden className="text-muted">→</span>
-            </Link>
+                <span aria-hidden className="text-muted">→</span>
+              </Link>
+            </CollapsibleSection>
 
             {/* Reports */}
-            <section>
+            <CollapsibleSection
+              title="Pending reports"
+              count={reports.length}
+              sub={reports.length === 0 ? 'All clear' : 'Tap to review'}
+              urgent={reports.length > 0}
+              open={openSection.reports}
+              onToggle={() => toggleSection('reports')}
+            >
               <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="font-display text-[18px] font-bold">Pending reports ({reports.length})</h2>
+                <span className="text-[12px] font-semibold text-muted">{reports.length > 0 ? 'Select all to bulk-dismiss' : ''}</span>
                 {reports.length > 0 && (
                   <button type="button" className="btn-ghost btn-sm" onClick={toggleAllReports}>
                     {allReportsSelected ? 'Clear selection' : 'Select all'}
@@ -691,13 +783,19 @@ export default function AdminModeration() {
                   </button>
                 </div>
               )}
-            </section>
+            </CollapsibleSection>
 
             {/* Appeals */}
-            <section>
-              <h2 className="mb-3 font-display text-[18px] font-bold">Appeals ({appeals.length})</h2>
+            <CollapsibleSection
+              title="Appeals"
+              count={appeals.length}
+              sub={appeals.length === 0 ? 'All clear' : 'Tap to review'}
+              urgent={appeals.length > 0}
+              open={openSection.appeals}
+              onToggle={() => toggleSection('appeals')}
+            >
               <div className="space-y-3">
-                {appeals.length === 0 && <p className="text-[13px] text-muted">No appeals waiting for review.</p>}
+                {appeals.length === 0 && <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">No appeals waiting for review.</p>}
                 {appeals.map((appeal) => (
                   <article key={appeal.id} className="card rounded-2xl p-4">
                     <p className="text-[12px] text-muted">
@@ -730,7 +828,7 @@ export default function AdminModeration() {
                   </article>
                 ))}
               </div>
-            </section>
+            </CollapsibleSection>
 
             {/* Recently reviewed — collapsed by default, newest first */}
             <section>
@@ -928,25 +1026,3 @@ function RecentItem({ item, onSelect }: { item: RecentReview; onSelect: () => vo
   )
 }
 
-function Tile({
-  label,
-  value,
-  tone,
-}: {
-  label: string
-  value: number
-  tone: 'alert' | 'plain'
-}) {
-  return (
-    <div
-      className={`rounded-xl border p-2.5 text-center ${
-        tone === 'alert' && value > 0 ? 'border-alert/40 bg-alert/5' : 'border-line bg-white'
-      }`}
-    >
-      <p className={`text-[18px] font-bold leading-none ${tone === 'alert' && value > 0 ? 'text-alert' : 'text-ink'}`}>
-        {value}
-      </p>
-      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted">{label}</p>
-    </div>
-  )
-}
