@@ -4,8 +4,13 @@ import {
   AlertTriangle,
   Check,
   CheckCheck,
+  ChevronDown,
   ExternalLink,
+  Flag,
+  History,
   MapPin,
+  MessageCircle,
+  Megaphone,
   ShieldAlert,
   ShieldCheck,
   X,
@@ -18,8 +23,8 @@ import {
   reviewViolation,
   reviewViolationAppeal,
 } from '../lib/api'
-import { fetchSOSAlerts, fetchPendingVerifications, mapLink, reviewSOSAlert, reviewVerification } from '../lib/moderation'
-import type { SOSAlert, SOSStatus, VerificationSubmission } from '../lib/moderation'
+import { fetchSOSAlerts, fetchPendingVerifications, fetchRecentReviews, mapLink, reviewSOSAlert, reviewVerification } from '../lib/moderation'
+import type { SOSAlert, SOSStatus, VerificationSubmission, RecentReview } from '../lib/moderation'
 import type { Violation, ViolationSeverity } from '../types'
 import { VIOLATION_CATEGORIES } from '../types'
 import { useNotifications } from '../context/NotificationContext'
@@ -60,6 +65,8 @@ export default function AdminModeration() {
   const [appeals, setAppeals] = useState<PendingAppeal[]>([])
   const [alerts, setAlerts] = useState<SOSAlert[]>([])
   const [verifications, setVerifications] = useState<VerificationSubmission[]>([])
+  const [recent, setRecent] = useState<RecentReview[]>([])
+  const [recentOpen, setRecentOpen] = useState(false)
   const [severity, setSeverity] = useState<Record<string, ViolationSeverity>>({})
   const [actions, setActions] = useState<Record<string, string>>({})
   const [responses, setResponses] = useState<Record<string, string>>({})
@@ -76,16 +83,18 @@ export default function AdminModeration() {
       const allowed = await isModerator()
       setModerator(allowed)
       if (!allowed) return
-      const [pendingReports, pendingAppeals, sos, pendingVerifications] = await Promise.all([
+      const [pendingReports, pendingAppeals, sos, pendingVerifications, recentReviews] = await Promise.all([
         getPendingReports(),
         getPendingViolationAppeals(),
         fetchSOSAlerts().catch(() => [] as SOSAlert[]),
         fetchPendingVerifications().catch(() => [] as VerificationSubmission[]),
+        fetchRecentReviews(30).catch(() => [] as RecentReview[]),
       ])
       setReports(pendingReports)
       setAppeals(pendingAppeals)
       setAlerts(sos)
       setVerifications(pendingVerifications)
+      setRecent(recentReviews)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load the moderation queue.')
     } finally {
@@ -503,6 +512,35 @@ export default function AdminModeration() {
                 ))}
               </div>
             </section>
+
+            {/* Recently reviewed — collapsed by default, newest first */}
+            <section>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-2 rounded-xl border border-line bg-white p-4 text-left transition hover:border-amber/40"
+                onClick={() => setRecentOpen((v) => !v)}
+                aria-expanded={recentOpen}
+                aria-controls="reviewed-panel"
+              >
+                <span className="flex items-center gap-2 text-[13px] font-semibold">
+                  <History size={16} className="text-amber" aria-hidden />
+                  Recently reviewed{recent.length > 0 ? ` (${recent.length})` : ''}
+                </span>
+                <ChevronDown size={18} className={`shrink-0 transition-transform duration-200 ${recentOpen ? 'rotate-180' : ''}`} aria-hidden />
+              </button>
+              {recentOpen && (
+                <div id="reviewed-panel" className="mt-2 space-y-2">
+                  {recent.length === 0 && (
+                    <p className="rounded-xl border border-line bg-white p-4 text-[12px] leading-relaxed text-muted">
+                      Nothing here yet. Everything you approve, reject, dismiss or resolve gathers here for later — nothing is ever thrown away.
+                    </p>
+                  )}
+                  {recent.map((item) => (
+                    <RecentItem key={`${item.kind}:${item.id}`} item={item} />
+                  ))}
+                </div>
+              )}
+            </section>
           </>
         )}
 
@@ -532,6 +570,64 @@ export default function AdminModeration() {
         {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] text-alert">{error}</p>}
       </main>
     </div>
+  )
+}
+
+const KIND_ICON = {
+  sos: ShieldAlert,
+  report: Flag,
+  appeal: MessageCircle,
+  ad: Megaphone,
+  verification: ShieldCheck,
+} as const
+
+const RECENT_STATUS_STYLE: Record<string, string> = {
+  approved: 'bg-verified/15 text-verified',
+  resolved: 'bg-verified/15 text-verified',
+  granted: 'bg-verified/15 text-verified',
+  reviewed: 'bg-sun/25 text-amber',
+  rejected: 'bg-alert/10 text-alert',
+  denied: 'bg-alert/10 text-alert',
+  false_alarm: 'bg-line text-muted',
+  paused: 'bg-line text-muted',
+}
+
+function prettyTitle(item: RecentReview) {
+  if (item.kind === 'report') {
+    return VIOLATION_CATEGORIES.find((c) => c.value === item.title)?.label ?? item.title
+  }
+  if (item.kind === 'appeal' && item.title.startsWith('appeal — ')) {
+    const slug = item.title.slice('appeal — '.length)
+    const label = VIOLATION_CATEGORIES.find((c) => c.value === slug)?.label ?? slug
+    return `Appeal — ${label}`
+  }
+  return item.title
+}
+
+function RecentItem({ item }: { item: RecentReview }) {
+  const Icon = KIND_ICON[item.kind]
+  const name = item.display_name || 'Member'
+  const status = item.status.toUpperCase()
+  const tone = RECENT_STATUS_STYLE[item.status] ?? 'bg-line text-muted'
+  return (
+    <article className="card flex items-start gap-3 rounded-2xl p-3">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-canvas text-muted" aria-hidden>
+        <Icon size={16} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13px] font-semibold">{prettyTitle(item)}</p>
+        <p className="mt-0.5 text-[11px] text-muted">
+          {name}
+          {item.username ? ` @${item.username}` : ''} · {timeAgo(item.reviewed_at)}
+        </p>
+        {item.note && (
+          <p className="mt-1.5 rounded-lg bg-canvas p-2 text-[11px] leading-relaxed text-ink/80">{item.note}</p>
+        )}
+      </div>
+      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${tone}`}>
+        {status}
+      </span>
+    </article>
   )
 }
 

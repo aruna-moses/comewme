@@ -118,6 +118,26 @@ export async function reviewSOSAlert(id: string, status: SOSStatus, note: string
   if (error) throw error
 }
 
+export type ReviewKind = 'sos' | 'report' | 'appeal' | 'ad' | 'verification'
+
+export interface RecentReview {
+  kind: ReviewKind
+  id: string
+  title: string
+  status: string
+  note: string | null
+  reviewed_at: string
+  display_name: string | null
+  username: string | null
+}
+
+/** Everything the reviewer has finished in the last while, newest first — for later reference. */
+export async function fetchRecentReviews(limit = 30): Promise<RecentReview[]> {
+  const { data, error } = await supabase.rpc('list_recent_reviews', { p_limit: limit })
+  if (error) throw error
+  return (data ?? []) as RecentReview[]
+}
+
 export function mapLink(lat: number | null, lng: number | null, address: string | null) {
   if (typeof lat === 'number' && typeof lng === 'number') {
     return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
