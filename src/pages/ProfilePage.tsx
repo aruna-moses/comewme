@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, MapPin, Pencil } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { fetchProfile, fetchReviews } from '../lib/api'
 import { supabase } from '../lib/supabase'
-import type { Profile, Review } from '../types'
+import { AREAS, CATEGORIES } from '../types'
+import type { Category, Profile, Review } from '../types'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
 import CharacterJourney from '../components/CharacterJourney'
@@ -12,6 +13,7 @@ import PersonalitySelector from '../components/PersonalitySelector'
 import ProfileMediaGallery from '../components/ProfileMediaGallery'
 import ReportButton from '../components/ReportButton'
 import TrustScoreDetail from '../components/TrustScoreDetail'
+import ProfileDetailsSheet from '../components/ProfileDetailsSheet'
 import { calculateTrustScore } from '../lib/trustScore'
 
 export default function ProfilePage() {
@@ -24,6 +26,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [trustOpen, setTrustOpen] = useState(false)
   const [growthOpen, setGrowthOpen] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -90,9 +93,20 @@ export default function ProfilePage() {
           </svg>
         </button>
         {isMe && (
-          <Link to="/settings" className="btn-ghost btn-sm" aria-label="Open settings">
-            Settings
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setDetailsOpen(true)}
+              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+              aria-label="Edit your profile details"
+            >
+              <Pencil size={13} aria-hidden />
+              Edit
+            </button>
+            <Link to="/settings" className="btn-ghost btn-sm" aria-label="Open settings">
+              Settings
+            </Link>
+          </div>
         )}
       </div>
 
@@ -104,8 +118,29 @@ export default function ProfilePage() {
               {profile.display_name}
             </h1>
             <p className="text-[13px] text-muted">@{profile.username}</p>
+            {(profile.area || (profile.interests && profile.interests.length > 0)) && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+                {profile.area && AREAS.includes(profile.area) && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-line/60 px-2 py-0.5 text-muted">
+                    <MapPin size={11} aria-hidden />
+                    {profile.area}
+                  </span>
+                )}
+                {profile.interests?.slice(0, 4).map((key) => {
+                  const label = CATEGORIES.find((c) => c.value === key)?.label ?? key
+                  return (
+                    <span key={key} className="inline-flex items-center gap-1 rounded-full bg-sun/15 px-2 py-0.5 text-amber">
+                      {label}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
+        {profile.bio && (
+          <p className="mt-3 text-[14px] leading-relaxed text-ink">{profile.bio}</p>
+        )}
 
         <div className="mt-5 grid grid-cols-3 gap-2">
           {[
@@ -206,6 +241,7 @@ export default function ProfilePage() {
           has_good_reviews={avg ? Number(avg) >= 4 : true}
           has_reports={false}
         />
+        <ProfileDetailsSheet open={detailsOpen} onClose={() => setDetailsOpen(false)} />
       </div>
     </div>
   )

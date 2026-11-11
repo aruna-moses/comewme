@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
-import { Moon, Sun, Megaphone, ShieldCheck, BookOpen, FileText, ChevronRight } from 'lucide-react'
+import { Moon, Sun, Megaphone, ShieldCheck, BookOpen, FileText, ChevronRight, Pencil } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { fetchMyVerification, submitVerification, updateProfile } from '../lib/api'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
-import { AREAS, CATEGORIES } from '../types'
-import type { Category, Profile } from '../types'
 
 const SUPPORT_LINKS: Array<{ to: string; icon: typeof BookOpen; title: string; note: string }> = [
   { to: '/violations', icon: ShieldCheck, title: 'Your reports & decisions', note: 'Warnings, suspensions, appeals — everything moderation ever did to your account, and the appeal button.' },
@@ -20,13 +18,6 @@ const SUPPORT_LINKS: Array<{ to: string; icon: typeof BookOpen; title: string; n
 export default function Settings() {
   const { profile, session, signOut, refreshProfile } = useAuth()
   const { theme, setTheme } = useTheme()
-
-  const [displayName, setDisplayName] = useState(profile?.display_name ?? '')
-  const [bio, setBio] = useState(profile?.bio ?? '')
-  const [area, setArea] = useState(profile?.area ?? 'Yaba')
-  const [interests, setInterests] = useState<Category[]>(profile?.interests ?? [])
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
 
   const [avatarBusy, setAvatarBusy] = useState(false)
   const [verifyBusy, setVerifyBusy] = useState(false)
@@ -42,31 +33,6 @@ export default function Settings() {
   }, [profile?.id])
 
   if (!profile || !session) return null
-
-  function toggleInterest(c: Category) {
-    setInterests((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
-  }
-
-  async function save() {
-    if (!profile) return
-    setSaving(true)
-    setSaved(false)
-    try {
-      await updateProfile(profile.id, {
-        display_name: displayName.trim(),
-        bio: bio.trim() || null,
-        area,
-        interests,
-      })
-      await refreshProfile()
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not save')
-    } finally {
-      setSaving(false)
-    }
-  }
 
   async function uploadAvatar(file: File) {
     if (!profile) return
@@ -182,58 +148,23 @@ export default function Settings() {
         </div>
       </div>
 
-      <section className="card mt-3 space-y-4 p-4" aria-labelledby="details-heading">
-        <p id="details-heading" className="text-[13px] font-semibold">Profile details</p>
-        <div>
-          <label className="label" htmlFor="dn">Display name</label>
-          <input
-            id="dn"
-            className="field"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            maxLength={60}
-          />
-        </div>
-
-        <div>
-          <label className="label" htmlFor="b">About you</label>
-          <textarea
-            id="b"
-            className="field min-h-[88px] resize-none"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            maxLength={240}
-          />
-        </div>
-
-        <div>
-          <label className="label" htmlFor="a">Area</label>
-          <select id="a" className="field" value={area} onChange={(e) => setArea(e.target.value)}>
-            {AREAS.map((a) => (
-              <option key={a} value={a}>{a}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="label">Interests</label>
-          <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => toggleInterest(c.value)}
-                className={`chip ${interests.includes(c.value) ? 'chip-active' : ''}`}
-              >
-                {c.label}
-              </button>
-            ))}
+      <Link
+        to={`/profile/${profile.id}`}
+        className="card mt-3 flex items-center justify-between gap-3 p-4 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
+            <Pencil size={17} aria-hidden />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold">Profile details</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+              Name, bio, area and interests — edit on your profile
+            </p>
           </div>
         </div>
-
-        <button className="btn-primary w-full" disabled={saving} onClick={save}>
-          {saving ? 'Saving…' : saved ? 'Saved' : 'Save changes'}
-        </button>
-      </section>
+        <ChevronRight size={18} className="mt-0.5 shrink-0 text-muted" aria-hidden />
+      </Link>
 
       <SectionLabel className="mt-5">Appearance</SectionLabel>
 
