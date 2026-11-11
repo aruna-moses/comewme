@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
-import { Moon, Sun, Megaphone } from 'lucide-react'
+import { Moon, Sun, Megaphone, ShieldCheck, BookOpen, FileText, ChevronRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -10,6 +10,12 @@ import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category, Profile } from '../types'
+
+const SUPPORT_LINKS: Array<{ to: string; icon: typeof BookOpen; title: string; note: string }> = [
+  { to: '/violations', icon: ShieldCheck, title: 'Your reports & decisions', note: 'Warnings, suspensions, appeals — everything moderation ever did to your account, and the appeal button.' },
+  { to: '/community-guidelines', icon: BookOpen, title: 'Community Guidelines', note: 'What’s allowed, what isn’t, and what happens if you break it — searchable by question.' },
+  { to: '/privacy', icon: FileText, title: 'Privacy Policy', note: 'What we collect, why, who else sees it, and how to delete or export your data.' },
+]
 
 export default function Settings() {
   const { profile, session, signOut, refreshProfile } = useAuth()
@@ -356,20 +362,31 @@ export default function Settings() {
           <p className="text-[14px] font-semibold">Help &amp; support</p>
           <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
             A bug, a complaint, or a suggestion? A human reads every message. Tell us here, or email{' '}
-            <span className="font-semibold text-ink">comewme.app@gmail.com</span>.
+            <a className="font-semibold text-ink underline underline-offset-2" href="mailto:comewme.app@gmail.com">comewme.app@gmail.com</a>.
           </p>
           <Link to="/feedback" className="btn-primary btn-sm mt-3 w-full">
             Send feedback
           </Link>
-          <Link to="/violations" className="btn-ghost btn-sm mt-2 w-full">
-            Your reports &amp; decisions
-          </Link>
-          <Link to="/community-guidelines" className="btn-ghost btn-sm mt-2 w-full">
-            Community Guidelines — what\u2019s allowed &amp; what isn\u2019t
-          </Link>
-          <Link to="/privacy" className="btn-ghost btn-sm mt-2 w-full">
-            Privacy Policy — what we collect, why &amp; your rights
-          </Link>
+        </div>
+
+        <div className="card divide-y divide-line overflow-hidden p-0" role="list">
+          {SUPPORT_LINKS.map(({ to, icon: Icon, title, note }) => (
+            <Link
+              key={to}
+              to={to}
+              role="listitem"
+              className="flex items-start gap-3 px-4 py-3 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:-outline-offset-2"
+            >
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber" aria-hidden>
+                <Icon size={16} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px] font-semibold text-ink">{title}</span>
+                <span className="mt-0.5 block text-[11px] leading-relaxed text-muted">{note}</span>
+              </span>
+              <ChevronRight size={18} className="mt-1 shrink-0 text-muted" aria-hidden />
+            </Link>
+          ))}
         </div>
 
         <button
