@@ -90,8 +90,8 @@ export default function ProfilePage() {
           </svg>
         </button>
         {isMe && (
-          <Link to="/settings" className="btn-ghost btn-sm">
-            Edit profile
+          <Link to="/settings" className="btn-ghost btn-sm" aria-label="Open settings">
+            Settings
           </Link>
         )}
       </div>
