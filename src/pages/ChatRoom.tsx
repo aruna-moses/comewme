@@ -542,7 +542,7 @@ export default function ChatRoom() {
                           {message.reply_to_message_id && message.reply_to_preview && (
                             <div className="mb-1.5 min-w-0 border-l-2 border-amber px-2 py-1 text-left">
                               <p className="truncate text-[10px] font-bold text-amber">
-                                {message.reply_to_sender_name ?? 'Message'}
+                                {message.reply_to_sender_id && profile?.id && message.reply_to_sender_id === profile.id ? 'You' : message.reply_to_sender_name ?? 'Message'}
                               </p>
                               <p className="truncate text-[11px] text-muted">{message.reply_to_preview}</p>
                             </div>

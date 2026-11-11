@@ -115,6 +115,7 @@ export interface Message {
   url: string | null
   duration: number | null
   reply_to_message_id?: string | null
+  reply_to_sender_id?: string | null
   reply_to_sender_name?: string | null
   reply_to_preview?: string | null
   deleted_at?: string | null

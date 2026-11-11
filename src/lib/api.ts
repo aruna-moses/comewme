@@ -339,6 +339,7 @@ export async function sendMessage(
     url,
     duration,
     reply_to_message_id: replyTo?.id ?? null,
+    reply_to_sender_id: replyTo?.sender_id ?? null,
     reply_to_sender_name: replyTo?.sender_name ?? null,
     reply_to_preview: replyPreview,
   }).select('*').single()
