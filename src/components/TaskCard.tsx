@@ -69,10 +69,13 @@ export default function TaskCard({
   task,
   verificationStatus,
   applicationStatus,
+  reviewBadge,
 }: {
   task: Task
   verificationStatus?: VerificationStatus
   applicationStatus?: JoinStatus
+  /** Number of pending join requests on this task (host view only) — rendered as a red badge. */
+  reviewBadge?: number
 }) {
   const [expanded, setExpanded] = useState(false)
   const sponsored = liveSponsor(task)
@@ -82,7 +85,15 @@ export default function TaskCard({
   const emoji = categoryEmoji(task.category)
 
   return (
-    <article className="card rounded-[22px] p-3 transition hover:shadow-lift">
+    <article className="card relative rounded-[22px] p-3 transition hover:shadow-lift">
+      {typeof reviewBadge === 'number' && reviewBadge > 0 && (
+        <span
+          aria-label={`${reviewBadge} pending join ${reviewBadge === 1 ? 'request' : 'requests'} waiting for review`}
+          className="absolute -right-2 -top-2 z-[2] flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-canvas bg-[#e53935] px-1.5 text-[11px] font-bold leading-none text-white shadow-sm"
+        >
+          {reviewBadge > 99 ? '99+' : reviewBadge}
+        </span>
+      )}
       <Link to={`/task/${task.id}`} className="block rounded-[18px] active:scale-[0.995]" aria-label={task.title}>
         <div className="flex items-start gap-3">
           <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] text-[30px] ${tileStyles[task.category]}`}>

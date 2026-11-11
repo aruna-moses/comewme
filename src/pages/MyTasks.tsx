@@ -209,7 +209,7 @@ export default function MyTasks() {
               id={`task-${t.id}`}
               className={targetTaskId === t.id ? 'task-reminder-highlight rounded-[22px]' : ''}
             >
-              <TaskCard task={t} applicationStatus={tab === 'going' ? applicationStatus : undefined} />
+              <TaskCard task={t} applicationStatus={tab === 'going' ? applicationStatus : undefined} reviewBadge={tab === 'hosting' ? pendingApplicants[t.id] ?? 0 : 0} />
               <div className="mt-2 flex items-center justify-between gap-2 px-1">
                 <span className="text-[12px] font-semibold text-muted">
                   {tab === 'hosting'
