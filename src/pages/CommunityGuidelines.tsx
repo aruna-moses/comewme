@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ChevronRight, ShieldCheck, Search, AlertCircle } from 'lucide-react'
+import { ArrowLeft, ChevronRight, ShieldCheck, Search, AlertCircle, Send, Loader2, Check } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { VIOLATION_CATEGORIES } from '../types'
+import { submitReport } from '../lib/api'
 
 const SECTIONS: Array<{ title: string; body: string | string[] }> = [
   {
@@ -101,6 +102,10 @@ function tokenise(value: string) {
 export default function CommunityGuidelines() {
   const { profile } = useAuth()
   const [question, setQuestion] = useState('')
+  const [askText, setAskText] = useState('')
+  const [askBusy, setAskBusy] = useState(false)
+  const [askDone, setAskDone] = useState(false)
+  const [askError, setAskError] = useState<string | null>(null)
 
   const scoredSections = useMemo(() => {
     const tokens = tokenise(question)
@@ -195,8 +200,62 @@ export default function CommunityGuidelines() {
                 <li className="rounded-xl bg-white p-3 text-[12px] text-muted ring-1 ring-line">
                   <p className="flex items-start gap-1.5">
                     <AlertCircle size={14} className="mt-0.5 shrink-0 text-amber" aria-hidden />
-                    <span>Not in here. Ask in the <Link to="/feedback" className="font-semibold text-amber">Feedback inbox</Link> or email <a className="underline" href="mailto:comewme.app@gmail.com">comewme.app@gmail.com</a> — a human reads every message.</span>
+                    <span>Not in here. You can ask a moderator instead — they read every question.</span>
                   </p>
+                  <form
+                    className="mt-2 space-y-2"
+                    onSubmit={async (event) => {
+                      event.preventDefault()
+                      setAskError(null)
+                      setAskDone(false)
+                      const text = (askText || question).trim()
+                      if (text.length < 4) {
+                        setAskError('Use at least a few words — a real question is easier to answer than “help”.')
+                        return
+                      }
+                      if (!profile) {
+                        setAskError('Sign in first so we know who to send the answer to.')
+                        return
+                      }
+                      setAskBusy(true)
+                      try {
+                        await submitReport({
+                          reporter_id: profile.id,
+                          category: 'feedback',
+                          details: `[Community Guidelines question] ${text}`,
+                        })
+                        setAskDone(true)
+                        setAskText('')
+                      } catch (err) {
+                        setAskError(err instanceof Error ? err.message : 'Could not send your question.')
+                      } finally {
+                        setAskBusy(false)
+                      }
+                    }}
+                  >
+                    <label htmlFor="ask-text" className="sr-only">What do you want to ask?</label>
+                    <textarea
+                      id="ask-text"
+                      className="field min-h-[72px] text-[13px]"
+                      placeholder="Write your question — keep it short and specific…"
+                      value={askText || question}
+                      onChange={(event) => setAskText(event.target.value)}
+                      required
+                    />
+                    {askError && <p role="alert" className="text-[11px] font-medium text-alert">{askError}</p>}
+                    {askDone && (
+                      <p role="status" className="flex items-center gap-1.5 rounded-lg bg-verified/10 p-2 text-[11px] font-medium text-verified">
+                        <Check size={13} aria-hidden /> Sent — a moderator will read it and reply in-app.
+                      </p>
+                    )}
+                    <button type="submit" className="btn-primary btn-sm w-full" disabled={askBusy || !profile}>
+                      {askBusy ? (
+                        <><Loader2 size={14} className="animate-spin" aria-hidden /> Sending…</>
+                      ) : (
+                        <><Send size={14} aria-hidden /> Ask the moderator</>
+                      )}
+                    </button>
+                  </form>
                 </li>
               )}
             </ul>
