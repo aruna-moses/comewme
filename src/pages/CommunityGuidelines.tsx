@@ -1,5 +1,6 @@
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ChevronRight, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ChevronRight, ShieldCheck, Search, AlertCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { VIOLATION_CATEGORIES } from '../types'
 
@@ -89,8 +90,39 @@ const SECTIONS: Array<{ title: string; body: string | string[] }> = [
   },
 ]
 
+function tokenise(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 2)
+}
+
 export default function CommunityGuidelines() {
   const { profile } = useAuth()
+  const [question, setQuestion] = useState('')
+
+  const scoredSections = useMemo(() => {
+    const tokens = tokenise(question)
+    if (tokens.length === 0) return SECTIONS.map((s) => ({ section: s, score: 1 }))
+
+    return SECTIONS
+      .map((section) => {
+        const haystack = [
+          section.title,
+          ...(Array.isArray(section.body) ? section.body : [section.body]),
+        ]
+          .join(' ')
+          .toLowerCase()
+        const score = tokens.reduce((sum, token) => {
+          if (haystack.includes(token)) return sum + (token.length > 5 ? 2 : 1)
+          return sum
+        }, 0)
+        return { section, score }
+      })
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score)
+  }, [question])
 
   return (
     <div className="min-h-screen pb-24">
@@ -128,6 +160,47 @@ export default function CommunityGuidelines() {
           <p className="mt-1 leading-relaxed text-ink/80">
             "Can I post a sexual task?" → <strong>No.</strong> Sexual, romantic, or companionship-for-pay tasks are a permanent ban on first post, no appeal. This one isn&apos;t flexible.
           </p>
+        </div>
+
+        {/* Instant answer box — matches against the same document a moderator reads. */}
+        <div className="mt-4 rounded-2xl border border-line bg-canvas p-4">
+          <label className="flex items-center gap-2 text-[13px] font-semibold text-ink" htmlFor="guideline-search">
+            <Search size={16} className="text-amber" aria-hidden />
+            Ask something
+          </label>
+          <p className="mt-1 text-[11px] leading-relaxed text-muted">
+            Type your question — we match instantly against these guidelines. Not legal advice and not a reviewer Decision, but it'll point to the right rule.
+          </p>
+          <input
+            id="guideline-search"
+            type="text"
+            className="field mt-2"
+            placeholder="e.g. Can I post a task to meet a girlfriend?"
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+          />
+          {question.trim().length > 0 && (
+            <ul className="mt-2 space-y-2">
+              {scoredSections.slice(0, 4).map(({ section }) => (
+                <li key={section.title} className="rounded-xl bg-white p-2.5 text-[12px] leading-relaxed text-ink ring-1 ring-line">
+                  <p className="font-semibold text-ink">{section.title}</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-4 text-muted">
+                    {(Array.isArray(section.body) ? (section.body as string[]).slice(0, 3) : [section.body as string]).map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+              {scoredSections.length === 0 && (
+                <li className="rounded-xl bg-white p-3 text-[12px] text-muted ring-1 ring-line">
+                  <p className="flex items-start gap-1.5">
+                    <AlertCircle size={14} className="mt-0.5 shrink-0 text-amber" aria-hidden />
+                    <span>Not in here. Ask in the <Link to="/feedback" className="font-semibold text-amber">Feedback inbox</Link> or email <a className="underline" href="mailto:comewme.app@gmail.com">comewme.app@gmail.com</a> — a human reads every message.</span>
+                  </p>
+                </li>
+              )}
+            </ul>
+          )}
         </div>
 
         {/* Category list */}
