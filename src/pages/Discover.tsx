@@ -23,10 +23,9 @@ export default function Discover() {
   const { profile, session, loading: authLoading } = useAuth()
 
   const [category, setCategory] = useState<Category | 'all'>('all')
-  const [compactHeader, setCompactHeader] = useState(false)
+  const [search, setSearch] = useState('')
   const [area, setArea] = useState<string>('all')
   const [forYou, setForYou] = useState(false)
-  const [search, setSearch] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   const [tasks, setTasks] = useState<Task[]>([])
@@ -100,13 +99,6 @@ export default function Discover() {
   )
 
   useEffect(() => {
-    const onScroll = () => setCompactHeader(window.scrollY > 48)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  useEffect(() => {
     void load(0)
   }, [load])
 
@@ -176,16 +168,14 @@ export default function Discover() {
   return (
     <div className="pb-6">
       <header
-        className={`sticky top-0 z-30 border-b border-line bg-canvas/95 backdrop-blur transition-all duration-200 ${compactHeader ? 'px-5 pb-1.5 pt-2' : 'px-5 pb-2 pt-8'}`}
+        className="border-b border-line bg-canvas px-5 pb-2 pt-8"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-bold tracking-[0.18em] text-amber">COME W' ME</p>
-            {!compactHeader && (
               <h1 className="mt-1 font-display text-[24px] font-bold leading-tight tracking-tight">
                 Find your people.
               </h1>
-            )}
           </div>
           {session && profile ? (
             <div className="flex shrink-0 items-center gap-1">
