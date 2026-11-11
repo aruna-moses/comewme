@@ -5,13 +5,19 @@ import { fetchChatUnreadCounts, fetchNotificationBadgeCounts } from '../lib/api'
 import type { NotificationBadgeCounts } from '../lib/api'
 import { EMPTY_MODERATION, fetchModerationCounts } from '../lib/moderation'
 import type { ModerationCounts } from '../lib/moderation'
+import { fetchNotifications, fetchUnreadCount, markAllNotificationsRead, markNotificationRead } from '../lib/notifications'
+import type { InAppNotification } from '../lib/notifications'
 import { supabase } from '../lib/supabase'
 
 interface NotificationState extends NotificationBadgeCounts {
   unreadByTask: Record<string, number>
   moderation: ModerationCounts
+  notifications: InAppNotification[]
+  unreadNotifications: number
   error: string | null
   refresh: () => Promise<void>
+  markNotificationRead: (id: string) => Promise<void>
+  markAllNotificationsRead: () => Promise<void>
 }
 
 const EMPTY_COUNTS: NotificationBadgeCounts = {
@@ -26,6 +32,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [counts, setCounts] = useState(EMPTY_COUNTS)
   const [unreadByTask, setUnreadByTask] = useState<Record<string, number>>({})
   const [moderation, setModeration] = useState<ModerationCounts>(EMPTY_MODERATION)
+  const [notifications, setNotifications] = useState<InAppNotification[]>([])
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [realtimeError, setRealtimeError] = useState<string | null>(null)
   const requestSequence = useRef(0)
@@ -36,6 +44,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       setCounts(EMPTY_COUNTS)
       setUnreadByTask({})
       setModeration(EMPTY_MODERATION)
+      setNotifications([])
+      setUnreadNotifications(0)
       setLoadError(null)
       setRealtimeError(null)
       return
@@ -43,15 +53,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     try {
       // Moderation is best-effort: if 014 has not been run yet the rest still works.
-      const [next, unreadCounts, mod] = await Promise.all([
+      const [next, unreadCounts, mod, inbox, unreadInbox] = await Promise.all([
         fetchNotificationBadgeCounts(),
         fetchChatUnreadCounts(),
         fetchModerationCounts().catch(() => EMPTY_MODERATION),
+        fetchNotifications(30).catch(() => [] as InAppNotification[]),
+        fetchUnreadCount().catch(() => 0),
       ])
       if (requestId !== requestSequence.current) return
       setCounts(next)
       setUnreadByTask(unreadCounts)
       setModeration(mod)
+      setNotifications(inbox)
+      setUnreadNotifications(unreadInbox)
       setLoadError(null)
     } catch (e) {
       if (requestId === requestSequence.current) {
@@ -67,6 +81,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       setCounts(EMPTY_COUNTS)
       setUnreadByTask({})
       setModeration(EMPTY_MODERATION)
+      setNotifications([])
+      setUnreadNotifications(0)
       setLoadError(null)
       setRealtimeError(null)
       return
@@ -88,6 +104,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_alerts' }, refreshIfActive)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'violations' }, refreshIfActive)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'advertisements' }, refreshIfActive)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, refreshIfActive)
       .subscribe((status) => {
         if (!active) return
         if (status === 'SUBSCRIBED') {
@@ -119,9 +136,24 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, [session?.user.id, refresh])
 
+  const markNotificationRead = useCallback(
+    async (id: string) => {
+      await markNotificationRead(id)
+      setNotifications((current) => current.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)))
+      setUnreadNotifications((current) => Math.max(0, current - 1))
+    },
+    [],
+  )
+
+  const markAllNotificationsRead = useCallback(async () => {
+    await markAllNotificationsRead()
+    setNotifications((current) => current.map((n) => (n.read_at ? n : { ...n, read_at: new Date().toISOString() })))
+    setUnreadNotifications(0)
+  }, [])
+
   const value = useMemo<NotificationState>(
-    () => ({ ...counts, unreadByTask, moderation, error: loadError ?? realtimeError, refresh }),
-    [counts, unreadByTask, moderation, loadError, realtimeError, refresh],
+    () => ({ ...counts, unreadByTask, moderation, notifications, unreadNotifications, error: loadError ?? realtimeError, refresh, markNotificationRead, markAllNotificationsRead }),
+    [counts, unreadByTask, moderation, notifications, unreadNotifications, loadError, realtimeError, refresh, markNotificationRead, markAllNotificationsRead],
   )
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>

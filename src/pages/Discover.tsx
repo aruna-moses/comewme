@@ -14,6 +14,7 @@ import EmptyState from '../components/EmptyState'
 import Avatar from '../components/Avatar'
 import AdCarousel from '../components/AdCarousel'
 import ActivityReminderSheet from '../components/ActivityReminderSheet'
+import NotificationBell from '../components/NotificationBell'
 import PublicHome from '../components/PublicHome'
 
 const PAGE = 20
@@ -22,6 +23,7 @@ export default function Discover() {
   const { profile, session, loading: authLoading } = useAuth()
 
   const [category, setCategory] = useState<Category | 'all'>('all')
+  const [compactHeader, setCompactHeader] = useState(false)
   const [area, setArea] = useState<string>('all')
   const [forYou, setForYou] = useState(false)
   const [search, setSearch] = useState('')
@@ -95,6 +97,13 @@ export default function Discover() {
   )
 
   useEffect(() => {
+    const onScroll = () => setCompactHeader(window.scrollY > 48)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
     void load(0)
   }, [load])
 
@@ -163,18 +172,25 @@ export default function Discover() {
 
   return (
     <div className="pb-6">
-      <header className="px-5 pb-2 pt-8">
+      <header
+        className={`sticky top-0 z-30 border-b border-line bg-canvas/95 backdrop-blur transition-all duration-200 ${compactHeader ? 'px-5 pb-1.5 pt-2' : 'px-5 pb-2 pt-8'}`}
+      >
         <div className="flex items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-[11px] font-bold tracking-[0.18em] text-amber">COME W' ME</p>
-            <h1 className="mt-1 font-display text-[24px] font-bold leading-tight tracking-tight">
-              Find your people.
-            </h1>
+            {!compactHeader && (
+              <h1 className="mt-1 font-display text-[24px] font-bold leading-tight tracking-tight">
+                Find your people.
+              </h1>
+            )}
           </div>
           {session && profile ? (
-            <Link to={`/profile/${profile.id}`} aria-label="Your profile">
-              <Avatar src={profile.avatar_url} name={profile.display_name} size={42} />
-            </Link>
+            <div className="flex shrink-0 items-center gap-1">
+              <NotificationBell />
+              <Link to={`/profile/${profile.id}`} aria-label="Your profile">
+                <Avatar src={profile.avatar_url} name={profile.display_name} size={42} />
+              </Link>
+            </div>
           ) : (
             <Link to="/login" className="text-[13px] font-semibold text-amber">Sign in</Link>
           )}
