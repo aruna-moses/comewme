@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Check, Eye, EyeOff, Footprints, Phone, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -455,9 +455,15 @@ export default function Login() {
       </div>
       </div>
 
-      <p className="px-8 pb-6 text-center text-[11px] leading-relaxed text-muted">
-        Meet in public places. Never send money to someone you have not met.
-      </p>
+      <div className="px-8 pb-6 text-center">
+        <p className="text-[11px] leading-relaxed text-muted">
+          Meet in public places. Never send money to someone you have not met.
+        </p>
+        <div className="mt-2 flex justify-center gap-x-4 text-[12px] font-semibold text-amber">
+          <Link to="/community-guidelines" className="underline underline-offset-2">Community Guidelines</Link>
+          <Link to="/privacy" className="underline underline-offset-2">Privacy Policy</Link>
+        </div>
+      </div>
     </div>
   )
 }

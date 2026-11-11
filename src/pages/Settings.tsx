@@ -362,10 +362,13 @@ export default function Settings() {
             Send feedback
           </Link>
           <Link to="/violations" className="btn-ghost btn-sm mt-2 w-full">
-            Your reports &amp; decisions — warnings, actions, appeals, all in one place
+            Your reports &amp; decisions
           </Link>
           <Link to="/community-guidelines" className="btn-ghost btn-sm mt-2 w-full">
-            Community Guidelines — what\u2019s allowed, what isn\u2019t, and what happens if you break them
+            Community Guidelines — what\u2019s allowed &amp; what isn\u2019t
+          </Link>
+          <Link to="/privacy" className="btn-ghost btn-sm mt-2 w-full">
+            Privacy Policy — what we collect, why &amp; your rights
           </Link>
         </div>
 
