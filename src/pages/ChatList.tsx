@@ -1,110 +1,35 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MessageCircle, Clock, MapPin, Pin, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { usePersistedState } from '../lib/drafts'
-import { supabase } from '../lib/supabase'
-import type { Task } from '../types'
 import { formatTime, taskEmoji } from '../lib/format'
 import Avatar from '../components/Avatar'
+import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
+import { loadChatsForUser } from '../lib/chatsData'
 
 export default function ChatList() {
   const { profile } = useAuth()
   const { unreadByTask, error: notificationError } = useNotifications()
-  const [chats, setChats] = useState<
-    Array<{
-      task: Task
-      lastMessage: { body: string; type: 'text' | 'image' | 'audio'; sender_name: string; sender_id: string; created_at: string } | null
-      members: Array<{ id: string; name: string; avatar: string | null }>
-    }>
-  >([])
-  const [loading, setLoading] = useState(true)
+  const cached = profile?.id ? readCache<Awaited<ReturnType<typeof loadChatsForUser>>>(cacheKeys.chats(profile.id)) : undefined
+
+  const [chats, setChats] = useState<Awaited<ReturnType<typeof loadChatsForUser>>>(cached ?? [])
+  const [loading, setLoading] = useState(() => !cached)
 
   useEffect(() => {
     let alive = true
     if (!profile?.id) return
-    setLoading(true)
-
-    // Tasks where user is host OR accepted participant
-    Promise.all([
-      supabase
-        .from('tasks')
-        .select('*')
-        .eq('host_id', profile.id)
-        .order('date_time', { ascending: false }),
-      supabase
-        .from('join_requests')
-        .select('task_id, status')
-        .eq('requester_id', profile.id)
-        .eq('status', 'accepted'),
-    ])
-      .then(async ([hostRes, joinRes]) => {
+    void loadChatsForUser(profile.id)
+      .then((entries) => {
         if (!alive) return
-        const hosted = (hostRes.data ?? []) as Task[]
-        const joinedIds = (joinRes.data ?? []).map((j) => j.task_id)
-
-        let joined: Task[] = []
-        if (joinedIds.length > 0) {
-          const { data } = await supabase
-            .from('tasks')
-            .select('*')
-            .in('id', joinedIds)
-            .order('date_time', { ascending: false })
-          joined = (data ?? []) as Task[]
-        }
-
-        const all = [...hosted, ...joined]
-        // Dedup by id
-        const seen = new Set<string>()
-        const unique = all.filter((t) => {
-          if (seen.has(t.id)) return false
-          seen.add(t.id)
-          return true
-        })
-
-        // For each task, fetch last message + member previews in parallel
-        const enriched = await Promise.all(
-          unique.map(async (t) => {
-            const [msgsRes, membersRes] = await Promise.all([
-              supabase
-                .from('messages')
-                .select('body, type, sender_name, sender_id, created_at')
-                .eq('task_id', t.id)
-                .order('created_at', { ascending: false })
-                .limit(1),
-              supabase
-                .from('join_requests')
-                .select('requester_id, requester_name, requester_avatar_url')
-                .eq('task_id', t.id)
-                .eq('status', 'accepted')
-                .order('created_at', { ascending: true })
-                .limit(4),
-            ])
-            const last = (msgsRes.data ?? [])[0]
-            const members = [
-              { id: t.host_id, name: t.host_name, avatar: t.host_avatar_url },
-              ...((membersRes.data ?? []) as Array<{ requester_id: string; requester_name: string; requester_avatar_url: string | null }>).map((m) => ({
-                id: m.requester_id,
-                name: m.requester_name,
-                avatar: m.requester_avatar_url,
-              })),
-            ].slice(0, 4)
-            return { task: t, lastMessage: last ?? null, members }
-          })
-        )
-
-        // Sort: tasks with messages first, then by date_time
-        enriched.sort((a, b) => {
-          const aTime = a.lastMessage?.created_at ?? a.task.date_time
-          const bTime = b.lastMessage?.created_at ?? b.task.date_time
-          return new Date(bTime).getTime() - new Date(aTime).getTime()
-        })
-
-        if (alive) setChats(enriched)
+        setChats(entries)
+        writeCache(cacheKeys.chats(profile.id!), entries)
+        setLoading(false)
       })
-      .catch(() => undefined)
-      .finally(() => alive && setLoading(false))
+      .catch(() => {
+        if (alive) setLoading(false)
+      })
     return () => {
       alive = false
     }

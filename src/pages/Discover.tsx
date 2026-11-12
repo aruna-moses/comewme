@@ -16,6 +16,7 @@ import AdCarousel from '../components/AdCarousel'
 import ActivityReminderSheet from '../components/ActivityReminderSheet'
 import NotificationBell from '../components/NotificationBell'
 import PublicHome from '../components/PublicHome'
+import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
 
 const PAGE = 20
 
@@ -27,11 +28,20 @@ export default function Discover() {
   const [area, setArea] = useState<string>('all')
   const [forYou, setForYou] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const interests = profile?.interests ?? []
 
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [applicationStatuses, setApplicationStatuses] = useState<Record<string, JoinStatus>>({})
-  const [verifiedMap, setVerifiedMap] = useState<Record<string, 'unverified' | 'pending' | 'verified'>>({})
-  const [loading, setLoading] = useState(true)
+  const isDefaultView = category === 'all' && area === 'all' && !(forYou && interests.length > 0) && !search.trim()
+  const cachedDefault = isDefaultView
+    ? readCache<{
+        tasks: Task[]
+        statuses: Record<string, JoinStatus>
+        verifiedMap: Record<string, 'unverified' | 'pending' | 'verified'>
+      }>(cacheKeys.feed())
+    : undefined
+  const [tasks, setTasks] = useState<Task[]>(() => cachedDefault?.tasks ?? [])
+  const [applicationStatuses, setApplicationStatuses] = useState<Record<string, JoinStatus>>(() => cachedDefault?.statuses ?? {})
+  const [verifiedMap, setVerifiedMap] = useState<Record<string, 'unverified' | 'pending' | 'verified'>>(() => cachedDefault?.verifiedMap ?? {})
+  const [loading, setLoading] = useState(() => !cachedDefault)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -47,8 +57,6 @@ export default function Discover() {
   const [upcomingError, setUpcomingError] = useState<string | null>(null)
   const [reminderOpen, setReminderOpen] = useState(false)
   const reminderKey = `comewme:reminder-shown:${new Date(Date.now() + 86_400_000).toDateString()}`
-
-  const interests = profile?.interests ?? []
 
   const refreshTimer = useRef<number | null>(null)
   const load = useCallback(
@@ -88,6 +96,9 @@ export default function Discover() {
         setVerifiedMap((prev) => (offset === 0 ? hostVerification : { ...prev, ...hostVerification }))
         setTasks((prev) => (offset === 0 ? rows : [...prev, ...rows]))
         setApplicationStatuses((prev) => (offset === 0 ? statuses : { ...prev, ...statuses }))
+        if (offset === 0 && isDefaultView) {
+          writeCache(cacheKeys.feed(), { tasks: rows, statuses, verifiedMap: hostVerification })
+        }
         setHasMore(rows.length === PAGE)
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not load activities')
@@ -102,7 +113,9 @@ export default function Discover() {
   )
 
   useEffect(() => {
-    void load(0)
+    // Quiet refresh when we already painted from cache; otherwise show the skeleton.
+    void load(0, cachedDefault !== undefined)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [load])
 
   // Keep Discover live: any task insert/update/delete refreshes the feed silently.

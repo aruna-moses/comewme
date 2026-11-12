@@ -5,22 +5,24 @@ import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 import type { JoinStatus, Task } from '../types'
-import { fetchVerificationStatuses } from '../lib/api'
 import SkeletonCard from '../components/SkeletonCard'
 import TaskCard from '../components/TaskCard'
-import { toError } from '../lib/errors'
+import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
+import { loadMyTasksForUser, type MyTasksBundle } from '../lib/myTasksData'
 
 export default function MyTasks() {
   const { profile } = useAuth()
   const { pendingApplications } = useNotifications()
   const location = useLocation()
-  const [hosted, setHosted] = useState<Task[]>([])
-  const [joined, setJoined] = useState<Task[]>([])
-  const [applicationStatuses, setApplicationStatuses] = useState<Record<string, JoinStatus>>({})
-  const [verifiedMap, setVerifiedMap] = useState<Record<string, 'unverified' | 'pending' | 'verified'>>({})
+  const cached = profile?.id ? readCache<MyTasksBundle>(cacheKeys.myTasks(profile.id)) : undefined
+
+  const [hosted, setHosted] = useState<Task[]>(cached?.hosted ?? [])
+  const [joined, setJoined] = useState<Task[]>(cached?.joined ?? [])
+  const [applicationStatuses, setApplicationStatuses] = useState<Record<string, JoinStatus>>(cached?.statuses ?? {})
+  const [verifiedMap, setVerifiedMap] = useState<Record<string, 'unverified' | 'pending' | 'verified'>>(cached?.verifiedMap ?? {})
   const [tab, setTab] = useState<'hosting' | 'going'>('hosting')
-  const [pendingApplicants, setPendingApplicants] = useState<Record<string, number>>({})
-  const [loading, setLoading] = useState(true)
+  const [pendingApplicants, setPendingApplicants] = useState<Record<string, number>>(cached?.pendingApplicants ?? {})
+  const [loading, setLoading] = useState(() => !cached)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -43,78 +45,23 @@ export default function MyTasks() {
   useEffect(() => {
     let alive = true
     if (!profile?.id) return
-    setLoading(true)
-    setLoadError(null)
-    Promise.all([
-      supabase
-        .from('tasks')
-        .select('*')
-        .eq('host_id', profile.id)
-        .order('date_time', { ascending: false }),
-      supabase
-        .from('join_requests')
-        .select('task_id, status')
-        .eq('requester_id', profile.id)
-        .neq('status', 'withdrawn'),
-    ])
-      .then(async ([hostRes, joinRes]) => {
+    void loadMyTasksForUser(profile.id)
+      .then((bundle) => {
         if (!alive) return
-        if (hostRes.error) throw hostRes.error
-        if (joinRes.error) throw joinRes.error
-        const h = (hostRes.data ?? []) as Task[]
-        setHosted(h)
-        // Verification map for hosted (own tasks) + joined (other hosts)
-        const ownHostIds = Array.from(new Set(h.map((t) => t.host_id)))
-        const hostMap = ownHostIds.length > 0 ? await fetchVerificationStatuses(ownHostIds) : {} as Record<string, 'unverified' | 'pending' | 'verified'>
-
-        const hostIds = h.map((task) => task.id)
-        if (hostIds.length > 0) {
-          const { data: applicants, error } = await supabase
-            .from('join_requests')
-            .select('task_id')
-            .in('task_id', hostIds)
-            .eq('status', 'pending')
-          if (error) throw toError(error)
-          const counts: Record<string, number> = {}
-          for (const applicant of applicants ?? []) {
-            counts[applicant.task_id] = (counts[applicant.task_id] ?? 0) + 1
-          }
-          if (alive) setPendingApplicants(counts)
-        } else {
-          setPendingApplicants({})
-        }
-
-        const applications = joinRes.data ?? []
-        const ids = applications.map((request) => request.task_id)
-        const statuses = Object.fromEntries(
-          applications.map((request) => [request.task_id, request.status as JoinStatus]),
-        )
-        if (alive) setApplicationStatuses(statuses)
-        const uniqueIds = [...new Set(ids)]
-        if (uniqueIds.length > 0) {
-          const { data, error } = await supabase
-            .from('tasks')
-            .select('*')
-            .in('id', uniqueIds)
-            .order('date_time', { ascending: false })
-          if (error) throw toError(error)
-          if (alive) setJoined((data ?? []) as Task[])
-          // Extend verification map with the hosts of joined activities (other hosts)
-          const joinedHostIds = Array.from(new Set((data ?? []).map((t) => t.host_id)))
-          const joinedVerified = joinedHostIds.length > 0 ? await fetchVerificationStatuses(joinedHostIds) : {} as Record<string, 'unverified' | 'pending' | 'verified'>
-          if (alive) setVerifiedMap({ ...hostMap, ...joinedVerified })
-        } else {
-          if (alive) {
-            setJoined([])
-            setApplicationStatuses({})
-            setVerifiedMap(hostMap)
-          }
-        }
+        setHosted(bundle.hosted)
+        setJoined(bundle.joined)
+        setApplicationStatuses(bundle.statuses)
+        setVerifiedMap(bundle.verifiedMap)
+        setPendingApplicants(bundle.pendingApplicants)
+        writeCache(cacheKeys.myTasks(profile.id!), bundle)
+        setLoadError(null)
       })
       .catch((error: unknown) => {
         if (alive) setLoadError(error instanceof Error ? error.message : 'Could not load your tasks.')
       })
-      .finally(() => alive && setLoading(false))
+      .finally(() => {
+        if (alive) setLoading(false)
+      })
     return () => {
       alive = false
     }

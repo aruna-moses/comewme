@@ -1,6 +1,7 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
+import { prefetchDiscoverFeed, prefetchMyTasks, prefetchChats, prefetchProfile } from '../lib/prefetch'
 
 function IconDiscover({ active }: { active: boolean }) {
   return (
@@ -57,6 +58,7 @@ export default function BottomNav() {
   ) return null
 
   const profileTo = profile ? `/profile/${profile.id}` : '/login'
+  const myId = session?.user.id
 
   const item = (
     to: string,
@@ -64,10 +66,14 @@ export default function BottomNav() {
     icon: (a: boolean) => JSX.Element,
     badgeCount = 0,
     badgeDescription = 'unread',
+    prefetcher?: () => void,
   ) => (
     <NavLink
       to={to}
       aria-label={badgeCount > 0 ? `${label}, ${badgeCount} ${badgeDescription}` : label}
+      onMouseEnter={prefetcher}
+      onPointerDown={prefetcher}
+      onFocus={prefetcher}
       className={({ isActive }) =>
         `flex flex-1 flex-col items-center gap-1 py-2 text-[11px] font-semibold transition ${
           isActive ? 'text-ink' : 'text-muted'
@@ -97,8 +103,8 @@ export default function BottomNav() {
     <>
       <nav aria-label="Main navigation" className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 rounded-t-[24px] border-t border-line bg-white/95 shadow-[0_-8px_24px_rgba(59,47,24,0.06)] backdrop-blur">
         <div className="flex items-stretch px-2 pb-[env(safe-area-inset-bottom)] pt-1">
-          {item('/', 'Discover', (a) => <IconDiscover active={a} />)}
-          {item('/mytasks', 'My Tasks', (a) => <IconMyTasks active={a} />, pendingApplications, 'pending applications')}
+          {item('/', 'Discover', (a) => <IconDiscover active={a} />, 0, 'unread', () => { void prefetchDiscoverFeed() })}
+          {item('/mytasks', 'My Tasks', (a) => <IconMyTasks active={a} />, pendingApplications, 'pending applications', () => { if (myId) void prefetchMyTasks(myId) })}
           <div className="flex flex-1 justify-center">
             <button
               onClick={() => (session ? navigate('/post') : navigate('/login'))}
@@ -111,13 +117,14 @@ export default function BottomNav() {
               </svg>
             </button>
           </div>
-          {item('/chats', 'Chats', (a) => <IconChat active={a} />, unreadMessages, 'unread messages')}
+          {item('/chats', 'Chats', (a) => <IconChat active={a} />, unreadMessages, 'unread messages', () => { if (myId) void prefetchChats(myId) })}
           {item(
             profileTo,
             'Profile',
             (a) => <IconProfile active={a} />,
             moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications + moderation.feedback,
             'items need review',
+            () => { if (myId) void prefetchProfile(myId) },
           )}
         </div>
       </nav>

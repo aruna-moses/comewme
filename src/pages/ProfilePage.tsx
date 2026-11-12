@@ -16,6 +16,7 @@ import ReportButton from '../components/ReportButton'
 import TrustScoreDetail from '../components/TrustScoreDetail'
 import ProfileDetailsSheet from '../components/ProfileDetailsSheet'
 import { calculateTrustScore } from '../lib/trustScore'
+import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
 
 export default function ProfilePage() {
   const { id } = useParams<{ id: string }>()
@@ -24,9 +25,10 @@ export default function ProfilePage() {
   const moderationPending = moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications + moderation.feedback
   const navigate = useNavigate()
 
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [reviews, setReviews] = useState<Review[]>([])
-  const [loading, setLoading] = useState(true)
+  const cached = id ? readCache<{ profile: Profile; reviews: Review[] }>(cacheKeys.profile(id)) : undefined
+  const [profile, setProfile] = useState<Profile | null>(cached?.profile ?? null)
+  const [reviews, setReviews] = useState<Review[]>(cached?.reviews ?? [])
+  const [loading, setLoading] = useState(() => !cached)
   const [trustOpen, setTrustOpen] = useState(false)
   const [growthOpen, setGrowthOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -35,7 +37,6 @@ export default function ProfilePage() {
     let alive = true
     let receivedRealtimeProfile = false
     if (!id) return
-    setLoading(true)
     const channel = supabase
       .channel(`profile-journey:${id}`)
       .on(
@@ -52,6 +53,7 @@ export default function ProfilePage() {
         if (!alive) return
         if (!receivedRealtimeProfile) setProfile(p)
         setReviews(r)
+        if (p) writeCache(cacheKeys.profile(id), { profile: p, reviews: r })
       })
       .catch(() => undefined)
       .finally(() => alive && setLoading(false))
