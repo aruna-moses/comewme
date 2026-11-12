@@ -202,7 +202,11 @@ export default function ChatList() {
           <p className="mt-1.5 line-clamp-1 text-[12px] text-muted">
             {c.lastMessage
               ? `${c.lastMessage.sender_id === profile?.id ? 'You' : c.lastMessage.sender_name}: ${
-                  c.lastMessage.type === 'image' ? 'Sent a photo' : c.lastMessage.type === 'audio' ? 'Sent a voice note' : c.lastMessage.body
+                  c.lastMessage.type === 'image'
+                    ? c.lastMessage.body || 'Sent a photo'
+                    : c.lastMessage.type === 'audio'
+                      ? 'Sent a voice note'
+                      : c.lastMessage.body
                 }`
               : 'No messages yet — say hello.'}
           </p>

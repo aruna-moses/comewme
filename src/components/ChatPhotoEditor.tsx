@@ -1,22 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Brush, Check, Crop, Eraser, Type, Undo2, X } from 'lucide-react'
+import { Brush, Check, Crop, Eraser, Undo2, X } from 'lucide-react'
 
 type Props = {
   file: File
   onCancel: () => void
-  onSend: (file: File) => void
+  onSend: (file: File, caption: string) => void
 }
 
 type Point = { x: number; y: number }
 type Stroke = { points: Point[]; color: string; size: number } // size in image px
-type Annotation = { id: string; x: number; y: number; text: string; color: string; size: number } // image px
 type CropRect = { x: number; y: number; w: number; h: number } // image px
 type AspectMode = 'free' | 'square' | 'portrait' | 'wide'
 type Handle = 'tl' | 'tr' | 'bl' | 'br'
-type Tool = 'none' | 'crop' | 'text' | 'brush'
+type Tool = 'none' | 'crop' | 'brush'
 
 const PALETTE = ['#ffffff', '#111111', '#ffb703', '#48cae4', '#06d6a0', '#ef476f', '#8338ec', '#ffd166']
-const TEXT_SIZES = [16, 22, 32, 44, 56, 72]
 const BRUSH_SIZES = [4, 8, 14, 20, 28]
 const MAX_BYTES = 1_500_000
 const MIN_CROP = 40
@@ -47,12 +45,9 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
   const [aspect, setAspect] = useState<AspectMode>('free')
   const [color, setColor] = useState('#ffffff')
   const [strokeSize, setStrokeSize] = useState(BRUSH_SIZES[1])
-  const [textSize, setTextSize] = useState(TEXT_SIZES[2])
-  const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [strokes, setStrokes] = useState<Stroke[]>([])
   const [currentStroke, setCurrentStroke] = useState<Stroke | null>(null)
-  const [textInput, setTextInput] = useState('')
-  const [textPos, setTextPos] = useState<Point | null>(null)
+  const [caption, setCaption] = useState('')
   const [busy, setBusy] = useState(false)
   const [tick, setTick] = useState(0)
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 })
@@ -155,42 +150,6 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
     }
     ctx.restore()
 
-    // Text annotations
-    ctx.save()
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    for (const a of annotations) {
-      const d = toDisp(a)
-      const fontPx = Math.max(6, a.size * scale)
-      ctx.font = `700 ${fontPx}px "Plus Jakarta Sans", system-ui, sans-serif`
-      ctx.lineWidth = Math.max(2, fontPx * 0.1)
-      ctx.strokeStyle = 'rgba(0,0,0,0.5)'
-      ctx.strokeText(a.text, d.x, d.y)
-      ctx.fillStyle = a.color
-      ctx.fillText(a.text, d.x, d.y)
-    }
-    if (tool === 'text' && textPos) {
-      const d = toDisp(textPos)
-      if (textInput.trim()) {
-        const fontPx = Math.max(6, (textSize / scale) * scale)
-        ctx.font = `700 ${fontPx}px "Plus Jakarta Sans", system-ui, sans-serif`
-        ctx.lineWidth = Math.max(2, fontPx * 0.1)
-        ctx.strokeStyle = 'rgba(0,0,0,0.5)'
-        ctx.strokeText(textInput, d.x, d.y)
-        ctx.fillStyle = color
-        ctx.fillText(textInput, d.x, d.y)
-      }
-      ctx.strokeStyle = 'rgba(255,255,255,0.85)'
-      ctx.lineWidth = 1.5
-      ctx.beginPath()
-      ctx.moveTo(d.x - 12, d.y)
-      ctx.lineTo(d.x + 12, d.y)
-      ctx.moveTo(d.x, d.y - 12)
-      ctx.lineTo(d.x, d.y + 12)
-      ctx.stroke()
-    }
-    ctx.restore()
-
     // Crop overlay — only when the crop tool is on
     if (tool === 'crop' && crop.w > 0 && crop.h > 0) {
       const tl = toDisp({ x: crop.x, y: crop.y })
@@ -244,8 +203,8 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
 
     void tick
   }, [
-    annotations, containerSize, crop, currentStroke, dispH, dispW, offsetX, offsetY,
-    scale, strokes, textInput, textPos, textSize, color, tool, tick, toDisp,
+    containerSize, crop, currentStroke, dispH, dispW, offsetX, offsetY,
+    scale, strokes, tool, tick, toDisp,
   ])
 
   useEffect(() => {
@@ -276,14 +235,6 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
       }
       strokeRef.current = stroke
       setCurrentStroke(stroke)
-      return
-    }
-
-    if (tool === 'text') {
-      setTextPos({
-        x: clamp(imgPt.x, 0, natural.w),
-        y: clamp(imgPt.y, 0, natural.h),
-      })
       return
     }
 
@@ -335,8 +286,7 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
     }
 
     if (drag.kind === 'crop-resize' && drag.handle) {
-      const next = resizeCrop(drag.startCrop, drag.handle, imgPt, aspect, natural)
-      setCrop(next)
+      setCrop(resizeCrop(drag.startCrop, drag.handle, imgPt, aspect, natural))
     }
   }
 
@@ -344,16 +294,14 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
     if (strokeRef.current) {
       const stroke = strokeRef.current
       strokeRef.current = null
-      if (stroke.points.length > 1) {
-        setStrokes((prev) => [...prev, stroke])
-      }
+      if (stroke.points.length > 1) setStrokes((prev) => [...prev, stroke])
       setCurrentStroke(null)
     }
     dragRef.current = null
   }
 
   /* ---------------------------------------------------------------- */
-  /* Crop presets + annotations                                        */
+  /* Crop presets                                                      */
   /* ---------------------------------------------------------------- */
 
   function applyAspect(next: AspectMode) {
@@ -378,29 +326,14 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
     })
   }
 
-  function addAnnotation() {
-    const text = textInput.trim()
-    if (!text || !textPos) return
-    setAnnotations((prev) => [
-      ...prev,
-      { id: `a-${Date.now()}-${prev.length}`, x: textPos.x, y: textPos.y, text, color, size: textSize / scale },
-    ])
-    setTextInput('')
-    setTextPos(null)
-    setTick((n) => n + 1)
-  }
-
   function undoLast() {
-    if (strokes.length > 0) setStrokes((prev) => prev.slice(0, -1))
-    else if (annotations.length > 0) setAnnotations((prev) => prev.slice(0, -1))
+    setStrokes((prev) => prev.slice(0, -1))
     setTick((n) => n + 1)
   }
 
   function clearAll() {
     setStrokes([])
-    setAnnotations([])
     setCurrentStroke(null)
-    setTextPos(null)
     setTick((n) => n + 1)
   }
 
@@ -446,22 +379,8 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
     }
     ctx.restore()
 
-    ctx.save()
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    for (const a of annotations) {
-      const fontPx = Math.max(6, a.size)
-      ctx.font = `700 ${fontPx}px "Plus Jakarta Sans", system-ui, sans-serif`
-      ctx.lineWidth = Math.max(2, fontPx * 0.1)
-      ctx.strokeStyle = 'rgba(0,0,0,0.5)'
-      ctx.strokeText(a.text, a.x + offX, a.y + offY)
-      ctx.fillStyle = a.color
-      ctx.fillText(a.text, a.x + offX, a.y + offY)
-    }
-    ctx.restore()
-
     const finish = (blob: Blob) => {
-      onSend(new File([blob], 'photo.jpg', { type: 'image/jpeg' }))
+      onSend(new File([blob], 'photo.jpg', { type: 'image/jpeg' }), caption.trim())
       setBusy(false)
     }
 
@@ -533,7 +452,7 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
             <button
               type="button"
               onClick={undoLast}
-              disabled={strokes.length === 0 && annotations.length === 0}
+              disabled={strokes.length === 0}
               aria-label="Undo"
               className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white disabled:opacity-30"
             >
@@ -542,8 +461,8 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
             <button
               type="button"
               onClick={clearAll}
-              disabled={strokes.length === 0 && annotations.length === 0}
-              aria-label="Clear all"
+              disabled={strokes.length === 0}
+              aria-label="Clear drawing"
               className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white disabled:opacity-30"
             >
               <Eraser size={18} />
@@ -553,7 +472,6 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
 
         <div className="flex gap-1.5">
           {toolButton('crop', <Crop size={16} />, 'Crop')}
-          {toolButton('text', <Type size={16} />, 'Text')}
           {toolButton('brush', <Brush size={16} />, 'Draw')}
         </div>
       </div>
@@ -578,7 +496,7 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
         )}
       </div>
 
-      {/* Bottom: tool options + send */}
+      {/* Bottom: tool options, caption, send */}
       <div className="shrink-0 space-y-2 border-t border-white/10 bg-[#0B0B0F] px-3 pb-4 pt-3">
         {tool === 'crop' && (
           <div className="flex gap-1.5">
@@ -624,60 +542,13 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
           </div>
         )}
 
-        {tool === 'text' && (
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <input
-                value={textInput}
-                onChange={(event) => setTextInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault()
-                    addAnnotation()
-                  }
-                }}
-                placeholder={textPos ? 'Type your text…' : 'Tap the photo to place text'}
-                className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[13px] text-white outline-none placeholder-white/50"
-              />
-              <button
-                type="button"
-                onClick={addAnnotation}
-                disabled={!textInput.trim() || !textPos}
-                className="rounded-xl bg-[#FF9F1C] px-3 py-2 text-[12px] font-bold text-[#0B0B0F] disabled:opacity-40"
-              >
-                Add
-              </button>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex gap-1.5">
-                {PALETTE.map((swatch) => (
-                  <button
-                    key={swatch}
-                    type="button"
-                    onClick={() => setColor(swatch)}
-                    aria-label={`Colour ${swatch}`}
-                    className={`h-7 w-7 rounded-full border-2 ${color === swatch ? 'border-[#FF9F1C]' : 'border-transparent'}`}
-                    style={{ background: swatch }}
-                  />
-                ))}
-              </div>
-              <div className="flex gap-1">
-                {TEXT_SIZES.map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => setTextSize(size)}
-                    className={`rounded-lg px-2 py-1 text-[10px] font-bold transition ${
-                      textSize === size ? 'bg-white text-[#0B0B0F]' : 'bg-white/10 text-white'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        <input
+          value={caption}
+          onChange={(event) => setCaption(event.target.value)}
+          placeholder="Add a caption…"
+          maxLength={500}
+          className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-[13px] text-white outline-none placeholder-white/50"
+        />
 
         <button
           type="button"
@@ -716,7 +587,6 @@ function resizeCrop(start: CropRect, handle: Handle, imgPt: Point, aspect: Aspec
 
   const ratio = ratioFor(aspect)
   if (ratio > 0) {
-    // Width leads. Then anchor the moving edge and pull the other one.
     h = w / ratio
     if (handle === 'br') {
       if (top + h > natural.h) {

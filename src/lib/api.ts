@@ -324,7 +324,7 @@ export async function sendMessage(
 ): Promise<Message> {
   const replyPreview = replyTo
     ? replyTo.type === 'image'
-      ? 'Photo'
+      ? replyTo.body?.trim() || 'Photo'
       : replyTo.type === 'audio'
         ? 'Voice note'
         : replyTo.body.slice(0, 200)

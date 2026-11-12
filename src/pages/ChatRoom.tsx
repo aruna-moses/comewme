@@ -305,7 +305,7 @@ export default function ChatRoom() {
     }
   }, [reactions])
 
-  const handleAttach = useCallback(async (file: File, duration: number | null = null) => {
+  const handleAttach = useCallback(async (file: File, duration: number | null = null, caption = '') => {
     if (!task) return
     const image = file.type.startsWith('image/') && file.type !== 'image/svg+xml'
     const audio = file.type.startsWith('audio/')
@@ -324,7 +324,7 @@ export default function ChatRoom() {
     try {
       const { path } = await uploadChatMedia(task.id, file)
       uploadedPath = path
-      const sent = await handleSend('', image ? 'image' : 'audio', path, duration)
+      const sent = await handleSend(caption, image ? 'image' : 'audio', path, duration)
       if (!sent) {
         await deleteChatMedia(path)
         uploadedPath = null
@@ -742,6 +742,9 @@ export default function ChatRoom() {
                               <img src={message.url} alt="Photo shared in the group chat" className="max-h-72 max-w-full rounded-xl object-cover" />
                             </a>
                           )}
+                          {!message.deleted_at && message.type === 'image' && message.body && (
+                            <p className="whitespace-pre-wrap px-1 pt-1 text-[14px] leading-snug">{message.body}</p>
+                          )}
                           {!message.deleted_at && message.type === 'audio' && message.url && (
                             <VoiceNotePlayer
                               messageId={message.id}
@@ -898,7 +901,7 @@ export default function ChatRoom() {
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-bold text-amber">Replying to {replyTarget.sender_id === profile?.id ? 'You' : replyTarget.sender_name}</p>
                 <p className="truncate text-[11px] text-muted">
-                  {replyTarget.type === 'image' ? 'Photo' : replyTarget.type === 'audio' ? 'Voice note' : replyTarget.body}
+                  {replyTarget.type === 'image' ? (replyTarget.body || 'Photo') : replyTarget.type === 'audio' ? 'Voice note' : replyTarget.body}
                 </p>
               </div>
               <button
@@ -966,9 +969,9 @@ export default function ChatRoom() {
         <ChatPhotoEditor
           file={pendingPhoto}
           onCancel={() => setPendingPhoto(null)}
-          onSend={(file) => {
+          onSend={(file, caption) => {
             setPendingPhoto(null)
-            void handleAttach(file)
+            void handleAttach(file, null, caption)
           }}
         />
       )}
