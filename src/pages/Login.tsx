@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowRight, Check, Eye, EyeOff, Footprints, Phone, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
+/**
+ * Phone verification was pulled until the number flows are re-enabled in
+ * Supabase (SMS provider, templates, buyers). Email + Google are the only
+ * sign-in methods for now — revert to the phone branch when the feature
+ * lights up again.
+ */
 export default function Login() {
   const {
     signIn,
     signUp,
     signInWithGoogle,
-    signInWithPhone,
-    verifyPhoneOtp,
     session,
     profile,
   } = useAuth()
@@ -20,11 +24,7 @@ export default function Login() {
     ? location.state.from
     : '/'
 
-  const [method, setMethod] = useState<'phone' | 'email'>('phone')
   const [mode, setMode] = useState<'in' | 'up' | 'forgot'>('in')
-  const [phone, setPhone] = useState('')
-  const [phoneSent, setPhoneSent] = useState(false)
-  const [code, setCode] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -36,62 +36,6 @@ export default function Login() {
   useEffect(() => {
     if (session && profile) navigate(location.state?.from ?? '/', { replace: true })
   }, [session, profile, navigate, location.state])
-
-  function normalizedPhone() {
-    const value = phone.replace(/[\s()-]/g, '')
-    if (!/^\+[1-9]\d{7,14}$/.test(value)) {
-      throw new Error('Enter your number with country code, for example +234 803 000 1234.')
-    }
-    return value
-  }
-
-  async function requestPhoneCode() {
-    setError(null)
-    setNotice(null)
-    if (!guidelinesChecked) {
-      setError('Please read and agree to the Community Guidelines before continuing.')
-      return
-    }
-    setBusy(true)
-    try {
-      await signInWithPhone(normalizedPhone())
-      setPhoneSent(true)
-      setCode('')
-      setNotice('A verification code has been sent to your phone.')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not send verification code.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  function handleSendCode(e: React.FormEvent) {
-    e.preventDefault()
-    void requestPhoneCode()
-  }
-
-  async function handleVerifyCode(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setNotice(null)
-    if (!guidelinesChecked) {
-      setError('Please agree to follow the Community Guidelines before signing in.')
-      return
-    }
-    if (!/^\d{6}$/.test(code)) {
-      setError('Enter the 6-digit code from your messages.')
-      return
-    }
-    setBusy(true)
-    try {
-      await verifyPhoneOtp(normalizedPhone(), code)
-      navigate(location.state?.from ?? '/', { replace: true })
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not verify this code.')
-    } finally {
-      setBusy(false)
-    }
-  }
 
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -160,187 +104,55 @@ export default function Login() {
       <div className="flex-1 px-5 pb-6 pt-8">
         <div className="mx-auto w-full max-w-[390px]">
           <div className="flex items-center gap-2">
-  <img 
-    src="/logo.png" 
-    alt="Logo" 
-    className="h-8 w-8 rounded-[10px] object-cover" 
-  />
-  <span className="font-display text-[20px] font-bold tracking-tight">Come w' me</span>
-</div>
-
-          {method === 'phone' && (
             <img
-  src="/signin-banner.png"
-  alt="Sign in banner"
-  className="mt-6 h-[210px] w-full rounded-[16px] object-cover"
-/>
-          )}
+              src="/logo.png"
+              alt="Come w' me logo"
+              className="h-8 w-8 rounded-[10px] object-cover"
+            />
+            <span className="font-display text-[20px] font-bold tracking-tight">Come w' me</span>
+          </div>
 
-          {method === 'phone' ? (
+          <img
+            src="/signin-banner.png"
+            alt="A group of friends meeting for a walk in the park"
+            className="mt-6 h-[210px] w-full rounded-[16px] object-cover"
+          />
+
+          {mode === 'forgot' ? (
             <>
-              <h1 className="mt-6 font-display text-[24px] font-bold leading-tight">
-                {phoneSent ? 'Check your messages' : 'Good company. Real life.'}
-              </h1>
+              <h1 className="mt-7 font-display text-[28px] font-bold leading-tight tracking-tight">Reset password</h1>
               <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
-                {phoneSent
-                  ? `Enter the 6-digit code sent to ${phone}.`
-                  : 'Run an errand, learn something, or make a plan. Find your people in Lagos.'}
+                Enter the email you use to sign in. We&apos;ll send you a link to get back in — it expires after an hour.
               </p>
-
-              <label className="mt-5 flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-muted">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-[#ff9f1c]"
-                  checked={guidelinesChecked}
-                  onChange={(event) => setGuidelinesChecked(event.target.checked)}
-                />
-                <span>
-                  I agree to follow the Community Guidelines and understand that violations may lead to a warning,
-                  temporary suspension, or permanent ban.
-                </span>
-              </label>
-
-              {phoneSent ? (
-                <form onSubmit={handleVerifyCode} className="mt-6">
-                  <label className="label" htmlFor="phone-code">Verification code</label>
-                  <div className="relative">
-                    <div aria-hidden className="pointer-events-none flex gap-2">
-                      {Array.from({ length: 6 }, (_, index) => (
-                        <span
-                          key={index}
-                          className={`flex h-[62px] min-w-0 flex-1 items-center justify-center rounded-[12px] border bg-white text-[22px] font-semibold ${
-                            code.length === index ? 'border-amber' : 'border-line'
-                          }`}
-                        >
-                          {code[index] ?? ''}
-                        </span>
-                      ))}
-                    </div>
-                    <input
-                      id="phone-code"
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      pattern="[0-9]{6}"
-                      maxLength={6}
-                      value={code}
-                      onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      className="absolute inset-0 h-full w-full cursor-text opacity-0"
-                      aria-label="Enter the 6-digit verification code"
-                      required
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    className="mt-5 text-[14px] font-semibold text-amber"
-                    onClick={() => void requestPhoneCode()}
-                    disabled={busy}
-                  >
-                    Resend code
-                  </button>
-                  <button
-                    type="button"
-                    className="mt-4 block text-[12px] text-muted"
-                    onClick={() => {
-                      setPhoneSent(false)
-                      setCode('')
-                      setError(null)
-                      setNotice(null)
-                    }}
-                  >
-                    Wrong number? Change phone number
-                  </button>
-                  <div className="mt-5 flex items-start gap-2 rounded-[12px] border border-[#edd996] bg-[#fff4d1] p-3 text-[12px] leading-relaxed text-[#7a622f]">
-                    <ShieldCheck size={20} className="shrink-0 text-amber" aria-hidden />
-                    <p>Never share your verification code, even with someone claiming to be from Come w&apos; me.</p>
-                  </div>
-                  {error && <p role="alert" className="mt-4 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>}
-                  {notice && <p role="status" className="mt-4 text-[12px] text-verified">{notice}</p>}
-                  <button type="submit" className="btn-primary mt-7 w-full rounded-[16px]" disabled={busy || code.length !== 6 || !guidelinesChecked}>
-                    <Check size={18} aria-hidden />
-                    {busy ? 'Verifying…' : 'Verify phone'}
-                  </button>
-                </form>
-              ) : (
-                <form onSubmit={handleSendCode} className="mt-6">
-                  <label className="label" htmlFor="phone">Your phone number</label>
-                  <div className="flex min-h-[54px] items-center gap-3 rounded-[12px] bg-white px-4">
-                    <Phone size={19} className="text-muted" aria-hidden />
-                    <input
-                      id="phone"
-                      type="tel"
-                      autoComplete="tel"
-                      className="min-w-0 flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-muted/70"
-                      placeholder="+234 803 000 1234"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <p className="mt-5 text-[12px] leading-relaxed text-muted">
-                    Use your Nigerian number. We&apos;ll text you a one-time code to get started.
-                  </p>
-                  <div className="mt-5 flex items-start gap-2 rounded-[12px] border border-[#edd996] bg-[#fff4d1] p-3 text-[12px] leading-relaxed text-[#7a622f]">
-                    <ShieldCheck size={20} className="shrink-0 text-amber" aria-hidden />
-                    <p>Phone verification helps keep the community safer. A quick community check comes next, before you post or join.</p>
-                  </div>
-                  {error && <p role="alert" className="mt-4 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>}
-                  {notice && <p role="status" className="mt-4 text-[12px] text-verified">{notice}</p>}
-                  <button type="submit" className="btn-primary mt-7 w-full rounded-[16px]" disabled={busy || !phone.trim() || !guidelinesChecked}>
-                    <ArrowRight size={18} aria-hidden />
-                    {busy ? 'Sending code…' : 'Send verification code'}
-                  </button>
-                  <p className="mt-3 text-center text-[12px] text-muted">Your phone number stays private.</p>
-                </form>
-              )}
+              <form onSubmit={handleEmailSubmit} className="mt-6 space-y-3">
+                <div>
+                  <label className="label" htmlFor="reset-email">Email</label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    autoComplete="email"
+                    className="field"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>}
+                {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[13px] font-medium text-verified">{notice}</p>}
+                <button type="submit" className="btn-primary w-full rounded-[16px]" disabled={busy || !email.trim()}>
+                  {busy ? 'Sending…' : 'Send reset link'}
+                </button>
+              </form>
               <button
                 type="button"
-                className="mt-5 w-full py-2 text-[13px] font-semibold text-amber"
-                onClick={() => {
-                  setMethod('email')
-                  setError(null)
-                  setNotice(null)
-                }}
+                onClick={() => { setMode('in'); setError(null); setNotice(null) }}
+                className="mt-4 w-full py-2 text-[13px] font-semibold text-amber"
               >
-                Use email instead
+                Back to sign in
               </button>
             </>
           ) : (
-            mode === 'forgot' ? (
-              <>
-                <h1 className="mt-7 font-display text-[28px] font-bold leading-tight tracking-tight">Reset password</h1>
-                <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
-                  Enter the email you use to sign in. We&apos;ll send you a link to get back in — it expires after an hour.
-                </p>
-                <form onSubmit={handleEmailSubmit} className="mt-6 space-y-3">
-                  <div>
-                    <label className="label" htmlFor="reset-email">Email</label>
-                    <input
-                      id="reset-email"
-                      type="email"
-                      autoComplete="email"
-                      className="field"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>}
-                  {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[13px] font-medium text-verified">{notice}</p>}
-                  <button type="submit" className="btn-primary w-full rounded-[16px]" disabled={busy || !email.trim()}>
-                    {busy ? 'Sending…' : 'Send reset link'}
-                  </button>
-                </form>
-                <button
-                  type="button"
-                  onClick={() => { setMode('in'); setError(null); setNotice(null) }}
-                  className="mt-4 w-full py-2 text-[13px] font-semibold text-amber"
-                >
-                  Back to sign in
-                </button>
-              </>
-            ) : (
             <>
               <h1 className="mt-7 font-display text-[28px] font-bold leading-tight tracking-tight">Come w&apos; me</h1>
               <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
@@ -438,21 +250,9 @@ export default function Login() {
                   {mode === 'in' ? 'Create one' : 'Sign in'}
                 </button>
               </p>
-              <button
-                type="button"
-                className="mt-4 w-full py-2 text-[13px] font-semibold text-amber"
-                onClick={() => {
-                  setMethod('phone')
-                  setError(null)
-                  setNotice(null)
-                }}
-              >
-                Use phone number instead
-              </button>
             </>
-            )
           )}
-      </div>
+        </div>
       </div>
 
       <div className="px-8 pb-6 text-center">
