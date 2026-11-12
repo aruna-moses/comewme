@@ -82,18 +82,28 @@ export default function BottomNav() {
     >
       {({ isActive }) => (
         <>
-          <span className="relative">
+          <span
+            className={`relative flex h-11 w-11 items-center justify-center rounded-full border-[2.5px] transition-all duration-300 ease-out ${
+              isActive
+                ? 'scale-105 border-amber bg-amber/10 text-amber shadow-[0_0_0_3px_rgb(var(--color-sun)/0.15)]'
+                : 'border-transparent text-muted'
+            }`}
+          >
             {icon(isActive)}
             {badgeCount > 0 && (
               <span
                 aria-hidden="true"
-                className="absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#e53935] px-1 text-[9px] font-bold leading-none text-white shadow-sm"
+                className="absolute -right-2 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#e53935] px-1 text-[9px] font-bold leading-none text-white shadow-sm"
               >
                 {badgeCount > 99 ? '99+' : badgeCount}
               </span>
             )}
           </span>
-          <span className="text-[10px] font-semibold tracking-tight">{label}</span>
+          <span className={`text-[10px] font-semibold tracking-tight transition-colors duration-200 ${
+            isActive ? 'text-amber' : 'text-muted'
+          }`}>
+            {label}
+          </span>
         </>
       )}
     </NavLink>
@@ -101,8 +111,8 @@ export default function BottomNav() {
 
   return (
     <>
-      <nav aria-label="Main navigation" className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t border-ink/[0.06] bg-white/75 shadow-[0_-4px_18px_rgba(11,11,15,0.05)] backdrop-blur-2xl">
-        <div className="flex items-stretch px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-1.5">
+      <nav aria-label="Main navigation" className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 rounded-t-[26px] border-t border-line bg-white/95 shadow-[0_-8px_24px_rgba(59,47,24,0.06)] backdrop-blur">
+        <div className="flex items-stretch px-2 pb-[env(safe-area-inset-bottom)] pt-1.5">
           {item('/', 'Discover', (a) => <IconDiscover active={a} />, 0, 'unread', () => { void prefetchDiscoverFeed() })}
           {item('/mytasks', 'My Tasks', (a) => <IconMyTasks active={a} />, pendingApplications, 'pending applications', () => { if (myId) void prefetchMyTasks(myId) })}
           <div className="flex flex-1 justify-center">
