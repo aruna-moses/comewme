@@ -5,7 +5,7 @@ import { prefetchDiscoverFeed, prefetchMyTasks, prefetchChats, prefetchProfile }
 
 function IconDiscover({ active }: { active: boolean }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden className={active ? 'text-sun' : 'text-muted'}>
       <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth={active ? 2.1 : 1.7} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
@@ -13,7 +13,7 @@ function IconDiscover({ active }: { active: boolean }) {
 
 function IconMyTasks({ active }: { active: boolean }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden className={active ? 'text-sun' : 'text-muted'}>
       <rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" strokeWidth={active ? 2.1 : 1.7} />
       <path d="M9 4.5h6M9 10h6M9 14h6M9 18h3" stroke="currentColor" strokeWidth={active ? 2.1 : 1.7} strokeLinecap="round" />
     </svg>
@@ -22,7 +22,7 @@ function IconMyTasks({ active }: { active: boolean }) {
 
 function IconChat({ active }: { active: boolean }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden className={active ? 'text-sun' : 'text-muted'}>
       <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-4-.99L3 21l1.99-5.5A8.4 8.4 0 0 1 4 11.5 8.5 8.5 0 1 1 21 11.5Z" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round" />
       <circle cx="8" cy="12" r="1" fill="currentColor" />
       <circle cx="12" cy="12" r="1" fill="currentColor" />
@@ -33,7 +33,7 @@ function IconChat({ active }: { active: boolean }) {
 
 function IconProfile({ active }: { active: boolean }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden className={active ? 'text-sun' : 'text-muted'}>
       <circle cx="12" cy="8.5" r="3.5" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} />
       <path d="M5 19.5c1.6-3 4-4.5 7-4.5s5.4 1.5 7 4.5" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" />
     </svg>
@@ -74,26 +74,34 @@ export default function BottomNav() {
       onMouseEnter={prefetcher}
       onPointerDown={prefetcher}
       onFocus={prefetcher}
-      className={({ isActive }) =>
-        `flex flex-1 flex-col items-center gap-1 py-2 text-[11px] font-semibold transition ${
-          isActive ? 'text-ink' : 'text-muted'
-        }`
-      }
+      className="flex flex-1 flex-col items-center justify-end py-2"
     >
       {({ isActive }) => (
         <>
-          <span className="relative">
+          <span
+            className={`relative flex h-[44px] w-[58px] items-center justify-center rounded-2xl transition-all duration-300 ease-out ${
+              isActive
+                ? '-translate-y-[2px] bg-ink shadow-[0_6px_14px_rgba(11,11,15,0.28)]'
+                : 'bg-transparent'
+            }`}
+          >
             {icon(isActive)}
             {badgeCount > 0 && (
               <span
                 aria-hidden="true"
-                className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#e53935] px-1 text-[9px] font-bold leading-none text-white shadow-sm"
+                className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#e53935] px-1 text-[9px] font-bold leading-none text-white shadow-sm"
               >
                 {badgeCount > 99 ? '99+' : badgeCount}
               </span>
             )}
           </span>
-          <span>{label}</span>
+          <span
+            className={`mt-1 text-[11px] font-bold transition-all duration-300 ${
+              isActive ? 'tracking-tight text-ink' : 'tracking-normal text-muted'
+            }`}
+          >
+            {label}
+          </span>
         </>
       )}
     </NavLink>
@@ -101,7 +109,7 @@ export default function BottomNav() {
 
   return (
     <>
-      <nav aria-label="Main navigation" className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 rounded-t-[24px] border-t border-line bg-white/95 shadow-[0_-8px_24px_rgba(59,47,24,0.06)] backdrop-blur">
+      <nav aria-label="Main navigation" className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 rounded-t-[26px] border-t border-line/80 bg-white/90 shadow-[0_-10px_30px_rgba(11,11,15,0.10)] backdrop-blur-xl">
         <div className="flex items-stretch px-2 pb-[env(safe-area-inset-bottom)] pt-1">
           {item('/', 'Discover', (a) => <IconDiscover active={a} />, 0, 'unread', () => { void prefetchDiscoverFeed() })}
           {item('/mytasks', 'My Tasks', (a) => <IconMyTasks active={a} />, pendingApplications, 'pending applications', () => { if (myId) void prefetchMyTasks(myId) })}
