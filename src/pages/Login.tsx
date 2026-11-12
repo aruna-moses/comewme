@@ -154,24 +154,32 @@ export default function Login() {
             </>
           ) : (
             <>
-              <h1 className="mt-7 font-display text-[28px] font-bold leading-tight tracking-tight">Come w&apos; me</h1>
+              <h1 className="mt-6 font-display text-[28px] font-bold leading-tight tracking-tight">Come w&apos; me</h1>
               <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
                 {mode === 'in'
                   ? 'Find something worth doing today and someone to do it with.'
                   : 'Create an account. It takes a minute.'}
               </p>
-              <label className="mt-5 flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-muted">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-[#ff9f1c]"
-                  checked={guidelinesChecked}
-                  onChange={(event) => setGuidelinesChecked(event.target.checked)}
-                />
-                <span>
-                  I agree to follow the Community Guidelines and understand that violations may lead to a warning,
-                  temporary suspension, or permanent ban.
-                </span>
-              </label>
+              <button
+                type="button"
+                onClick={() => void handleGoogleSignIn()}
+                className="mt-5 flex w-full items-center justify-center gap-3 rounded-[16px] bg-ink py-3.5 text-[14px] font-bold text-canvas shadow-card transition enabled:hover:brightness-110 disabled:opacity-50"
+                disabled={busy}
+                aria-label="Continue with Google"
+              >
+                <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+                  <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.36-2.17 3.56-5.4 3.56-8.82z" />
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z" />
+                  <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z" />
+                  <path fill="#EA4335" d="M12 4.77c1.76 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.77 12 4.77z" />
+                </svg>
+                {busy ? 'One moment…' : 'Continue with Google'}
+              </button>
+              <div className="my-4 flex items-center gap-3" aria-hidden="true">
+                <div className="h-px flex-1 bg-line" />
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">or continue with email</span>
+                <div className="h-px flex-1 bg-line" />
+              </div>
               <form onSubmit={handleEmailSubmit} className="mt-6 space-y-3">
                 <div>
                   <label className="label" htmlFor="email">Email</label>
@@ -212,6 +220,19 @@ export default function Login() {
                     </button>
                   </div>
                 </div>
+                <label className="flex cursor-pointer items-start gap-2 pt-1 text-[12px] leading-relaxed text-muted">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 accent-[#ff9f1c]"
+                    checked={guidelinesChecked}
+                    onChange={(event) => setGuidelinesChecked(event.target.checked)}
+                    aria-describedby="guidelines-label"
+                  />
+                  <span id="guidelines-label">
+                    I agree to follow the Community Guidelines and understand that violations may lead to a warning,
+                    temporary suspension, or permanent ban.
+                  </span>
+                </label>
                 {mode === 'in' && (
                   <button
                     type="button"
@@ -227,15 +248,6 @@ export default function Login() {
                   {busy ? 'One moment…' : mode === 'in' ? 'Sign in' : 'Create account'}
                 </button>
               </form>
-
-              <div className="my-5 flex items-center gap-3">
-                <div className="h-px flex-1 bg-line" />
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">or</span>
-                <div className="h-px flex-1 bg-line" />
-              </div>
-              <button type="button" onClick={() => void handleGoogleSignIn()} className="btn-ghost w-full" disabled={busy || !guidelinesChecked}>
-                Continue with Google
-              </button>
               <p className="mt-5 text-center text-[13px] text-muted">
                 {mode === 'in' ? "Don't have an account?" : 'Already have one?'}{' '}
                 <button
