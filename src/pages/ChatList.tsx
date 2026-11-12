@@ -130,12 +130,18 @@ export default function ChatList() {
   const renderRow = (c: typeof chats[number]) => {
     const unread = unreadByTask[c.task.id] ?? 0
     const countdownLabel = (() => {
-      const diff = new Date(c.task.date_time).getTime() - now
-      if (diff < -3600_000) return 'Passed'
-      if (diff < 3600_000) return 'Within the hour'
-      if (diff < 24 * 3600_000) return 'Today'
-      const days = Math.ceil(diff / 86_400_000)
-      return days === 1 ? 'Tomorrow' : `In ${days} days`
+      const start = new Date(c.task.date_time)
+      const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+      const days = Math.round((startOfDay(start) - startOfDay(new Date(now))) / 86_400_000)
+      if (days < -364) return 'Over a year ago'
+      if (days < -30) return `${Math.round(days / 30)} months ago`
+      if (days < -1) return `${Math.abs(days)} days ago`
+      if (days === -1) return 'Yesterday'
+      if (days === 0) return 'Today'
+      if (days === 1) return 'Tomorrow'
+      if (days < 30) return `In ${days} days`
+      if (days < 365) return `In ${Math.round(days / 30)} months`
+      return `In ${Math.round(days / 365)} years`
     })()
     return (
       <Link
