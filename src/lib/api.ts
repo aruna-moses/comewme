@@ -629,6 +629,54 @@ export async function acknowledgeViolationWarning(violationId: string): Promise<
 }
 
 /* ------------------------------------------------------------------ */
+/* Message reactions                                                     */
+
+export interface MessageReaction {
+  message_id: string
+  user_id: string
+  emoji: string
+}
+
+export async function fetchMessageReactions(messageIds: string[]): Promise<MessageReaction[]> {
+  const unique = Array.from(new Set(messageIds.filter(Boolean)))
+  if (unique.length === 0) return []
+  const { data, error } = await supabase
+    .from('message_reactions')
+    .select('message_id, user_id, emoji')
+    .in('message_id', unique)
+  if (error) throw error
+  return (data ?? []) as MessageReaction[]
+}
+
+export async function toggleMessageReaction(messageId: string, emoji: string): Promise<'added' | 'removed'> {
+  const { data: u } = await supabase.auth.getUser()
+  if (!u.user) throw new Error('Sign in before reacting.')
+  const existing = await supabase
+    .from('message_reactions')
+    .select('message_id')
+    .eq('message_id', messageId)
+    .eq('user_id', u.user.id)
+    .eq('emoji', emoji)
+    .maybeSingle()
+
+  if (existing.data) {
+    const { error } = await supabase
+      .from('message_reactions')
+      .delete()
+      .eq('message_id', messageId)
+      .eq('user_id', u.user.id)
+      .eq('emoji', emoji)
+    if (error) throw error
+    return 'removed'
+  }
+
+  const { error } = await supabase
+    .from('message_reactions')
+    .upsert({ message_id: messageId, user_id: u.user.id, emoji }, { onConflict: 'message_id,user_id' })
+  if (error) throw error
+  return 'added'
+}
+
 /* Verification status batch fetch                                    */
 /* ------------------------------------------------------------------ */
 

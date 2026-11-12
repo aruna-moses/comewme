@@ -8,6 +8,7 @@ import {
   deleteMessage,
   deleteChatMedia,
   fetchMessages,
+  fetchMessageReactions,
   fetchMyJoinRequest,
   fetchParticipants,
   fetchTask,
@@ -15,6 +16,7 @@ import {
   resolveChatMedia,
   sendMessage,
   subscribeToMessages,
+  toggleMessageReaction,
   uploadChatMedia,
 } from '../lib/api'
 import { formatTime, isSameDay, formatDateTime } from '../lib/format'
@@ -24,6 +26,8 @@ import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
 import VoiceNotePlayer from '../components/VoiceNotePlayer'
+
+const REACTIONS = ['👍', '❤️', '😂', '😎']
 
 export default function ChatRoom() {
   const { id } = useParams<{ id: string }>()
@@ -35,6 +39,7 @@ export default function ChatRoom() {
   const [authorized, setAuthorized] = useState(false)
   const [loading, setLoading] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
+  const [reactions, setReactions] = useState<Record<string, Record<string, { count: number; mine: boolean }>>>({})
   const [draft, setDraft] = usePersistedState(`chat:${id}:draft`, '')
   const [uploading, setUploading] = useState(false)
   const [recording, setRecording] = useState(false)
@@ -96,6 +101,20 @@ export default function ChatRoom() {
       .then(async (rows) => {
         if (!active) return
         setMessages(rows)
+        fetchMessageReactions(rows.map((r) => r.id))
+          .then((all) => {
+            if (!active) return
+            const map: Record<string, Record<string, { count: number; mine: boolean }>> = {}
+            for (const r of all) {
+              map[r.message_id] = map[r.message_id] ?? {}
+              const bucket = map[r.message_id][r.emoji] ?? { count: 0, mine: false }
+              bucket.count += 1
+              if (r.user_id === profile?.id) bucket.mine = true
+              map[r.message_id][r.emoji] = bucket
+            }
+            setReactions(map)
+          })
+          .catch(() => undefined)
         if (document.visibilityState === 'visible') {
           try {
             await markChatRead(task.id)
@@ -112,6 +131,21 @@ export default function ChatRoom() {
         .then(([resolved]) => {
           if (!active) return
           setMessages((current) => current.some((item) => item.id === resolved.id) ? current : [...current, resolved])
+          fetchMessageReactions([resolved.id])
+            .then((all) => {
+              setReactions((current) => {
+                // initial seed — full fetch happens on message load and periodically
+                const next = { ...current }
+                for (const r of all) {
+                  const bucket = next[r.message_id]?.[r.emoji] ?? { count: 0, mine: false }
+                  bucket.count += 1
+                  if (r.user_id === profile?.id) bucket.mine = true
+                  next[r.message_id] = { ...(next[r.message_id] ?? {}), [r.emoji]: bucket }
+                }
+                return next
+              })
+            })
+            .catch(() => undefined)
           if (document.visibilityState === 'visible') {
             void markChatRead(task.id)
               .then(refreshNotifications)
@@ -197,6 +231,37 @@ export default function ChatRoom() {
       return false
     }
   }, [task, profile, replyTarget])
+
+  const onToggleReaction = useCallback(async (messageId: string, emoji: string) => {
+    setError(null)
+    try {
+      const prev = reactions[messageId]?.[emoji]
+      const isMine = prev?.mine ?? false
+      const toggled = await toggleMessageReaction(messageId, emoji)
+      // Optimistic-ish update
+      setReactions((current) => {
+        const currentEntry = current[messageId]?.[emoji] ?? { count: 0, mine: false }
+        if (toggled === 'added') {
+          return {
+            ...current,
+            [messageId]: {
+              ...(current[messageId] ?? {}),
+              [emoji]: { count: currentEntry.count + (currentEntry.mine ? 0 : 1), mine: true },
+            },
+          }
+        }
+        return {
+          ...current,
+          [messageId]: {
+            ...(current[messageId] ?? {}),
+            [emoji]: { count: Math.max(0, currentEntry.count - (currentEntry.mine ? 1 : 0)), mine: false },
+          },
+        }
+      })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not update reaction.')
+    }
+  }, [reactions])
 
   const handleAttach = useCallback(async (file: File, duration: number | null = null) => {
     if (!task) return
@@ -603,6 +668,32 @@ export default function ChatRoom() {
                             </p>
                           )}
                         </div>
+                        {!message.deleted_at && message.type === 'text' && (
+                          <div className={`mt-1 flex flex-wrap gap-1 ${mine ? 'justify-end' : ''}`} aria-label="React to message">
+                            {REACTIONS.map((emoji) => {
+                              const info = reactions[message.id]?.[emoji]
+                              const count = info?.count ?? 0
+                              const mine = info?.mine ?? false
+                              return (
+                                <button
+                                  key={emoji}
+                                  type="button"
+                                  onClick={() => void onToggleReaction(message.id, emoji)}
+                                  className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] transition ${
+                                    mine
+                                      ? 'border-amber bg-sun/25 text-amber'
+                                      : 'border-line bg-canvas text-muted hover:text-ink'
+                                  }`}
+                                  aria-pressed={mine}
+                                  aria-label={`React ${emoji} (${count})`}
+                                >
+                                  <span aria-hidden="true">{emoji}</span>
+                                  {count > 0 && <span className="font-semibold">{count}</span>}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )}
                         {actionMessageId === message.id && !message.deleted_at && (
                           <div className={`absolute top-full z-20 mt-1 flex min-w-[150px] flex-col overflow-hidden rounded-xl border border-line bg-white py-1 text-left shadow-lift ${mine ? 'right-0' : 'left-0'}`} role="menu" aria-label="Message actions">
                             <button
