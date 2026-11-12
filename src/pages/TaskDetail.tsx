@@ -10,6 +10,7 @@ import {
   fetchJoinRequests,
   fetchTask,
   markTaskDone,
+  reopenTask,
   requestJoin,
   setJoinStatus,
   submitReport,
@@ -208,6 +209,19 @@ export default function TaskDetail() {
     }
   }
 
+  async function handleReopen() {
+    if (!task) return
+    setBusy(true)
+    try {
+      await reopenTask(task.id, participants.length, task.spots_needed)
+      await load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Could not reopen this activity')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function handleCancel() {
     if (!task) return
     setCancelConfirmOpen(false)
@@ -374,8 +388,28 @@ export default function TaskDetail() {
             </Link>
           )}
 
-          {session && isHost && ['open', 'full'].includes(task.status) && <button className="btn-primary w-full" disabled={busy} onClick={() => setDoneConfirmOpen(true)}>Mark as done</button>}
+          {session && isHost && ['open', 'full'].includes(task.status) && (
+            <button
+              className={`w-full ${requests.some((r) => r.status === 'accepted') ? 'btn-primary' : 'btn-ghost text-muted'}`}
+              disabled={busy}
+              onClick={() => setDoneConfirmOpen(true)}
+            >
+              Mark as done
+            </button>
+          )}
           {session && isHost && ['open', 'full'].includes(task.status) && <button className="btn-ghost mt-2 w-full" disabled={busy} onClick={() => setCancelConfirmOpen(true)}>Cancel activity</button>}
+          {session && isHost && task.status === 'completed' && (
+            <div className="rounded-card border border-[#edd996] bg-[#fff4d1] p-4">
+              <p className="text-[13px] font-semibold text-[#7a622f]">This activity was marked done</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-[#7a622f]">
+                New requests and the group chat were closed. If that was by mistake, reopen the activity and accept
+                people again.
+              </p>
+              <button type="button" className="btn-primary btn-sm mt-3 w-full" disabled={busy} onClick={() => void handleReopen()}>
+                {busy ? 'Reopening…' : 'Reopen activity'}
+              </button>
+            </div>
+          )}
 
           {session && !isHost && task.status === 'open' && (!myRequest || myRequest.status === 'declined') && (
             <button

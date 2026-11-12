@@ -155,6 +155,12 @@ export async function cancelTask(taskId: string) {
   if (error) throw toError(error)
 }
 
+export async function reopenTask(taskId: string, spotsFilled: number, spotsNeeded: number) {
+  const status = spotsFilled >= spotsNeeded ? 'full' : 'open'
+  const { error } = await supabase.from('tasks').update({ status }).eq('id', taskId)
+  if (error) throw toError(error)
+}
+
 /* ------------------------------------------------------------------ */
 /* Join requests                                                       */
 /* ------------------------------------------------------------------ */
