@@ -7,15 +7,51 @@ export type Category =
   | 'event'
   | 'errands'
   | 'other'
+  | 'movies'
+  | 'sports'
+  | 'gym'
+  | 'outdoors'
+  | 'music'
+  | 'arts'
+  | 'fashion'
+  | 'faith'
+  | 'volunteer'
+  | 'pets'
+  | 'wellness'
+  | 'gaming'
+  | 'travel'
+  | 'nightlife'
+  | 'shopping'
+  | 'social'
+  | 'health'
+  | 'repair'
 
 export const CATEGORIES: { value: Category; label: string; emoji: string }[] = [
-  { value: 'market_run', label: 'Errands', emoji: '🛒' },
+  { value: 'market_run', label: 'Market run', emoji: '🛒' },
   { value: 'ride', label: 'Rides', emoji: '🚗' },
   { value: 'food', label: 'Food', emoji: '🍽️' },
   { value: 'study', label: 'Study', emoji: '📚' },
   { value: 'dev', label: 'Skill Meetups', emoji: '💻' },
   { value: 'event', label: 'Events', emoji: '🎉' },
   { value: 'errands', label: 'Errands', emoji: '📦' },
+  { value: 'movies', label: 'Movies', emoji: '🎬' },
+  { value: 'sports', label: 'Sports', emoji: '⚽' },
+  { value: 'gym', label: 'Gym & Fitness', emoji: '💪' },
+  { value: 'outdoors', label: 'Outdoors', emoji: '🏕️' },
+  { value: 'music', label: 'Music', emoji: '🎵' },
+  { value: 'arts', label: 'Art & Culture', emoji: '🎨' },
+  { value: 'fashion', label: 'Fashion', emoji: '👗' },
+  { value: 'faith', label: 'Faith & Community', emoji: '🙏' },
+  { value: 'volunteer', label: 'Charity & Volunteering', emoji: '🤝' },
+  { value: 'pets', label: 'Pets', emoji: '🐾' },
+  { value: 'wellness', label: 'Wellness', emoji: '🧘' },
+  { value: 'gaming', label: 'Gaming', emoji: '🎮' },
+  { value: 'travel', label: 'Travel & Trips', emoji: '✈️' },
+  { value: 'nightlife', label: 'Nightlife', emoji: '🌃' },
+  { value: 'shopping', label: 'Shopping', emoji: '🛍️' },
+  { value: 'social', label: 'Social hangouts', emoji: '🍻' },
+  { value: 'health', label: 'Health & Appointments', emoji: '🩺' },
+  { value: 'repair', label: 'Home repairs', emoji: '🔧' },
   { value: 'other', label: 'Other', emoji: '➕' },
 ]
 

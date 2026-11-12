@@ -9,27 +9,42 @@ import { useAuth } from '../context/AuthContext'
 import Avatar from './Avatar'
 import ShareTaskButton from './ShareTaskButton'
 
-const tileStyles: Record<Category, string> = {
-  market_run: 'bg-[#e4f4ef]',
-  ride: 'bg-[#e8eef7]',
-  food: 'bg-[#ffebdc]',
-  study: 'bg-[#f1ecfa]',
-  dev: 'bg-[#e8eef7]',
-  event: 'bg-[#fdeef3]',
-  errands: 'bg-[#e4f4ef]',
-  other: 'bg-[#f0efee]',
-}
+// Palette slots — all hex values are covered by the dark-theme overrides so tiles
+// keep their quiet tints on dark surfaces.
+const tileSlots = [
+  'bg-[#e4f4ef]',
+  'bg-[#e8eef7]',
+  'bg-[#ffebdc]',
+  'bg-[#f1ecfa]',
+  'bg-[#fdeef3]',
+  'bg-[#f0efee]',
+  'bg-[#eaf6ee]',
+  'bg-[#eef4fb]',
+  'bg-[#fff3e8]',
+  'bg-[#f5f0f8]',
+  'bg-[#fcf0f5]',
+  'bg-[#f7f6f1]',
+  'bg-[#f1f1ef]',
+  'bg-[#fff4d1]',
+  'bg-[#f1ecfa]',
+  'bg-[#fdeef3]',
+]
 
-const categoryStyles: Record<Category, string> = {
-  market_run: 'bg-[#eef7f5] text-[#16827d]',
-  ride: 'bg-[#eef4fb] text-[#4273a8]',
-  food: 'bg-[#fff3e8] text-[#cc7625]',
-  study: 'bg-[#f5f0f8] text-[#8054a6]',
-  dev: 'bg-[#eef4fb] text-[#4273a8]',
-  event: 'bg-[#fcf0f5] text-[#d35d88]',
-  errands: 'bg-[#eef7f5] text-[#16827d]',
-  other: 'bg-[#f1f1ef] text-[#6b7280]',
-}
+const chipSlots = [
+  'bg-[#eef7f5] text-[#16827d]',
+  'bg-[#eef4fb] text-[#4273a8]',
+  'bg-[#fff3e8] text-[#cc7625]',
+  'bg-[#f5f0f8] text-[#8054a6]',
+  'bg-[#fcf0f5] text-[#d35d88]',
+  'bg-[#f1f1ef] text-[#6b7280]',
+]
+
+const tileStyles = {} as Record<Category, string>
+const categoryStyles = {} as Record<Category, string>
+CATEGORIES.forEach((category, index) => {
+  tileStyles[category.value] = tileSlots[index % tileSlots.length]
+  categoryStyles[category.value] = chipSlots[index % chipSlots.length]
+})
 
 function liveSponsor(t: Task) {
   if (!t.is_sponsored) return false

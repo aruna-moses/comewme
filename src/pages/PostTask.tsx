@@ -180,13 +180,31 @@ export default function PostTask() {
             </div>
 
             <div>
-              <label className="label">Category</label>
-              <div className="flex items-center gap-2 rounded-xl border border-line bg-white p-3">
-                <span className="text-[13px] font-semibold text-ink">{categoryEmoji} {categoryLabel}</span>
-                <span className="text-[11px] text-muted ml-auto">Auto-detected</span>
+              <label className="label" htmlFor="category-picker">Category</label>
+              <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Activity category">
+                {CATEGORIES.map((c) => {
+                  const active = selectedCategory === c.value
+                  return (
+                    <button
+                      key={c.value}
+                      id={c.value === selectedCategory ? 'category-picker' : undefined}
+                      type="button"
+                      onClick={() => setSelectedCategory(c.value)}
+                      aria-pressed={active}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
+                        active ? 'border-ink bg-ink text-canvas shadow-sm' : 'border-line bg-white text-muted hover:text-ink'
+                      }`}
+                    >
+                      <span aria-hidden="true">{c.emoji}</span>
+                      {c.label}
+                    </button>
+                  )
+                })}
               </div>
               <p className="mt-1 text-[11px] text-muted">
-                We read your title and details to pick the category. You can edit the text above if the category looks wrong.
+                {selectedCategory === detectedCategory
+                  ? `Auto-detected — ${categoryEmoji} ${categoryLabel}. Tap a chip to change it.`
+                  : `You changed it to ${CATEGORIES.find((c) => c.value === selectedCategory)?.label ?? selectedCategory}.`}
               </p>
             </div>
 
