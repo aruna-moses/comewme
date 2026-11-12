@@ -7,7 +7,6 @@ import { usePersistedState } from '../lib/drafts'
 import { supabase } from '../lib/supabase'
 import type { Task } from '../types'
 import { formatTime, taskEmoji } from '../lib/format'
-import Spinner from '../components/Spinner'
 import Avatar from '../components/Avatar'
 
 export default function ChatList() {
@@ -117,7 +116,28 @@ export default function ChatList() {
     setPinnedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
 
-  if (loading) return <Spinner full />
+  if (loading) {
+    return (
+      <div className="pb-8" aria-hidden>
+        <header className="px-5 pb-2 pt-8">
+          <div className="skeleton h-7 w-32 rounded-lg" />
+          <div className="skeleton mt-1.5 h-4 w-72" />
+        </header>
+        <div className="mt-4 divide-y divide-line px-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="flex items-center gap-3 py-3">
+              <div className="skeleton h-12 w-12 rounded-full" />
+              <div className="min-w-0 flex-1">
+                <div className="skeleton h-4 w-1/3" />
+                <div className="skeleton mt-2 h-3 w-3/4" />
+              </div>
+              <div className="skeleton h-3 w-8" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   // Split: Pinned > Attention > Catch-up > Brand-new (say hi first)
   const now = Date.now()

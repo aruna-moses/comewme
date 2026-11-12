@@ -22,7 +22,6 @@ import { REPORT_CATEGORIES, categoryLabel, trustLevel } from '../types'
 import { formatDateTime, isPast, timeOfDay } from '../lib/format'
 import Avatar from '../components/Avatar'
 import Sheet from '../components/Sheet'
-import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { TrustPill, VerifiedBadge } from '../components/Badges'
 import TaskCompletionCelebration from '../components/TaskCompletionCelebration'
@@ -274,7 +273,28 @@ export default function TaskDetail() {
     }
   }
 
-  if (loading) return <Spinner full />
+  if (loading) {
+    return (
+      <div className="pb-10" aria-hidden>
+        <div className="sticky top-0 z-30 flex h-[56px] items-center justify-between border-b border-line bg-canvas/95 px-4 backdrop-blur">
+          <div className="skeleton h-6 w-6 rounded-full" />
+          <div className="skeleton h-5 w-28 rounded-full" />
+        </div>
+        <div className="px-4 pt-5">
+          <div className="skeleton h-4 w-24 rounded-full" />
+          <div className="skeleton mt-2 h-8 w-11/12" />
+          <div className="skeleton mt-1.5 h-4 w-2/3" />
+          <div className="skeleton mt-4 h-4 w-full" />
+          <div className="skeleton mt-2 h-4 w-3/4" />
+          <div className="mt-6 grid grid-cols-3 gap-2">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="skeleton h-14 rounded-2xl" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
   if (error || !task)
     return (
       <div className="p-6">

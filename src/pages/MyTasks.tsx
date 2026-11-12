@@ -6,7 +6,7 @@ import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 import type { JoinStatus, Task } from '../types'
 import { fetchVerificationStatuses } from '../lib/api'
-import Spinner from '../components/Spinner'
+import SkeletonCard from '../components/SkeletonCard'
 import TaskCard from '../components/TaskCard'
 import { toError } from '../lib/errors'
 
@@ -141,7 +141,24 @@ export default function MyTasks() {
     return () => window.clearTimeout(timer)
   }, [loading, targetTaskId, tab, hosted, joined])
 
-  if (loading) return <Spinner full />
+  if (loading) {
+    return (
+      <div className="pb-8" aria-hidden>
+        <header className="px-5 pb-2 pt-8">
+          <div className="skeleton h-7 w-28 rounded-lg" />
+          <div className="skeleton mt-1.5 h-4 w-72" />
+        </header>
+        <div className="px-5 pt-4">
+          <div className="skeleton h-14 w-full rounded-2xl" />
+          <div className="mt-4 space-y-3">
+            {[0, 1, 2].map((i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const list = tab === 'hosting' ? hosted : joined
   const empty =

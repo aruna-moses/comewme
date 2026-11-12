@@ -9,7 +9,6 @@ import { supabase } from '../lib/supabase'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category, Profile, Review } from '../types'
 import Avatar from '../components/Avatar'
-import Spinner from '../components/Spinner'
 import CharacterJourney from '../components/CharacterJourney'
 import PersonalitySelector from '../components/PersonalitySelector'
 import ProfileMediaGallery from '../components/ProfileMediaGallery'
@@ -62,7 +61,32 @@ export default function ProfilePage() {
     }
   }, [id])
 
-  if (loading) return <Spinner full />
+  if (loading) {
+    return (
+      <div className="pb-10" aria-hidden>
+        <div className="flex h-[56px] items-center justify-between border-b border-line px-4">
+          <div className="skeleton h-6 w-6 rounded-full" />
+          <div className="flex gap-2">
+            <div className="skeleton h-7 w-14 rounded-full" />
+            <div className="skeleton h-7 w-20 rounded-full" />
+          </div>
+        </div>
+        <div className="flex items-start gap-4 px-4 pt-5">
+          <div className="skeleton h-[76px] w-[76px] rounded-full" />
+          <div className="min-w-0 flex-1 pt-1">
+            <div className="skeleton h-6 w-40" />
+            <div className="skeleton mt-2 h-4 w-24" />
+            <div className="skeleton mt-3 h-3 w-44" />
+          </div>
+        </div>
+        <div className="mt-5 grid grid-cols-3 gap-2 px-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="skeleton h-16 rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    )
+  }
   if (!profile)
     return (
       <div className="p-6">
