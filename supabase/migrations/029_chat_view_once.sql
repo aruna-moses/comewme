@@ -70,3 +70,17 @@ create policy message_views_insert_self on public.message_views
 
 create index if not exists message_views_message_idx
   on public.message_views (message_id);
+
+-- 3. Realtime so the sender's "Opened by N" updates live.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'message_views'
+  ) then
+    alter publication supabase_realtime add table public.message_views;
+  end if;
+end $$;

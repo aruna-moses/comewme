@@ -590,6 +590,47 @@ export default function ChatRoom() {
     }
   }
 
+  const messageIdsRef = useRef<string[]>([])
+  useEffect(() => {
+    messageIdsRef.current = messages.map((message) => message.id)
+  }, [messages])
+
+  const refreshViewCounts = useCallback(async () => {
+    if (!task) return
+    const ids = messageIdsRef.current.filter((id) => !id.startsWith('temp-'))
+    if (ids.length === 0) return
+    try {
+      const views = await fetchMessageViews(ids)
+      const counts = new Map<string, number>()
+      for (const view of views) counts.set(view.message_id, (counts.get(view.message_id) ?? 0) + 1)
+      setMessages((current) => current.map((item) => (
+        item.view_once && item.sender_id === profile?.id
+          ? { ...item, view_once_count: counts.get(item.id) ?? 0 }
+          : item
+      )))
+    } catch {
+      // Non-fatal: the count just stays as it was.
+    }
+  }, [task, profile?.id])
+
+  useEffect(() => {
+    if (!task || !authorized) return
+    const channel = supabase
+      .channel(`message-views:${task.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'message_views' }, () => {
+        void refreshViewCounts()
+      })
+      .subscribe()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refreshViewCounts()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      void supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [task, authorized, refreshViewCounts])
+
   function handleMessagePointerDown(message: Message, event: PointerEvent<HTMLDivElement>) {
     if (message.pending || message.deleted_at) return
     const target = event.target as HTMLElement
@@ -1183,6 +1224,7 @@ export default function ChatRoom() {
         <ViewOnceViewer
           url={viewOnceOpen.url}
           caption={viewOnceOpen.body}
+          viewerName={profile?.display_name ?? 'You'}
           onClose={closeViewOnce}
         />
       )}
