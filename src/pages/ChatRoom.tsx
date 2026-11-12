@@ -32,7 +32,7 @@ import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
 import VoiceNotePlayer from '../components/VoiceNotePlayer'
-import ChatPhotoSheet from '../components/ChatPhotoSheet'
+import ChatPhotoEditor from '../components/ChatPhotoEditor'
 
 const REACTIONS = ['👍', '❤️', '😂', '😎']
 
@@ -963,7 +963,7 @@ export default function ChatRoom() {
         onConfirm={() => void handleDeleteMessage()}
       />
       {pendingPhoto && (
-        <ChatPhotoSheet
+        <ChatPhotoEditor
           file={pendingPhoto}
           onCancel={() => setPendingPhoto(null)}
           onSend={(file) => {
