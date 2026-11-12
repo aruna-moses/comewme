@@ -8,6 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import { updateProfile } from '../lib/api'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
+import { toError } from '../lib/errors'
 
 const SUPPORT_LINKS: Array<{ to: string; icon: typeof BookOpen; title: string; note: string }> = [
   { to: '/violations', icon: ShieldCheck, title: 'Your reports & decisions', note: 'Warnings, suspensions, appeals — everything moderation ever did to your account, and the appeal button.' },
@@ -34,7 +35,7 @@ export default function Settings() {
       const { error } = await supabase.storage
         .from('avatars')
         .upload(path, file, { upsert: true, contentType: file.type })
-      if (error) throw error
+      if (error) throw toError(error)
 
       const { data } = supabase.storage.from('avatars').getPublicUrl(path)
       await updateProfile(profile.id, { avatar_url: data.publicUrl })

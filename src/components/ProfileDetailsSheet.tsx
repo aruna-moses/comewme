@@ -6,6 +6,7 @@ import { AREAS, CATEGORIES } from '../types'
 import type { Category } from '../types'
 import { fetchMyVerification, submitVerification, updateProfile } from '../lib/api'
 import { supabase } from '../lib/supabase'
+import { toError } from '../lib/errors'
 
 export default function ProfileDetailsSheet({
   open,
@@ -64,7 +65,7 @@ export default function ProfileDetailsSheet({
       const { error } = await supabase.storage
         .from('avatars')
         .upload(path, file, { upsert: true, contentType: file.type })
-      if (error) throw error
+      if (error) throw toError(error)
       const { data } = supabase.storage.from('avatars').getPublicUrl(path)
       await updateProfile(profile.id, { avatar_url: data.publicUrl })
       await refreshProfile()

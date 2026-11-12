@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { toError } from './errors'
 
 export type NotificationType = 'join_request' | 'selfie' | 'appeal' | 'violation' | 'chat' | 'info' | 'reminder'
 
@@ -19,7 +20,7 @@ export async function fetchNotifications(limit = 30): Promise<InAppNotification[
     .select('id, user_id, type, title, body, link_path, created_at, read_at')
     .order('created_at', { ascending: false })
     .limit(limit)
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as InAppNotification[]
 }
 
@@ -28,7 +29,7 @@ export async function fetchUnreadCount(): Promise<number> {
     .from('notifications')
     .select('id', { count: 'exact', head: true })
     .is('read_at', null)
-  if (error) throw error
+  if (error) throw toError(error)
   return count ?? 0
 }
 
@@ -38,7 +39,7 @@ export async function markNotificationRead(id: string) {
     .update({ read_at: new Date().toISOString() })
     .eq('id', id)
     .is('read_at', null)
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export async function markAllNotificationsRead() {
@@ -46,5 +47,5 @@ export async function markAllNotificationsRead() {
     .from('notifications')
     .update({ read_at: new Date().toISOString() })
     .is('read_at', null)
-  if (error) throw error
+  if (error) throw toError(error)
 }

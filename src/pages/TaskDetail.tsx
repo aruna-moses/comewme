@@ -52,6 +52,7 @@ export default function TaskDetail() {
     name: string
     status: 'declined' | 'waitlisted' | 'remove'
   } | null>(null)
+  const [decisionError, setDecisionError] = useState<string | null>(null)
   const [doneConfirmOpen, setDoneConfirmOpen] = useState(false)
   const [completionCount, setCompletionCount] = useState<number | null>(null)
   const closeCompletionCelebration = useCallback(() => setCompletionCount(null), [])
@@ -162,11 +163,13 @@ export default function TaskDetail() {
     status: 'accepted' | 'declined' | 'waitlisted',
   ) {
     setBusy(true)
+    setDecisionError(null)
     try {
       await setJoinStatus(requestId, status)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not update request')
+      setDecisionError(e instanceof Error ? e.message : 'Could not update request')
+      void load(true)
     } finally {
       setBusy(false)
     }
@@ -428,6 +431,12 @@ export default function TaskDetail() {
           <section className="mt-6">
             <h2 className="mb-1 font-display text-base font-bold">Applicants</h2>
             <p className="mb-3 text-[12px] text-muted">Review each person, then accept, waitlist, or kindly decline.</p>
+            {decisionError && (
+              <p role="alert" className="mb-3 flex items-start justify-between gap-3 rounded-xl border border-alert/30 bg-alert/10 p-3 text-[12px] leading-relaxed text-alert">
+                <span>{decisionError}</span>
+                <button type="button" onClick={() => setDecisionError(null)} aria-label="Dismiss" className="shrink-0 font-bold">×</button>
+              </p>
+            )}
             {spotsLeft === 0 && (
               <p className="mb-3 rounded-xl border border-[#edd996] bg-[#fff4d1] p-3 text-[12px] leading-relaxed text-[#7a622f]">
                 All spots are taken. You can waitlist extra applicants now and move them in later if a spot opens up.

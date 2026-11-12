@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { toError } from './errors'
 
 export interface ModerationCounts {
   is_moderator: boolean
@@ -31,7 +32,7 @@ export const EMPTY_MODERATION: ModerationCounts = {
 /** Everything moderators need for their badges, in a single round trip. */
 export async function fetchModerationCounts(): Promise<ModerationCounts> {
   const { data, error } = await supabase.rpc('moderation_counts')
-  if (error) throw error
+  if (error) throw toError(error)
   return { ...EMPTY_MODERATION, ...(data as Partial<ModerationCounts>) }
 }
 
@@ -52,7 +53,7 @@ export interface VerificationSubmission {
 
 export async function fetchPendingVerifications(): Promise<VerificationSubmission[]> {
   const { data, error } = await supabase.rpc('list_pending_verifications')
-  if (error) throw error
+  if (error) throw toError(error)
   const rows = (data ?? []) as Array<{
     id: string
     user_id: string
@@ -84,7 +85,7 @@ export async function reviewVerification(
     p_status: status,
     p_note: note?.trim() || null,
   })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export interface SOSAlert {
@@ -107,7 +108,7 @@ export interface SOSAlert {
 
 export async function fetchSOSAlerts(): Promise<SOSAlert[]> {
   const { data, error } = await supabase.rpc('list_sos_alerts')
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as SOSAlert[]
 }
 
@@ -117,7 +118,7 @@ export async function reviewSOSAlert(id: string, status: SOSStatus, note: string
     p_status: status,
     p_note: note,
   })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export type ReviewKind = 'sos' | 'report' | 'appeal' | 'ad' | 'verification'
@@ -167,7 +168,7 @@ export interface RecentReview {
 /** Everything the reviewer has finished in the last while, newest first — for later reference. */
 export async function fetchRecentReviews(limit = 30): Promise<RecentReview[]> {
   const { data, error } = await supabase.rpc('list_recent_reviews', { p_limit: limit })
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as RecentReview[]
 }
 
@@ -189,7 +190,7 @@ export interface ReportForAdmin {
 
 export async function fetchFeedbackForModerator(): Promise<ReportForAdmin[]> {
   const { data, error } = await supabase.rpc('list_feedback_for_moderator')
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as ReportForAdmin[]
 }
 
@@ -203,7 +204,7 @@ export async function reviewFeedback(
     p_status: status,
     p_note: note?.trim() || null,
   })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export function mapLink(lat: number | null, lng: number | null, address: string | null) {

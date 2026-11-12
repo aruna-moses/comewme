@@ -11,6 +11,7 @@ import {
   hasAcceptedGuidelines,
 } from '../lib/api'
 import type { Profile, Violation } from '../types'
+import { toError } from '../lib/errors'
 
 const GOOGLE_GUIDELINES_CONSENT_KEY = 'comewme:google-guidelines-consent'
 const GOOGLE_GUIDELINES_CONSENT_MAX_AGE = 10 * 60 * 1000
@@ -85,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function refreshAuthenticatedUserState() {
     const { data, error } = await supabase.auth.getUser()
-    if (error) throw error
+    if (error) throw toError(error)
     if (!data.user) throw new Error('Your sign-in could not be verified. Please try again.')
     setLoading(true)
     await loadUserState(data.user.id)
@@ -140,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       needsOnboarding: Boolean(session) && !loading && !profile,
       async signIn(email, password) {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
+        if (error) throw toError(error)
         await saveGuidelinesAcceptance('1.0')
         await refreshAuthenticatedUserState()
       },
@@ -156,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             },
           },
         })
-        if (error) throw error
+        if (error) throw toError(error)
         if (data.session) {
           await saveGuidelinesAcceptance('1.0')
           await refreshAuthenticatedUserState()
@@ -172,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         if (error) {
           sessionStorage.removeItem(GOOGLE_GUIDELINES_CONSENT_KEY)
-          throw error
+          throw toError(error)
         }
       },
       async signInWithPhone(phone) {
@@ -186,17 +187,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             },
           },
         })
-        if (error) throw error
+        if (error) throw toError(error)
       },
       async verifyPhoneOtp(phone, token) {
         const { error } = await supabase.auth.verifyOtp({ phone, token, type: 'sms' })
-        if (error) throw error
+        if (error) throw toError(error)
         await saveGuidelinesAcceptance('1.0')
         await refreshAuthenticatedUserState()
       },
       async signOut() {
         const { error } = await supabase.auth.signOut()
-        if (error) throw error
+        if (error) throw toError(error)
         // Never leave half-typed drafts for the next person on a shared phone.
         clearAllDrafts()
         setProfile(null)
@@ -212,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async acceptGuidelines() {
         const { data, error } = await supabase.auth.getUser()
-        if (error) throw error
+        if (error) throw toError(error)
         if (!data.user) throw new Error('Sign in before accepting the Community Guidelines.')
         await saveGuidelinesAcceptance('1.0')
         setLoading(true)

@@ -8,6 +8,7 @@ import type { JoinStatus, Task } from '../types'
 import { fetchVerificationStatuses } from '../lib/api'
 import Spinner from '../components/Spinner'
 import TaskCard from '../components/TaskCard'
+import { toError } from '../lib/errors'
 
 export default function MyTasks() {
   const { profile } = useAuth()
@@ -73,7 +74,7 @@ export default function MyTasks() {
             .select('task_id')
             .in('task_id', hostIds)
             .eq('status', 'pending')
-          if (error) throw error
+          if (error) throw toError(error)
           const counts: Record<string, number> = {}
           for (const applicant of applicants ?? []) {
             counts[applicant.task_id] = (counts[applicant.task_id] ?? 0) + 1
@@ -96,7 +97,7 @@ export default function MyTasks() {
             .select('*')
             .in('id', uniqueIds)
             .order('date_time', { ascending: false })
-          if (error) throw error
+          if (error) throw toError(error)
           if (alive) setJoined((data ?? []) as Task[])
           // Extend verification map with the hosts of joined activities (other hosts)
           const joinedHostIds = Array.from(new Set((data ?? []).map((t) => t.host_id)))

@@ -12,6 +12,7 @@ import type {
   ViolationCategory,
   ViolationSeverity,
 } from '../types'
+import { toError } from './errors'
 
 /* ------------------------------------------------------------------ */
 /* Feed                                                                */
@@ -63,7 +64,7 @@ export async function fetchFeed({
   }
 
   const { data, error } = await q
-  if (error) throw error
+  if (error) throw toError(error)
 
   const rows = (data ?? []) as unknown as Task[]
   // Stable partition: live sponsors first, then everything else in date order.
@@ -74,7 +75,7 @@ export async function fetchFeed({
 
 export async function fetchTask(id: string): Promise<Task | null> {
   const { data, error } = await supabase.from('tasks').select(TASK_COLUMNS).eq('id', id).maybeSingle()
-  if (error) throw error
+  if (error) throw toError(error)
   return (data as unknown as Task) ?? null
 }
 
@@ -107,7 +108,7 @@ export async function fetchUpcomingForUser(userId: string): Promise<Task[]> {
   q = ids.length ? q.or(`host_id.eq.${userId},id.in.(${ids.join(',')})`) : q.eq('host_id', userId)
 
   const { data, error } = await q.order('date_time', { ascending: true }).limit(20)
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as unknown as Task[]
 }
 
@@ -135,7 +136,7 @@ export async function createTask(
     })
     .select(TASK_COLUMNS)
     .single()
-  if (error) throw error
+  if (error) throw toError(error)
   return data as unknown as Task
 }
 
@@ -146,12 +147,12 @@ export async function markTaskDone(taskId: string) {
     .eq('id', taskId)
     .select('id')
     .single()
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export async function cancelTask(taskId: string) {
   const { error } = await supabase.from('tasks').update({ status: 'cancelled' }).eq('id', taskId)
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 /* ------------------------------------------------------------------ */
@@ -164,7 +165,7 @@ export async function fetchJoinRequests(taskId: string): Promise<JoinRequest[]> 
     .select('*')
     .eq('task_id', taskId)
     .order('created_at', { ascending: true })
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as JoinRequest[]
 }
 
@@ -179,7 +180,7 @@ export async function fetchMyJoinRequest(
     .eq('requester_id', userId)
     .neq('status', 'withdrawn')
     .maybeSingle()
-  if (error) throw error
+  if (error) throw toError(error)
   return (data as JoinRequest) ?? null
 }
 
@@ -195,7 +196,7 @@ export async function requestJoin(task: Task, profile: Profile, message: string)
     },
     { onConflict: 'task_id,requester_id' },
   )
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export async function setJoinStatus(
@@ -203,12 +204,12 @@ export async function setJoinStatus(
   status: 'accepted' | 'declined' | 'waitlisted',
 ) {
   const { error } = await supabase.from('join_requests').update({ status }).eq('id', requestId)
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export async function withdrawJoin(requestId: string) {
   const { error } = await supabase.from('join_requests').update({ status: 'withdrawn' }).eq('id', requestId)
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 /** Accepted participants for a task, for the avatar row. RLS limits this to host + requester. */
@@ -218,7 +219,7 @@ export async function fetchParticipants(taskId: string): Promise<JoinRequest[]> 
     .select('*')
     .eq('task_id', taskId)
     .eq('status', 'accepted')
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as JoinRequest[]
 }
 
@@ -233,7 +234,7 @@ export async function fetchMessages(taskId: string): Promise<Message[]> {
     .eq('task_id', taskId)
     .order('created_at', { ascending: true })
     .limit(200)
-  if (error) throw error
+  if (error) throw toError(error)
   return resolveChatMedia((data ?? []) as Message[])
 }
 
@@ -244,7 +245,7 @@ export interface NotificationBadgeCounts {
 
 export async function fetchNotificationBadgeCounts(): Promise<NotificationBadgeCounts> {
   const { data, error } = await supabase.rpc('get_notification_badge_counts')
-  if (error) throw error
+  if (error) throw toError(error)
   const row = Array.isArray(data) ? data[0] : data
   return {
     pendingApplications: Number(row?.pending_applications ?? 0),
@@ -254,7 +255,7 @@ export async function fetchNotificationBadgeCounts(): Promise<NotificationBadgeC
 
 export async function fetchChatUnreadCounts(): Promise<Record<string, number>> {
   const { data, error } = await supabase.rpc('get_chat_unread_counts')
-  if (error) throw error
+  if (error) throw toError(error)
   return Object.fromEntries(
     (data ?? []).map((row: { task_id: string; unread_messages: number }) => [
       row.task_id,
@@ -265,7 +266,7 @@ export async function fetchChatUnreadCounts(): Promise<Record<string, number>> {
 
 export async function markChatRead(taskId: string): Promise<void> {
   const { error } = await supabase.rpc('mark_chat_read', { p_task_id: taskId })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 /** Resolve stored private object paths to fresh URLs, retaining support for older URL rows. */
@@ -278,7 +279,7 @@ export async function resolveChatMedia(messages: Message[]): Promise<Message[]> 
   if (mediaPaths.length === 0) return messages
 
   const { data, error } = await supabase.storage.from('chat-media').createSignedUrls(mediaPaths, 3600)
-  if (error) throw error
+  if (error) throw toError(error)
 
   const signedUrls = new Map<string, string>()
   for (const item of data) {
@@ -304,19 +305,19 @@ export async function uploadChatMedia(taskId: string, file: File): Promise<{ pat
     cacheControl: '3600',
     upsert: false,
   })
-  if (error) throw error
+  if (error) throw toError(error)
   return { path }
 }
 
 export async function deleteChatMedia(path: string): Promise<void> {
   const { error } = await supabase.storage.from('chat-media').remove([path])
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 /** Sign a single private chat object path — used to shorten the media send path. */
 export async function signChatMedia(path: string): Promise<string> {
   const { data, error } = await supabase.storage.from('chat-media').createSignedUrl(path, 3600)
-  if (error) throw error
+  if (error) throw toError(error)
   return data.signedUrl
 }
 
@@ -336,7 +337,7 @@ export async function fetchMessageViews(messageIds: string[]): Promise<MessageVi
   if (error) {
     // Migration 029 may not be applied yet — degrade quietly.
     if (/message_views|does not exist|schema cache/i.test(error.message)) return []
-    throw error
+    throw toError(error)
   }
   return (data ?? []) as MessageViewRow[]
 }
@@ -348,7 +349,7 @@ export async function markMessageViewed(messageId: string): Promise<void> {
   const { error } = await supabase
     .from('message_views')
     .insert({ message_id: messageId, user_id: data.user.id })
-  if (error && !/duplicate key/i.test(error.message)) throw error
+  if (error && !/duplicate key/i.test(error.message)) throw toError(error)
 }
 
 export async function sendMessage(
@@ -383,7 +384,7 @@ export async function sendMessage(
     reply_to_sender_name: replyTo?.sender_name ?? null,
     reply_to_preview: replyPreview,
   }).select('*').single()
-  if (error) throw error
+  if (error) throw toError(error)
   if (options?.resolveMedia === false) return data as Message
   const [message] = await resolveChatMedia([data as Message])
   return message
@@ -414,7 +415,7 @@ export async function deleteMessage(messageId: string, senderId: string): Promis
     .eq('sender_id', senderId)
     .select('*')
     .single()
-  if (error) throw error
+  if (error) throw toError(error)
 
   const isStoredMedia = existing.type === 'image' || existing.type === 'audio'
   return {
@@ -453,7 +454,7 @@ export function subscribeToMessages(
 
 export async function fetchProfile(id: string): Promise<Profile | null> {
   const { data, error } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle()
-  if (error) throw error
+  if (error) throw toError(error)
   return (data as Profile) ?? null
 }
 
@@ -463,7 +464,7 @@ export async function fetchProfileByUsername(username: string): Promise<Profile 
     .select('*')
     .eq('username', username)
     .maybeSingle()
-  if (error) throw error
+  if (error) throw toError(error)
   return (data as Profile) ?? null
 }
 
@@ -471,7 +472,7 @@ export async function updateProfile(id: string, patch: Partial<Profile>) {
   // Note: verification_status, trust_score, tasks_completed and no_shows are
   // overwritten by a database trigger even if you send them. That is deliberate.
   const { data, error } = await supabase.from('profiles').update(patch).eq('id', id).select().single()
-  if (error) throw error
+  if (error) throw toError(error)
   return data as Profile
 }
 
@@ -496,7 +497,7 @@ export async function fetchReviews(revieweeId: string): Promise<Review[]> {
     .eq('reviewee_id', revieweeId)
     .order('created_at', { ascending: false })
     .limit(20)
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as Review[]
 }
 
@@ -508,7 +509,7 @@ export async function createReview(input: {
   comment: string
 }) {
   const { error } = await supabase.from('reviews').insert(input)
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export async function submitReport(input: {
@@ -523,7 +524,7 @@ export async function submitReport(input: {
     task_id: input.task_id ?? null,
     reported_user_id: input.reported_user_id ?? null,
   })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 /* ------------------------------------------------------------------ */
@@ -537,7 +538,7 @@ export async function hasAcceptedGuidelines(userId: string): Promise<boolean> {
     .eq('user_id', userId)
     .eq('guideline_version', '1.0')
     .maybeSingle()
-  if (error) throw error
+  if (error) throw toError(error)
   return Boolean(data)
 }
 
@@ -546,7 +547,7 @@ export async function acceptGuidelines(version: string): Promise<void> {
     p_version: version,
     p_user_agent: navigator.userAgent,
   })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export async function getMyViolations(): Promise<Violation[]> {
@@ -554,7 +555,7 @@ export async function getMyViolations(): Promise<Violation[]> {
     .from('violations')
     .select('*')
     .order('created_at', { ascending: false })
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as Violation[]
 }
 
@@ -568,7 +569,7 @@ export async function submitAppeal(violationId: string, reason: string): Promise
     user_id: userData.user.id,
     appeal_reason: reason.trim(),
   })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export async function getMyViolationAppeals(): Promise<ViolationAppeal[]> {
@@ -576,7 +577,7 @@ export async function getMyViolationAppeals(): Promise<ViolationAppeal[]> {
     .from('violation_appeals')
     .select('*')
     .order('created_at', { ascending: false })
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as ViolationAppeal[]
 }
 
@@ -598,24 +599,24 @@ export async function reportViolation(input: {
     category: input.category,
     description: input.description.trim(),
   })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export async function isModerator(): Promise<boolean> {
   const { data, error } = await supabase.rpc('is_moderator')
-  if (error) throw error
+  if (error) throw toError(error)
   return Boolean(data)
 }
 
 export async function getPendingReports(): Promise<Violation[]> {
   const { data, error } = await supabase.rpc('list_pending_reports')
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as Violation[]
 }
 
 export async function getPendingViolationAppeals() {
   const { data, error } = await supabase.rpc('list_pending_violation_appeals')
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as Array<{
     id: string
     violation_id: string
@@ -638,7 +639,7 @@ export async function reviewViolation(
     p_severity: severity,
     p_action_taken: actionTaken,
   })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export async function dismissViolation(violationId: string, reason: string): Promise<void> {
@@ -646,7 +647,7 @@ export async function dismissViolation(violationId: string, reason: string): Pro
     p_violation_id: violationId,
     p_action_taken: reason,
   })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export async function reviewViolationAppeal(
@@ -659,14 +660,14 @@ export async function reviewViolationAppeal(
     p_status: status,
     p_admin_response: adminResponse,
   })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 export async function acknowledgeViolationWarning(violationId: string): Promise<void> {
   const { error } = await supabase.rpc('acknowledge_violation_warning', {
     p_violation_id: violationId,
   })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 /* ------------------------------------------------------------------ */
@@ -689,7 +690,7 @@ export async function fetchSystemEvents(taskId: string): Promise<ChatSystemEvent
     .select('*')
     .eq('task_id', taskId)
     .order('created_at', { ascending: true })
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as ChatSystemEvent[]
 }
 
@@ -713,7 +714,7 @@ export async function fetchCheckins(taskId: string): Promise<Array<{ user_id: st
     .from('activity_checkins')
     .select('user_id, checked_in_at')
     .eq('task_id', taskId)
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as Array<{ user_id: string; checked_in_at: string }>
 }
 
@@ -725,7 +726,7 @@ export async function writeRecap(taskId: string, hostId: string, hostName: strin
   const { error } = await supabase
     .from('activity_recaps')
     .upsert({ task_id: taskId, host_id: hostId, host_name: hostName, body }, { onConflict: 'task_id' })
-  if (error) throw error
+  if (error) throw toError(error)
 
   // Broadcast the recap as a system event so it shows in the chat timeline.
   const { error: eventError } = await supabase
@@ -760,7 +761,7 @@ export async function fetchMessageReactions(messageIds: string[]): Promise<Messa
     .from('message_reactions')
     .select('message_id, user_id, emoji')
     .in('message_id', unique)
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as MessageReaction[]
 }
 
@@ -782,14 +783,14 @@ export async function toggleMessageReaction(messageId: string, emoji: string): P
       .eq('message_id', messageId)
       .eq('user_id', u.user.id)
       .eq('emoji', emoji)
-    if (error) throw error
+    if (error) throw toError(error)
     return 'removed'
   }
 
   const { error } = await supabase
     .from('message_reactions')
     .upsert({ message_id: messageId, user_id: u.user.id, emoji }, { onConflict: 'message_id,user_id' })
-  if (error) throw error
+  if (error) throw toError(error)
   return 'added'
 }
 
@@ -827,7 +828,7 @@ export async function submitVerification(userId: string, file: File) {
   const { error } = await supabase
     .from('verifications')
     .insert({ user_id: userId, selfie_url: path, status: 'pending' })
-  if (error) throw error
+  if (error) throw toError(error)
 }
 
 /**

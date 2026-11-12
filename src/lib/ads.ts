@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { lagosTodayISO } from './adSlot'
+import { toError } from './errors'
 
 export type AdStatus = 'pending' | 'approved' | 'rejected' | 'paused'
 
@@ -44,7 +45,7 @@ export async function fetchActiveAds(): Promise<Ad[]> {
     .gte('end_date', today)
     .order('created_at', { ascending: false })
     .limit(12)
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as Ad[]
 }
 
@@ -55,7 +56,7 @@ export async function fetchMyAds(userId: string): Promise<Ad[]> {
     .select(FIELDS)
     .eq('advertiser_id', userId)
     .order('created_at', { ascending: false })
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as Ad[]
 }
 
@@ -65,7 +66,7 @@ export async function fetchAdsForReview(): Promise<Ad[]> {
     .from('advertisements')
     .select(FIELDS)
     .order('created_at', { ascending: false })
-  if (error) throw error
+  if (error) throw toError(error)
   return (data ?? []) as Ad[]
 }
 
@@ -73,7 +74,7 @@ async function uploadAdImage(userId: string, file: File): Promise<string> {
   const safeName = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '')
   const path = `${userId}/${Date.now()}-${safeName}`
   const { error } = await supabase.storage.from('ad-media').upload(path, file)
-  if (error) throw error
+  if (error) throw toError(error)
   const { data } = supabase.storage.from('ad-media').getPublicUrl(path)
   return data.publicUrl
 }
@@ -102,7 +103,7 @@ export async function submitAd(
     })
     .select(FIELDS)
     .single()
-  if (error) throw error
+  if (error) throw toError(error)
   return data as Ad
 }
 
@@ -120,5 +121,5 @@ export async function reviewAd(
       reviewed_by: (await supabase.auth.getUser()).data.user?.id ?? null,
     })
     .eq('id', adId)
-  if (error) throw error
+  if (error) throw toError(error)
 }

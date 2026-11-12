@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { toError } from './errors'
 
 /**
  * Submit an SOS alert for a task.
@@ -44,7 +45,7 @@ export async function submitSOS(
     media_type: mediaType,
     status: 'pending',
   });
-  if (error) throw error;
+  if (error) throw toError(error);
 }
 
 /** Fetch the current user's own SOS alerts. */
@@ -53,7 +54,7 @@ export async function fetchMySOSAlerts() {
     .from('sos_alerts')
     .select('*')
     .order('created_at', { ascending: false });
-  if (error) throw error;
+  if (error) throw toError(error);
   return (data ?? []) as Array<{
     id: string;
     user_id: string;
@@ -77,7 +78,7 @@ export async function fetchAllSOSAlerts() {
     .from('sos_alerts')
     .select('*, profiles(display_name, username)')
     .order('created_at', { ascending: false });
-  if (error) throw error;
+  if (error) throw toError(error);
   return (data ?? []) as Array<{
     id: string;
     user_id: string;
@@ -110,5 +111,5 @@ export async function updateSOSAlert(
       reviewed_at: new Date().toISOString(),
     })
     .eq('id', alertId);
-  if (error) throw error;
+  if (error) throw toError(error);
 }
