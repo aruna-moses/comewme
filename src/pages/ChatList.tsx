@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, Clock, MapPin } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 import type { Task } from '../types'
-import { formatTime } from '../lib/format'
+import { formatTime, taskEmoji } from '../lib/format'
 import Spinner from '../components/Spinner'
+import Avatar from '../components/Avatar'
 
 export default function ChatList() {
   const { profile } = useAuth()
@@ -15,6 +16,7 @@ export default function ChatList() {
     Array<{
       task: Task
       lastMessage: { body: string; type: 'text' | 'image' | 'audio'; sender_name: string; sender_id: string; created_at: string } | null
+      members: Array<{ id: string; name: string; avatar: string | null }>
     }>
   >([])
   const [loading, setLoading] = useState(true)
@@ -61,20 +63,34 @@ export default function ChatList() {
           return true
         })
 
-        // For each task, fetch last message
+        // For each task, fetch last message + member previews in parallel
         const enriched = await Promise.all(
           unique.map(async (t) => {
-            const { data: msgs } = await supabase
-              .from('messages')
-              .select('body, type, sender_name, sender_id, created_at')
-              .eq('task_id', t.id)
-              .order('created_at', { ascending: false })
-              .limit(1)
-            const last = (msgs ?? [])[0]
-            return {
-              task: t,
-              lastMessage: last ?? null,
-            }
+            const [msgsRes, membersRes] = await Promise.all([
+              supabase
+                .from('messages')
+                .select('body, type, sender_name, sender_id, created_at')
+                .eq('task_id', t.id)
+                .order('created_at', { ascending: false })
+                .limit(1),
+              supabase
+                .from('join_requests')
+                .select('requester_id, requester_name, requester_avatar_url')
+                .eq('task_id', t.id)
+                .eq('status', 'accepted')
+                .order('created_at', { ascending: true })
+                .limit(4),
+            ])
+            const last = (msgsRes.data ?? [])[0]
+            const members = [
+              { id: t.host_id, name: t.host_name, avatar: t.host_avatar_url },
+              ...((membersRes.data ?? []) as Array<{ requester_id: string; requester_name: string; requester_avatar_url: string | null }>).map((m) => ({
+                id: m.requester_id,
+                name: m.requester_name,
+                avatar: m.requester_avatar_url,
+              })),
+            ].slice(0, 4)
+            return { task: t, lastMessage: last ?? null, members }
           })
         )
 
@@ -95,6 +111,80 @@ export default function ChatList() {
   }, [profile?.id])
 
   if (loading) return <Spinner full />
+
+  // Split: anything with an unread ping or starting in the next 24h goes above the fold.
+  const now = Date.now()
+  const buckets = {
+    attention: chats.filter((c) => {
+      if ((unreadByTask[c.task.id] ?? 0) > 0) return true
+      const start = new Date(c.task.date_time).getTime()
+      return start > now - 6 * 3600_000 && start - now < 24 * 3600_000
+    }),
+    quiet: [] as typeof chats,
+  }
+  for (const c of chats) {
+    if (!buckets.attention.includes(c)) buckets.quiet.push(c)
+  }
+
+  // One row, used by both sections.
+  const renderRow = (c: typeof chats[number]) => {
+    const unread = unreadByTask[c.task.id] ?? 0
+    const countdownLabel = (() => {
+      const diff = new Date(c.task.date_time).getTime() - now
+      if (diff < -3600_000) return 'Passed'
+      if (diff < 3600_000) return 'Within the hour'
+      if (diff < 24 * 3600_000) return 'Today'
+      const days = Math.ceil(diff / 86_400_000)
+      return days === 1 ? 'Tomorrow' : `In ${days} days`
+    })()
+    return (
+      <Link
+        key={c.task.id}
+        to={`/task/${c.task.id}/chat`}
+        className="card flex items-start gap-3 rounded-[18px] p-3.5 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+      >
+        <div className="relative shrink-0">
+          <div className="-space-x-2 flex">
+            {c.members.slice(0, 3).map((m, idx) => (
+              <Avatar key={`${c.task.id}-${m.id}-${idx}`} src={m.avatar} name={m.name} size={30} />
+            ))}
+          </div>
+          {unread > 0 && (
+            <span
+              aria-label={`${unread} unread ${unread === 1 ? 'message' : 'messages'}`}
+              className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#e53935] px-1.5 text-[9px] font-bold leading-none text-white ring-2 ring-canvas"
+            >
+              {unread > 99 ? '99+' : unread}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="line-clamp-2 font-display text-[14px] font-bold leading-snug text-ink">
+              {c.task.title}
+            </h2>
+            {c.lastMessage && (
+              <span className="mt-0.5 shrink-0 text-[9px] text-muted">{formatTime(c.lastMessage.created_at)}</span>
+            )}
+          </div>
+          <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted">
+            <span className="inline-flex items-center gap-1 rounded-full bg-line/50 px-2 py-0.5 font-semibold text-ink/70">
+              <span aria-hidden="true">{taskEmoji(c.task.category)}</span> {countdownLabel}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span className="inline-flex items-center gap-1"><MapPin size={9} aria-hidden />{c.task.area}</span>
+          </div>
+          <p className="mt-1.5 line-clamp-1 text-[12px] text-muted">
+            {c.lastMessage
+              ? `${c.lastMessage.sender_id === profile?.id ? 'You' : c.lastMessage.sender_name}: ${
+                  c.lastMessage.type === 'image' ? 'Sent a photo' : c.lastMessage.type === 'audio' ? 'Sent a voice note' : c.lastMessage.body
+                }`
+              : 'No messages yet — say hello.'}
+          </p>
+        </div>
+      </Link>
+    )
+  }
 
   return (
     <div className="pb-8">
@@ -132,36 +222,27 @@ export default function ChatList() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {chats.map((c) => (
-              <Link
-                key={c.task.id}
-                to={`/task/${c.task.id}/chat`}
-                className="card flex items-center gap-3 rounded-[18px] p-4"
-              >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff4d1] text-amber">
-                  <MessageCircle size={21} aria-hidden />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <h2 className="line-clamp-2 font-display text-[14px] font-bold leading-snug">{c.task.title}</h2>
-                    <span className="ml-2 flex shrink-0 items-center gap-2">
-                      {c.lastMessage && <span className="text-[9px] text-muted">{formatTime(c.lastMessage.created_at)}</span>}
-                      {(unreadByTask[c.task.id] ?? 0) > 0 && (
-                        <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#e53935] px-1 text-[9px] font-bold text-white" aria-label={`${unreadByTask[c.task.id]} unread messages`}>
-                          {unreadByTask[c.task.id] > 99 ? '99+' : unreadByTask[c.task.id]}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  <p className="mt-1 line-clamp-1 text-[13px] text-muted">
-                    {c.lastMessage
-                      ? `${c.lastMessage.sender_id === profile?.id ? 'You' : c.lastMessage.sender_name}: ${c.lastMessage.type === 'image' ? 'Photo' : c.lastMessage.type === 'audio' ? 'Voice note' : c.lastMessage.body}`
-                      : 'No messages yet'}
-                  </p>
+          <div className="space-y-5">
+            {buckets.attention.length > 0 && (
+              <section aria-labelledby="attention-heading">
+                <p id="attention-heading" className="px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+                  Needs your attention
+                </p>
+                <div className="mt-2 space-y-2">
+                  {buckets.attention.map((c) => renderRow(c))}
                 </div>
-              </Link>
-            ))}
+              </section>
+            )}
+            {buckets.quiet.length > 0 && (
+              <section aria-labelledby="quiet-heading">
+                <p id="quiet-heading" className="px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+                  All caught up
+                </p>
+                <div className="mt-2 space-y-2">
+                  {buckets.quiet.map((c) => renderRow(c))}
+                </div>
+              </section>
+            )}
           </div>
         )}
         {chats.length > 0 && (

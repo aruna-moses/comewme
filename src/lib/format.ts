@@ -42,6 +42,29 @@ export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+/** Compact task-type emoji for chat-list chips / previews. */
+export function taskEmoji(category: string): string {
+  const map: Record<string, string> = {
+    ride: '🚗',
+    food: '🍽️',
+    market_run: '🛒',
+    dev: '💻',
+    study: '📚',
+    event: '🎉',
+    lesson: '🎓',
+    exercise: '🏋️',
+    game: '🎮',
+    comedy: '🎤',
+    music: '🎵',
+    shop: '🛍️',
+    errands: '📦',
+    church: '⛪',
+    vendor: '🧺',
+    open: '🎪',
+  }
+  return map[category] ?? '📍'
+}
+
 /** Same-day check for chat date separators. */
 export function isSameDay(a: string, b: string): boolean {
   const x = new Date(a)
