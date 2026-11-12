@@ -82,10 +82,10 @@ export default function BottomNav() {
     >
       {({ isActive }) => (
         <span
-          className={`relative flex h-[52px] w-[60px] flex-col items-center justify-center gap-0 rounded-[16px] border transition-all duration-300 ease-out ${
+          className={`relative flex h-[52px] w-[60px] flex-col items-center justify-center gap-0 rounded-[16px] transition-all duration-300 ease-out ${
             isActive
-              ? 'scale-105 border-amber bg-sun/25 text-amber shadow-[0_0_0_3px_rgb(var(--color-sun)/0.18)]'
-              : 'border-transparent text-muted'
+              ? 'scale-105 bg-sun/30 text-amber shadow-[0_0_0_4px_rgb(var(--color-sun)/0.22)]'
+              : 'text-muted'
           }`}
         >
           {icon(isActive)}
