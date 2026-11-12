@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Reply, Send, Square, Trash2, X, Clock3, MapPin, ArrowRight } from 'lucide-react'
+import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Reply, Send, Square, Trash2, X, Clock3, MapPin, ArrowRight, Volume2, VolumeX, BookmarkCheck, MessageSquare } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
+import { supabase } from '../lib/supabase'
 import {
+  checkInToActivity,
   deleteMessage,
   deleteChatMedia,
+  fetchCheckins,
   fetchMessages,
   fetchMessageReactions,
   fetchMyJoinRequest,
+  fetchRecap,
+  fetchSystemEvents,
   fetchParticipants,
   fetchTask,
   markChatRead,
@@ -18,10 +23,11 @@ import {
   subscribeToMessages,
   toggleMessageReaction,
   uploadChatMedia,
+  writeRecap,
 } from '../lib/api'
 import { formatTime, isSameDay, formatDateTime } from '../lib/format'
 import { usePersistedState } from '../lib/drafts'
-import type { JoinRequest, Message, Task } from '../types'
+import type { JoinRequest, Message, Task, ChatSystemEvent } from '../types'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -39,6 +45,12 @@ export default function ChatRoom() {
   const [authorized, setAuthorized] = useState(false)
   const [loading, setLoading] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
+  const [systemEvents, setSystemEvents] = useState<ChatSystemEvent[]>([])
+  const [checkins, setCheckins] = useState<Record<string, string>>({})
+  const [checkinPending, setCheckinPending] = useState(false)
+  const [recapText, setRecapText] = useState('')
+  const [recapPosted, setRecapPosted] = useState(false)
+  const [muteThisChat, setMuteThisChat] = usePersistedState<boolean>(`chat:${id}:mute`, false)
   const [reactions, setReactions] = useState<Record<string, Record<string, { count: number; mine: boolean }>>>({})
   const [draft, setDraft] = usePersistedState(`chat:${id}:draft`, '')
   const [uploading, setUploading] = useState(false)
@@ -93,6 +105,33 @@ export default function ChatRoom() {
     void loadRoom()
     return () => { active = false }
   }, [id, profile?.id])
+
+  useEffect(() => {
+    if (!task?.id) return
+    let active = true
+    const refreshEvents = async () => {
+      const [eventsRes, checkinsRes] = await Promise.all([
+        fetchSystemEvents(task.id).catch(() => [] as ChatSystemEvent[]),
+        fetchCheckins(task.id).catch(() => [] as Array<{ user_id: string; checked_in_at: string }>),
+      ])
+      if (!active) return
+      setSystemEvents(eventsRes)
+      setCheckins(Object.fromEntries(checkinsRes.map((c) => [c.user_id, c.checked_in_at])))
+    }
+    void refreshEvents()
+
+    // Realtime check-ins + system events (welcome, left, recap, etc.)
+    const eventsChannel = supabase.channel(`activity-events:${task.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_system_events', filter: `task_id=eq.${task.id}` }, () => { void refreshEvents() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_checkins', filter: `task_id=eq.${task.id}` }, () => { void refreshEvents() })
+      .subscribe()
+
+    // Host cares about arrival pinging the host when someone taps "I'm here".
+    return () => {
+      active = false
+      void supabase.removeChannel(eventsChannel)
+    }
+  }, [task?.id])
 
   useEffect(() => {
     if (!task || !authorized) return
@@ -212,6 +251,7 @@ export default function ChatRoom() {
     chatEnd.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages.length])
 
+  const isHost = Boolean(profile && task?.host_id === profile.id)
   const handleSend = useCallback(async (
     body: string,
     type: 'text' | 'image' | 'audio' = 'text',
@@ -525,10 +565,24 @@ export default function ChatRoom() {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate font-display text-[16px] font-bold">{task.title}</span>
-            <span className="block truncate text-[12px] text-muted">
+            <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted">
               Group chat · {participants.length + 1} {participants.length === 0 ? 'member' : 'members'}
+              <span aria-hidden>·</span>
+              {Object.keys(checkins).length > 0 ? `${Object.keys(checkins).length} checked in` : 'nobody here yet'}
             </span>
           </span>
+          <button
+            type="button"
+            className="shrink-0 rounded-full p-2 transition hover:bg-canvas"
+            aria-label={muteThisChat ? 'Unmute notifications for this chat' : 'Mute notifications for this chat'}
+            aria-pressed={muteThisChat}
+            onClick={(event) => {
+              event.stopPropagation()
+              setMuteThisChat((v) => !v)
+            }}
+          >
+            {muteThisChat ? <VolumeX size={19} aria-hidden /> : <Volume2 size={19} aria-hidden />}
+          </button>
           <MoreVertical size={19} className="shrink-0 text-muted" aria-hidden />
         </button>
       </header>
@@ -560,7 +614,7 @@ export default function ChatRoom() {
           </section>
         </div>
 
-        {/* Quick facts + one-tap replies */}
+        {/* Quick facts + one-tap replies + check-in */}
         <div className="mt-2 flex flex-wrap gap-2" aria-label="Meeting quick facts">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[10px] font-semibold text-muted">
             <Clock3 size={11} aria-hidden />
@@ -570,13 +624,28 @@ export default function ChatRoom() {
             <MapPin size={11} aria-hidden />
             <span className="max-w-[140px] truncate">{task.meeting_point}</span>
           </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[10px] font-semibold text-muted">
+            <MessageSquare size={11} aria-hidden />
+            {systemEvents.length} updates
+          </span>
         </div>
+
+        {/* Timeline of what happened historically */}
+        {systemEvents.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Activity timeline">
+            {systemEvents.slice(-6).map((event) => (
+              <span key={event.id} className="inline-flex max-w-[160px] items-center gap-1.5 rounded-full bg-line px-2.5 py-1 text-[10px] font-semibold text-muted">
+                <span aria-hidden>{event.event_type === 'joined' ? '🤝' : event.event_type === 'arrived' ? '📍' : event.event_type === 'completed' ? '✅' : event.event_type === 'recap' ? '📝' : 'ℹ️'}</span>
+                <span className="truncate">{event.actor_name}{event.event_type === 'joined' ? ' joined' : event.event_type === 'arrived' ? ' arrived' : event.event_type === 'completed' ? ' — done' : event.event_type === 'recap' ? ' wrote a recap' : ''}</span>
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Quick messages">
           {[
             'On my way',
             'Running 5 mins late',
-            "I'm here ✋",
             'Traffic is bad',
           ].map((text) => (
             <button
@@ -588,6 +657,30 @@ export default function ChatRoom() {
               {text}
             </button>
           ))}
+          <button
+            type="button"
+            disabled={checkinPending}
+            aria-pressed={Boolean(checkins[profile?.id ?? ''])}
+            onClick={async () => {
+              if (!profile) return
+              setCheckinPending(true)
+              setError(null)
+              try {
+                await checkInToActivity(task.id, profile)
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Could not check in.')
+              } finally {
+                setCheckinPending(false)
+              }
+            }}
+            className={`rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
+              checkins[profile?.id ?? '']
+                ? 'border border-verified/40 bg-verified/15 text-verified'
+                : 'border border-amber/40 bg-sun/15 text-amber hover:bg-sun/25'
+            } disabled:opacity-60`}
+          >
+            {checkinPending ? 'Checking…' : checkins[profile?.id ?? ''] ? '✓ I’m here' : 'Check in'}
+          </button>
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto py-4">
@@ -760,6 +853,41 @@ export default function ChatRoom() {
           })}
           <div ref={chatEnd} />
         </div>
+
+        {isHost && task.status === 'completed' && !recapPosted && (
+          <div className="mb-2 rounded-xl border border-amber/30 bg-sun/15 p-3">
+            <p className="text-[11px] font-bold text-amber">Share a recap</p>
+            <p className="mt-0.5 text-[11px] text-ink/80">Tell everyone what went down — what you loved, what you&apos;d skip next time.</p>
+            <textarea
+              className="field mt-2 min-h-[60px] text-[13px]"
+              placeholder="e.g. Brilliant energy. Go for the fruit stand first — everyone agreed next time\u2019ll be there at 8am sharp."
+              value={recapText}
+              onChange={(event) => setRecapText(event.target.value)}
+              maxLength={400}
+            />
+            <button
+              type="button"
+              disabled={!recapText.trim()}
+              className="btn-primary btn-sm mt-2"
+              onClick={async () => {
+                if (!profile || !recapText.trim()) return
+                setError(null)
+                try {
+                  await writeRecap(task.id, profile.id, isHost ? 'You' : profile.display_name, recapText.trim())
+                  setRecapPosted(true)
+                  setRecapText('')
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'Could not save recap.')
+                }
+              }}
+            >
+              Post recap
+            </button>
+          </div>
+        )}
+        {recapPosted && (
+          <p className="mb-2 text-[11px] font-semibold text-verified">Recap saved. Everyone can see it on this activity.</p>
+        )}
 
         <div className="sticky bottom-0 -mx-3 border-t border-line bg-white px-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2">
           {error && <p role="alert" className="px-2 pb-2 text-[12px] font-medium text-alert">{error}</p>}

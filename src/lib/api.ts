@@ -629,6 +629,81 @@ export async function acknowledgeViolationWarning(violationId: string): Promise<
 }
 
 /* ------------------------------------------------------------------ */
+/* System events (joins/leaves/arrivals) and check-ins                       */
+/* ------------------------------------------------------------------ */
+
+export interface ChatSystemEvent {
+  id: string
+  task_id: string
+  event_type: 'joined' | 'left' | 'on_my_way' | 'arrived' | 'completed' | 'recap'
+  actor_id: string | null
+  actor_name: string
+  body: string | null
+  created_at: string
+}
+
+export async function fetchSystemEvents(taskId: string): Promise<ChatSystemEvent[]> {
+  const { data, error } = await supabase
+    .from('activity_system_events')
+    .select('*')
+    .eq('task_id', taskId)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as ChatSystemEvent[]
+}
+
+export async function checkInToActivity(taskId: string, _profile: { id: string; display_name: string }) {
+  const { data: u } = await supabase.auth.getUser()
+  if (!u.user) throw new Error('Sign in first.')
+
+  const { error: checkInError } = await supabase
+    .from('activity_checkins')
+    .upsert({ task_id: taskId, user_id: u.user.id }, { onConflict: 'task_id,user_id' })
+  if (checkInError) throw checkInError
+
+  const { error: eventError } = await supabase
+    .from('activity_system_events')
+    .insert({ task_id: taskId, event_type: 'arrived', actor_id: u.user.id, actor_name: u.user.user_metadata?.display_name ?? (u.user.email ?? 'Someone') })
+  if (eventError) throw eventError
+}
+
+export async function fetchCheckins(taskId: string): Promise<Array<{ user_id: string; checked_in_at: string }>> {
+  const { data, error } = await supabase
+    .from('activity_checkins')
+    .select('user_id, checked_in_at')
+    .eq('task_id', taskId)
+  if (error) throw error
+  return (data ?? []) as Array<{ user_id: string; checked_in_at: string }>
+}
+
+/* ------------------------------------------------------------------ */
+/* Recap                                                                */
+/* ------------------------------------------------------------------ */
+
+export async function writeRecap(taskId: string, hostId: string, hostName: string, body: string) {
+  const { error } = await supabase
+    .from('activity_recaps')
+    .upsert({ task_id: taskId, host_id: hostId, host_name: hostName, body }, { onConflict: 'task_id' })
+  if (error) throw error
+
+  // Broadcast the recap as a system event so it shows in the chat timeline.
+  const { error: eventError } = await supabase
+    .from('activity_system_events')
+    .insert({ task_id: taskId, event_type: 'recap', actor_id: hostId, actor_name: hostName, body })
+  if (eventError) throw eventError
+}
+
+export async function fetchRecap(taskId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('activity_recaps')
+    .select('body')
+    .eq('task_id', taskId)
+    .maybeSingle()
+  if (error) return null
+  const row = data as { body: string } | null
+  return row?.body ?? null
+}
+
 /* Message reactions                                                     */
 
 export interface MessageReaction {

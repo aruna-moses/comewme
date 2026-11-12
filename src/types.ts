@@ -132,6 +132,16 @@ export interface Review {
   created_at: string
 }
 
+export interface ChatSystemEvent {
+  id: string
+  task_id: string
+  event_type: 'joined' | 'left' | 'on_my_way' | 'arrived' | 'completed' | 'recap'
+  actor_id: string | null
+  actor_name: string
+  body: string | null
+  created_at: string
+}
+
 export interface ProfileMedia {
   id: string
   profile_id: string
