@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Pause, Play, Reply, Send, Trash2, X, Clock3, MapPin, ArrowRight, Volume2, VolumeX, BookmarkCheck, MessageSquare } from 'lucide-react'
+import { playSend } from '../lib/sounds'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
@@ -287,6 +288,7 @@ export default function ChatRoom() {
     duration: number | null = null,
   ): Promise<boolean> => {
     if (!task || !profile || (type === 'text' && !body.trim())) return false
+    playSend()
     setError(null)
     try {
       const message = await sendMessage(task.id, profile, body, type, url, duration, replyTarget)

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { markNotificationRead, type InAppNotification } from '../lib/notifications'
 import { supabase } from '../lib/supabase'
+import { playReceive } from '../lib/sounds'
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
@@ -14,40 +15,6 @@ function timeAgo(iso: string) {
   const hours = Math.round(minutes / 60)
   if (hours < 24) return `${hours} hr ago`
   return 'over a day ago'
-}
-
-/** Soft, short UI chime — no audio file needed, generated on demand. */
-function playPing() {
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-    if (!AudioCtx) return
-    const ctx = new AudioCtx()
-    if (ctx.state === 'suspended') void ctx.resume()
-
-    const now = ctx.currentTime
-    const notes: Array<[number, number]> = [
-      [880, 0],    // A5
-      [1318.5, 0.14], // E6
-    ]
-
-    for (const [freq, offset] of notes) {
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
-      osc.type = 'sine'
-      osc.frequency.setValueAtTime(freq, now + offset)
-      gain.gain.setValueAtTime(0.0001, now + offset)
-      gain.gain.exponentialRampToValueAtTime(0.18, now + offset + 0.02)
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.35)
-      osc.connect(gain).connect(ctx.destination)
-      osc.start(now + offset)
-      osc.stop(now + offset + 0.4)
-    }
-
-    // Paranoia: close the context soon after so we don't leak nodes on long sessions
-    window.setTimeout(() => void ctx.close().catch(() => {}), 1200)
-  } catch {
-    // Silent failure is fine — the toast itself is the notification.
-  }
 }
 
 export default function InAppToast() {
@@ -72,7 +39,7 @@ export default function InAppToast() {
         shownRef.current.add(row.id)
         setQueue((q) => (q.length >= 3 ? q : [...q, row]))
         void refresh()
-        playPing()
+        playReceive()
       })
       .subscribe()
     return () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from './context/AuthContext'
@@ -28,6 +28,24 @@ import GuidelinesModal from './components/GuidelinesModal'
 import WarningModal, { activeRestriction, unacknowledgedWarning } from './components/WarningModal'
 import ModerationAlert from './components/ModerationAlert'
 import InAppToast from './components/InAppToast'
+import { unlockAudio } from './lib/sounds'
+
+/** Creates/resumes the shared AudioContext on the user's first tap or keystroke. */
+function AudioUnlock() {
+  useEffect(() => {
+    const unlock = () => unlockAudio()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    window.addEventListener('keydown', unlock, { once: true })
+    // Keyboard slots may not fire on mobile — a click covers it too.
+    window.addEventListener('click', unlock, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+      window.removeEventListener('click', unlock)
+    }
+  }, [])
+  return null
+}
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth()
@@ -180,6 +198,7 @@ export default function App() {
       </Routes>
       <ModerationAlert />
       <InAppToast />
+      <AudioUnlock />
       <BottomNav />
       {session && restriction && <WarningModal violation={restriction} onAcknowledge={async () => undefined} />}
       {session && !restriction && warning && <WarningModal violation={warning} onAcknowledge={() => acknowledgeWarning(warning.id)} />}
