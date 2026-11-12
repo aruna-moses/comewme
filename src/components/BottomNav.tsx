@@ -5,7 +5,7 @@ import { prefetchDiscoverFeed, prefetchMyTasks, prefetchChats, prefetchProfile }
 
 function IconDiscover({ active }: { active: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth={active ? 2.2 : 1.9} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
@@ -13,7 +13,7 @@ function IconDiscover({ active }: { active: boolean }) {
 
 function IconMyTasks({ active }: { active: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
       <rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" strokeWidth={active ? 2.2 : 1.9} />
       <path d="M9 4.5h6M9 10h6M9 14h6M9 18h3" stroke="currentColor" strokeWidth={active ? 2.1 : 1.7} strokeLinecap="round" />
     </svg>
@@ -22,7 +22,7 @@ function IconMyTasks({ active }: { active: boolean }) {
 
 function IconChat({ active }: { active: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-4-.99L3 21l1.99-5.5A8.4 8.4 0 0 1 4 11.5 8.5 8.5 0 1 1 21 11.5Z" stroke="currentColor" strokeWidth={active ? 2.4 : 2} strokeLinecap="round" strokeLinejoin="round" />
       <circle cx="8" cy="12" r="1" fill="currentColor" />
       <circle cx="12" cy="12" r="1" fill="currentColor" />
@@ -33,7 +33,7 @@ function IconChat({ active }: { active: boolean }) {
 
 function IconProfile({ active }: { active: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
       <circle cx="12" cy="8.5" r="3.5" stroke="currentColor" strokeWidth={active ? 2.4 : 2} />
       <path d="M5 19.5c1.6-3 4-4.5 7-4.5s5.4 1.5 7 4.5" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" />
     </svg>
@@ -75,36 +75,30 @@ export default function BottomNav() {
       onPointerDown={prefetcher}
       onFocus={prefetcher}
       className={({ isActive }) =>
-        `flex flex-1 flex-col items-center justify-center gap-[3px] py-1.5 transition-colors duration-200 ${
+        `flex flex-1 items-center justify-center py-1 transition-colors duration-200 ${
           isActive ? 'text-amber' : 'text-muted hover:text-ink'
         }`
       }
     >
       {({ isActive }) => (
-        <>
-          <span
-            className={`relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 ease-out ${
-              isActive
-                ? 'scale-110 bg-amber/15 text-amber shadow-[0_0_0_4px_rgb(var(--color-sun)/0.18)]'
-                : 'bg-transparent text-muted'
-            }`}
-          >
-            {icon(isActive)}
-            {badgeCount > 0 && (
-              <span
-                aria-hidden="true"
-                className="absolute -right-2 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#e53935] px-1 text-[9px] font-bold leading-none text-white shadow-sm"
-              >
-                {badgeCount > 99 ? '99+' : badgeCount}
-              </span>
-            )}
-          </span>
-          <span className={`text-[10px] font-semibold tracking-tight transition-colors duration-200 ${
-            isActive ? 'text-amber' : 'text-muted'
-          }`}>
-            {label}
-          </span>
-        </>
+        <span
+          className={`relative flex h-[52px] w-[60px] flex-col items-center justify-center gap-0 rounded-[16px] border transition-all duration-300 ease-out ${
+            isActive
+              ? 'scale-105 border-amber bg-sun/25 text-amber shadow-[0_0_0_3px_rgb(var(--color-sun)/0.18)]'
+              : 'border-transparent text-muted'
+          }`}
+        >
+          {icon(isActive)}
+          <span className="mt-0.5 text-[9px] font-bold leading-none tracking-tight">{label}</span>
+          {badgeCount > 0 && (
+            <span
+              aria-hidden="true"
+              className="absolute right-0.5 top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-[#e53935] px-1 text-[8px] font-bold leading-none text-white shadow-sm"
+            >
+              {badgeCount > 99 ? '99+' : badgeCount}
+            </span>
+          )}
+        </span>
       )}
     </NavLink>
   )
