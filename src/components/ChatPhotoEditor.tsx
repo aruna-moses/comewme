@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Check, Type, Brush, Crop, X, Eraser, Undo2 } from 'lucide-react'
+import { Brush, Check, Crop, Eraser, Type, Undo2, X } from 'lucide-react'
 
 type Props = {
   file: File
@@ -8,593 +8,751 @@ type Props = {
 }
 
 type Point = { x: number; y: number }
-type Stroke = { points: Point[]; color: string; size: number }
-type Annotation = { id: string; x: number; y: number; text: string; color: string; size: number } // image-space px
-type CropRect = { x: number; y: number; w: number; h: number } // image-space px
+type Stroke = { points: Point[]; color: string; size: number } // size in image px
+type Annotation = { id: string; x: number; y: number; text: string; color: string; size: number } // image px
+type CropRect = { x: number; y: number; w: number; h: number } // image px
 type AspectMode = 'free' | 'square' | 'portrait' | 'wide'
-type Mode = 'crop' | 'text' | 'brush'
+type Handle = 'tl' | 'tr' | 'bl' | 'br'
+type Tool = 'none' | 'crop' | 'text' | 'brush'
 
 const PALETTE = ['#ffffff', '#111111', '#ffb703', '#48cae4', '#06d6a0', '#ef476f', '#8338ec', '#ffd166']
 const TEXT_SIZES = [16, 22, 32, 44, 56, 72]
-const BRUSH_SIZES = [4, 6, 10, 14, 20, 28]
-const MAX_BYTES = 1_500_000 // 1.5MB cap after JPEG export
+const BRUSH_SIZES = [4, 8, 14, 20, 28]
+const MAX_BYTES = 1_500_000
+const MIN_CROP = 40
+const HANDLE_HIT = 24
+
+function ratioFor(aspect: AspectMode): number {
+  if (aspect === 'square') return 1
+  if (aspect === 'portrait') return 4 / 5
+  if (aspect === 'wide') return 16 / 9
+  return 0
+}
+
+function clamp(v: number, min: number, max: number) {
+  return Math.min(Math.max(v, min), max)
+}
 
 export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
+  const strokeRef = useRef<Stroke | null>(null)
+  const dragRef = useRef<{ kind: 'crop-move' | 'crop-resize'; start: Point; handle?: Handle; startCrop: CropRect } | null>(null)
 
   const [natural, setNatural] = useState({ w: 0, h: 0 })
-  const [zoom, setZoom] = useState(1)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [crop, setCrop] = useState<CropRect | null>(null)
+  const [ready, setReady] = useState(false)
+  const [tool, setTool] = useState<Tool>('none')
+  const [crop, setCrop] = useState<CropRect>({ x: 0, y: 0, w: 0, h: 0 })
   const [aspect, setAspect] = useState<AspectMode>('free')
-  const [mode, setMode] = useState<Mode>('crop')
   const [color, setColor] = useState('#ffffff')
-  const [strokeSize, setStrokeSize] = useState(BRUSH_SIZES[2])
+  const [strokeSize, setStrokeSize] = useState(BRUSH_SIZES[1])
   const [textSize, setTextSize] = useState(TEXT_SIZES[2])
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [strokes, setStrokes] = useState<Stroke[]>([])
   const [currentStroke, setCurrentStroke] = useState<Stroke | null>(null)
   const [textInput, setTextInput] = useState('')
-  const [textEditPos, setTextEditPos] = useState<Point | null>(null) // image-space
+  const [textPos, setTextPos] = useState<Point | null>(null)
   const [busy, setBusy] = useState(false)
-  const [historyTick, setHistoryTick] = useState(0)
+  const [tick, setTick] = useState(0)
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 })
 
-  const dragRef = useRef<{ kind: 'pan' | 'text-drag' | 'create-stroke' | 'crop-move' | 'crop-resize'; start: Point; data?: unknown } | null>(null)
+  /* ---------------------------------------------------------------- */
+  /* Load + measure                                                    */
+  /* ---------------------------------------------------------------- */
 
-  // Load image file
   useEffect(() => {
-    let active = true
     const url = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => {
-      if (!active) return
       imageRef.current = img
       setNatural({ w: img.naturalWidth, h: img.naturalHeight })
-      // Default crop = full image
-      const initialAspect: AspectMode = 'free'
-      const pad = Math.floor(Math.pow(img.naturalWidth * img.naturalHeight, 0.5) * 0.03)
-      setCrop({ x: pad, y: pad, w: img.naturalWidth - pad * 2, h: img.naturalHeight - pad * 2 })
-      setAspect(initialAspect)
+      setCrop({ x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight })
+      setReady(true)
     }
     img.src = url
-    return () => { active = false; URL.revokeObjectURL(url) }
+    return () => URL.revokeObjectURL(url)
   }, [file])
 
-  // Compute canvas size on resize
-  const [containerSize, setContainerSize] = useState({ w: 420, h: 420 })
   useEffect(() => {
-    function measure() {
-      const el = containerRef.current
-      if (!el) return
+    const el = containerRef.current
+    if (!el) return
+    const measure = () => {
       const rect = el.getBoundingClientRect()
       setContainerSize({ w: rect.width, h: rect.height })
     }
     measure()
-    const ro = new ResizeObserver(measure)
-    if (containerRef.current) ro.observe(containerRef.current)
-    return () => ro.disconnect()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
   }, [])
 
-  const fitScale = useMemo(() => {
-    if (!natural.w || !natural.h) return 1
+  const scale = useMemo(() => {
+    if (!natural.w || !natural.h || !containerSize.w || !containerSize.h) return 1
     return Math.min(containerSize.w / natural.w, containerSize.h / natural.h)
-  }, [containerSize, natural])
+  }, [natural, containerSize])
 
-  const scale = fitScale * zoom
   const dispW = natural.w * scale
   const dispH = natural.h * scale
+  const offsetX = (containerSize.w - dispW) / 2
+  const offsetY = (containerSize.h - dispH) / 2
 
-  // image-space → display-space
   const toDisp = useCallback(
-    (p: Point) => ({ x: (p.x - natural.w / 2) * scale + containerSize.w / 2 + pan.x, y: (p.y - natural.h / 2) * scale + containerSize.h / 2 + pan.y }),
-    [containerSize.w, containerSize.h, natural.w, natural.h, scale, pan],
+    (p: Point) => ({ x: offsetX + p.x * scale, y: offsetY + p.y * scale }),
+    [offsetX, offsetY, scale],
   )
   const fromDisp = useCallback(
-    (p: Point) => ({ x: (p.x - containerSize.w / 2 - pan.x) / scale + natural.w / 2, y: (p.y - containerSize.h / 2 - pan.y) / scale + natural.h / 2 }),
-    [containerSize.w, containerSize.h, natural.w, natural.h, scale, pan],
+    (p: Point) => ({ x: (p.x - offsetX) / scale, y: (p.y - offsetY) / scale }),
+    [offsetX, offsetY, scale],
   )
+
+  /* ---------------------------------------------------------------- */
+  /* Canvas rendering                                                  */
+  /* ---------------------------------------------------------------- */
 
   const drawScene = useCallback(() => {
     const canvas = canvasRef.current
-    if (!canvas || !imageRef.current) return
+    const img = imageRef.current
+    if (!canvas || !img || !containerSize.w || !containerSize.h) return
+
     const dpr = window.devicePixelRatio || 1
-    canvas.width = containerSize.w * dpr
-    canvas.height = containerSize.h * dpr
+    canvas.width = Math.round(containerSize.w * dpr)
+    canvas.height = Math.round(containerSize.h * dpr)
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    ctx.scale(dpr, dpr)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, containerSize.w, containerSize.h)
 
-    // Image
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(
-      imageRef.current,
-      (containerSize.w - dispW) / 2 + pan.x,
-      (containerSize.h - dispH) / 2 + pan.y,
-      dispW,
-      dispH,
-    )
+    ctx.drawImage(img, offsetX, offsetY, dispW, dispH)
 
-    // Dim outside crop rect
-    if (crop) {
-      ctx.save()
-      ctx.fillStyle = 'rgba(0,0,0,0.48)'
-      // Top band
-      const cTop = crop.y * scale + (containerSize.h - dispH) / 2 + pan.y
-      const cH = crop.h * scale
-      const cLeft = crop.x * scale + (containerSize.w - dispW) / 2 + pan.x
+    // Brush strokes
+    ctx.save()
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    for (const stroke of strokes) {
+      ctx.strokeStyle = stroke.color
+      ctx.lineWidth = Math.max(1, stroke.size * scale)
+      ctx.beginPath()
+      stroke.points.forEach((p, i) => {
+        const d = toDisp(p)
+        if (i === 0) ctx.moveTo(d.x, d.y)
+        else ctx.lineTo(d.x, d.y)
+      })
+      ctx.stroke()
+    }
+    if (currentStroke) {
+      ctx.strokeStyle = currentStroke.color
+      ctx.lineWidth = Math.max(1, currentStroke.size * scale)
+      ctx.beginPath()
+      currentStroke.points.forEach((p, i) => {
+        const d = toDisp(p)
+        if (i === 0) ctx.moveTo(d.x, d.y)
+        else ctx.lineTo(d.x, d.y)
+      })
+      ctx.stroke()
+    }
+    ctx.restore()
+
+    // Text annotations
+    ctx.save()
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    for (const a of annotations) {
+      const d = toDisp(a)
+      const fontPx = Math.max(6, a.size * scale)
+      ctx.font = `700 ${fontPx}px "Plus Jakarta Sans", system-ui, sans-serif`
+      ctx.lineWidth = Math.max(2, fontPx * 0.1)
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)'
+      ctx.strokeText(a.text, d.x, d.y)
+      ctx.fillStyle = a.color
+      ctx.fillText(a.text, d.x, d.y)
+    }
+    if (tool === 'text' && textPos) {
+      const d = toDisp(textPos)
+      if (textInput.trim()) {
+        const fontPx = Math.max(6, (textSize / scale) * scale)
+        ctx.font = `700 ${fontPx}px "Plus Jakarta Sans", system-ui, sans-serif`
+        ctx.lineWidth = Math.max(2, fontPx * 0.1)
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)'
+        ctx.strokeText(textInput, d.x, d.y)
+        ctx.fillStyle = color
+        ctx.fillText(textInput, d.x, d.y)
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)'
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.moveTo(d.x - 12, d.y)
+      ctx.lineTo(d.x + 12, d.y)
+      ctx.moveTo(d.x, d.y - 12)
+      ctx.lineTo(d.x, d.y + 12)
+      ctx.stroke()
+    }
+    ctx.restore()
+
+    // Crop overlay — only when the crop tool is on
+    if (tool === 'crop' && crop.w > 0 && crop.h > 0) {
+      const tl = toDisp({ x: crop.x, y: crop.y })
       const cW = crop.w * scale
-      ctx.fillRect(0, 0, containerSize.w, Math.max(0, cTop))
-      ctx.fillRect(0, Math.min(containerSize.h, cTop + cH), containerSize.w, containerSize.h)
-      ctx.fillRect(0, Math.max(0, cTop), Math.max(0, cLeft), cH)
-      ctx.fillRect(Math.min(containerSize.w, cLeft + cW), Math.max(0, cTop), containerSize.w, cH)
-      ctx.restore()
-
-      // Crop border
+      const cH = crop.h * scale
       ctx.save()
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'
+      ctx.fillRect(0, 0, containerSize.w, Math.max(0, tl.y))
+      ctx.fillRect(0, tl.y + cH, containerSize.w, Math.max(0, containerSize.h - (tl.y + cH)))
+      ctx.fillRect(0, tl.y, Math.max(0, tl.x), cH)
+      ctx.fillRect(tl.x + cW, tl.y, Math.max(0, containerSize.w - (tl.x + cW)), cH)
+
+      // Rule-of-thirds guides
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      for (let i = 1; i <= 2; i += 1) {
+        const gx = tl.x + (cW * i) / 3
+        const gy = tl.y + (cH * i) / 3
+        ctx.moveTo(gx, tl.y)
+        ctx.lineTo(gx, tl.y + cH)
+        ctx.moveTo(tl.x, gy)
+        ctx.lineTo(tl.x + cW, gy)
+      }
+      ctx.stroke()
+
+      // Border
       ctx.strokeStyle = '#ffffff'
-      ctx.lineWidth = 2
-      ctx.setLineDash([8, 6])
-      ctx.strokeRect(cLeft, cTop, cW, cH)
-      ctx.restore()
+      ctx.lineWidth = 1.5
+      ctx.strokeRect(tl.x, tl.y, cW, cH)
 
       // Corner handles
-      const handles: Point[] = [
-        { x: cLeft, y: cTop },
-        { x: cLeft + cW, y: cTop },
-        { x: cLeft, y: cTop + cH },
-        { x: cLeft + cW, y: cTop + cH },
+      const corners: Point[] = [
+        { x: tl.x, y: tl.y },
+        { x: tl.x + cW, y: tl.y },
+        { x: tl.x, y: tl.y + cH },
+        { x: tl.x + cW, y: tl.y + cH },
       ]
-      ctx.save()
-      ctx.fillStyle = '#ffffff'
-      for (const h of handles) {
-        const r = 7
+      for (const point of corners) {
         ctx.beginPath()
-        ctx.arc(h.x, h.y, r + 2, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(0,0,0,0.4)'
+        ctx.arc(point.x, point.y, 11, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(0,0,0,0.35)'
         ctx.fill()
         ctx.beginPath()
-        ctx.arc(h.x, h.y, r, 0, Math.PI * 2)
+        ctx.arc(point.x, point.y, 8, 0, Math.PI * 2)
         ctx.fillStyle = '#ffffff'
         ctx.fill()
       }
       ctx.restore()
     }
 
-    // Brush strokes
-    ctx.save()
-    for (const s of strokes) {
-      ctx.strokeStyle = s.color
-      ctx.lineWidth = s.size
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctx.beginPath()
-      for (let i = 0; i < s.points.length; i += 1) {
-        const p = s.points[i]
-        const disp = toDisp(p)
-        if (i === 0) ctx.moveTo(disp.x, disp.y)
-        else ctx.lineTo(disp.x, disp.y)
-      }
-      ctx.stroke()
-    }
-    if (currentStroke) {
-      ctx.strokeStyle = currentStroke.color
-      ctx.lineWidth = currentStroke.size
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctx.beginPath()
-      for (let i = 0; i < currentStroke.points.length; i += 1) {
-        const p = currentStroke.points[i]
-        const disp = toDisp(p)
-        if (i === 0) ctx.moveTo(disp.x, disp.y)
-        else ctx.lineTo(disp.x, disp.y)
-      }
-      ctx.stroke()
-    }
-    ctx.restore()
-
-    // Annotations
-    ctx.save()
-    for (const a of annotations) {
-      const disp = toDisp(a)
-      ctx.fillStyle = a.color
-      ctx.font = `bold ${a.size}px "Plus Jakarta Sans", system-ui, sans-serif`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      // Outline for readability on busy photos
-      ctx.lineWidth = 4
-      ctx.strokeStyle = 'rgba(0,0,0,0.45)'
-      ctx.strokeText(a.text, disp.x, disp.y)
-      ctx.fillText(a.text, disp.x, disp.y)
-    }
-    // Live text position with caret while typing
-    if (mode === 'text' && textEditPos) {
-      const disp = toDisp(textEditPos)
-      if (textInput) {
-        ctx.fillStyle = color
-        ctx.font = `bold ${textSize}px "Plus Jakarta Sans", system-ui, sans-serif`
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.lineWidth = 4
-        ctx.strokeStyle = 'rgba(0,0,0,0.5)'
-        ctx.strokeText(textInput, disp.x, disp.y)
-        ctx.fillText(textInput, disp.x, disp.y)
-      }
-
-      // Crosshair guiding the position
-      ctx.strokeStyle = 'rgba(255,255,255,0.7)'
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      ctx.moveTo(disp.x - 10, disp.y)
-      ctx.lineTo(disp.x + 10, disp.y)
-      ctx.moveTo(disp.x, disp.y - 10)
-      ctx.lineTo(disp.x, disp.y + 10)
-      ctx.stroke()
-    }
-    ctx.restore()
-    // Suppress unused-history errors
-    void historyTick
-  }, [containerSize, dispW, dispH, natural, scale, pan, crop, strokes, currentStroke, annotations, mode, color, textSize, textInput, textEditPos, toDisp, historyTick])
+    void tick
+  }, [
+    annotations, containerSize, crop, currentStroke, dispH, dispW, offsetX, offsetY,
+    scale, strokes, textInput, textPos, textSize, color, tool, tick, toDisp,
+  ])
 
   useEffect(() => {
     drawScene()
   }, [drawScene])
 
-  function updateAspect(next: AspectMode) {
-    setAspect(next)
-    if (!natural.w || !natural.h) return
-    let newW = natural.w
-    let newH = natural.h
-    if (next === 'square') {
-      const s = Math.min(natural.w, natural.h)
-      newW = s; newH = s
-    } else if (next === 'portrait') {
-      newH = Math.min(natural.h, natural.w * 1.25)
-      newW = newH * 0.8
-    } else if (next === 'wide') {
-      newW = Math.min(natural.w, natural.h * 1.777)
-      newH = newW / 1.777
-    } else {
-      newW = natural.w; newH = natural.h
-    }
-    newW = Math.round(newW); newH = Math.round(newH)
-    setCrop({
-      x: Math.round((natural.w - newW) / 2),
-      y: Math.round((natural.h - newH) / 2),
-      w: newW,
-      h: newH,
-    })
+  /* ---------------------------------------------------------------- */
+  /* Pointer interaction                                               */
+  /* ---------------------------------------------------------------- */
+
+  function pointerPos(event: React.PointerEvent<HTMLDivElement>): Point {
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return { x: 0, y: 0 }
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top }
   }
 
-  function pointerPos(e: React.PointerEvent<HTMLDivElement>) {
-    const rect = containerRef.current!.getBoundingClientRect()
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top }
-  }
-
-  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    e.currentTarget.setPointerCapture(e.pointerId)
-    const disp = pointerPos(e)
+  function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (!ready || !natural.w) return
+    event.currentTarget.setPointerCapture(event.pointerId)
+    const disp = pointerPos(event)
     const imgPt = fromDisp(disp)
 
-    if (mode === 'brush') {
-      setCurrentStroke({ points: [imgPt], color, size: strokeSize })
-      dragRef.current = { kind: 'create-stroke', start: disp }
+    if (tool === 'brush') {
+      const stroke: Stroke = {
+        points: [imgPt],
+        color,
+        size: strokeSize / scale,
+      }
+      strokeRef.current = stroke
+      setCurrentStroke(stroke)
       return
     }
 
-    if (mode === 'text') {
-      setTextEditPos({ x: Math.min(Math.max(0, imgPt.x), natural.w), y: Math.min(Math.max(0, imgPt.y), natural.h) })
-      dragRef.current = { kind: 'pan', start: disp, data: pan }
+    if (tool === 'text') {
+      setTextPos({
+        x: clamp(imgPt.x, 0, natural.w),
+        y: clamp(imgPt.y, 0, natural.h),
+      })
       return
     }
 
-    // Crop mode: check if on a corner handle first
-    if (crop) {
-      const ptDisp = toDisp({ x: crop.x, y: crop.y })
-      const tr = toDisp({ x: crop.x + crop.w, y: crop.y })
-      const bl = toDisp({ x: crop.x, y: crop.y + crop.h })
-      const br = toDisp({ x: crop.x + crop.w, y: crop.y + crop.h })
-      const handleHits: Array<{ handle: 'tl' | 'tr' | 'bl' | 'br'; point: Point }> = [
-        { handle: 'tl', point: ptDisp },
-        { handle: 'tr', point: tr },
-        { handle: 'bl', point: bl },
-        { handle: 'br', point: br },
+    if (tool === 'crop' && crop.w > 0 && crop.h > 0) {
+      const corners: Array<{ handle: Handle; point: Point }> = [
+        { handle: 'tl', point: toDisp({ x: crop.x, y: crop.y }) },
+        { handle: 'tr', point: toDisp({ x: crop.x + crop.w, y: crop.y }) },
+        { handle: 'bl', point: toDisp({ x: crop.x, y: crop.y + crop.h }) },
+        { handle: 'br', point: toDisp({ x: crop.x + crop.w, y: crop.y + crop.h }) },
       ]
-      for (const { handle, point } of handleHits) {
-        if (Math.hypot(point.x - disp.x, point.y - disp.y) <= 14) {
-          dragRef.current = { kind: 'crop-resize', start: disp, data: { handle, startCrop: { ...crop } } }
+      for (const { handle, point } of corners) {
+        if (Math.hypot(point.x - disp.x, point.y - disp.y) <= HANDLE_HIT) {
+          dragRef.current = { kind: 'crop-resize', handle, start: disp, startCrop: { ...crop } }
           return
         }
       }
-      // Otherwise check inside an area
-      const inCrop = imgPt.x >= crop.x && imgPt.x <= crop.x + crop.w && imgPt.y >= crop.y && imgPt.y <= crop.y + crop.h
-      if (inCrop) {
-        dragRef.current = { kind: 'crop-move', start: disp, data: { startCrop: { ...crop } } }
+      const inside =
+        imgPt.x >= crop.x && imgPt.x <= crop.x + crop.w &&
+        imgPt.y >= crop.y && imgPt.y <= crop.y + crop.h
+      if (inside) {
+        dragRef.current = { kind: 'crop-move', start: disp, startCrop: { ...crop } }
         return
       }
-      // Otherwise create a fresh crop region
-      setCrop({ x: imgPt.x, y: imgPt.y, w: 10, h: 10 })
-      dragRef.current = { kind: 'crop-resize', start: disp, data: { handle: 'br', startCrop: { x: imgPt.x, y: imgPt.y, w: 10, h: 10 } } }
-      return
+      // Outside the frame: do nothing. No collapsing the crop.
     }
-
-    dragRef.current = { kind: 'pan', start: disp, data: pan }
   }
 
-  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!dragRef.current) return
-    const disp = pointerPos(e)
+  function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const disp = pointerPos(event)
     const imgPt = fromDisp(disp)
+
+    if (tool === 'brush' && strokeRef.current) {
+      const stroke = strokeRef.current
+      stroke.points.push(imgPt)
+      setCurrentStroke({ ...stroke, points: [...stroke.points] })
+      return
+    }
+
     const drag = dragRef.current
+    if (!drag) return
 
-    if (drag.kind === 'pan') {
-      const p = drag.data as Point
-      setPan({ x: p.x + (disp.x - drag.start.x), y: p.y + (disp.y - drag.start.y) })
-      return
-    }
-
-    if (drag.kind === 'create-stroke' && currentStroke) {
-      setCurrentStroke({ ...currentStroke, points: [...currentStroke.points, imgPt] })
-      return
-    }
-
-    if (drag.kind === 'crop-move' && crop) {
-      const data = drag.data as { startCrop: CropRect }
+    if (drag.kind === 'crop-move') {
       const dx = (disp.x - drag.start.x) / scale
       const dy = (disp.y - drag.start.y) / scale
-      const x = Math.min(Math.max(0, data.startCrop.x + dx), natural.w - data.startCrop.w)
-      const y = Math.min(Math.max(0, data.startCrop.y + dy), natural.h - data.startCrop.h)
-      setCrop({ x, y, w: data.startCrop.w, h: data.startCrop.h })
+      const x = clamp(drag.startCrop.x + dx, 0, Math.max(0, natural.w - drag.startCrop.w))
+      const y = clamp(drag.startCrop.y + dy, 0, Math.max(0, natural.h - drag.startCrop.h))
+      setCrop({ x, y, w: drag.startCrop.w, h: drag.startCrop.h })
       return
     }
 
-    if (drag.kind === 'crop-resize' && crop) {
-      const data = drag.data as { handle: 'tl' | 'tr' | 'bl' | 'br'; startCrop: CropRect }
-      const s = data.startCrop
-      const nx = imgPt.x, ny = imgPt.y
-      let { x, y, w, h } = s
-      switch (data.handle) {
-        case 'tl':
-          x = Math.min(nx, s.x + s.w - 4)
-          y = Math.min(ny, s.y + s.h - 4)
-          w = s.x + s.w - x
-          h = s.y + s.h - y
-          break
-        case 'tr':
-          y = Math.min(ny, s.y + s.h - 4)
-          w = Math.max(4, nx - s.x)
-          h = s.y + s.h - y
-          x = s.x
-          break
-        case 'bl':
-          x = Math.min(nx, s.x + s.w - 4)
-          w = s.x + s.w - x
-          h = Math.max(4, ny - s.y)
-          y = s.y
-          break
-        case 'br':
-          w = Math.max(4, nx - s.x)
-          h = Math.max(4, ny - s.y)
-          break
-      }
-      // enforce aspect
-      if (aspect !== 'free') {
-        const ar = aspect === 'square' ? 1 : aspect === 'portrait' ? 0.8 : 16 / 9
-        const target = w
-        const h2 = target / ar
-        if (data.handle === 'bl' || data.handle === 'tl') {
-          x = s.x + s.w - target
-          w = target
-          h = h2
-          if (data.handle === 'tl') y = s.y + s.h - h2
-          else y = s.y
-        } else {
-          w = target
-          h = h2
-          if (data.handle === 'tr') y = s.y + s.h - h2
-          else y = s.y
-        }
-      }
-      setCrop({ x: Math.max(0, x), y: Math.max(0, y), w: Math.min(w, natural.w), h: Math.min(h, natural.h) })
+    if (drag.kind === 'crop-resize' && drag.handle) {
+      const next = resizeCrop(drag.startCrop, drag.handle, imgPt, aspect, natural)
+      setCrop(next)
     }
   }
 
-  function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
-    if (dragRef.current?.kind === 'create-stroke' && currentStroke && currentStroke.points.length > 1) {
-      setStrokes((s) => [...s, currentStroke])
-      setCurrentStroke(null)
-    } else if (currentStroke) {
+  function onPointerUp() {
+    if (strokeRef.current) {
+      const stroke = strokeRef.current
+      strokeRef.current = null
+      if (stroke.points.length > 1) {
+        setStrokes((prev) => [...prev, stroke])
+      }
       setCurrentStroke(null)
     }
     dragRef.current = null
-    setHistoryTick((n) => n + 1)
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Crop presets + annotations                                        */
+  /* ---------------------------------------------------------------- */
+
+  function applyAspect(next: AspectMode) {
+    setAspect(next)
+    if (!natural.w || !natural.h) return
+    const ratio = ratioFor(next)
+    if (!ratio) {
+      setCrop({ x: 0, y: 0, w: natural.w, h: natural.h })
+      return
+    }
+    let w = natural.w
+    let h = w / ratio
+    if (h > natural.h) {
+      h = natural.h
+      w = h * ratio
+    }
+    setCrop({
+      x: Math.round((natural.w - w) / 2),
+      y: Math.round((natural.h - h) / 2),
+      w: Math.round(w),
+      h: Math.round(h),
+    })
   }
 
   function addAnnotation() {
-    if (!textInput.trim() || !textEditPos) return
-    setAnnotations((a) => [...a, { id: crypto.randomUUID(), x: textEditPos.x, y: textEditPos.y, text: textInput.trim(), color, size: textSize }])
+    const text = textInput.trim()
+    if (!text || !textPos) return
+    setAnnotations((prev) => [
+      ...prev,
+      { id: `a-${Date.now()}-${prev.length}`, x: textPos.x, y: textPos.y, text, color, size: textSize / scale },
+    ])
     setTextInput('')
-    setHistoryTick((n) => n + 1)
-  }
-
-  function commitSend() {
-    if (!imageRef.current || !natural.w || !crop) return
-    setBusy(true)
-    const canvas = document.createElement('canvas')
-    canvas.width = crop.w
-    canvas.height = crop.h
-    const ctx = canvas.getContext('2d')
-    if (!ctx) { setBusy(false); return }
-    ctx.imageSmoothingEnabled = true
-    ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(imageRef.current, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h)
-    // Strokes & annotations in image coords — translate into crop coords
-    const offX = -crop.x, offY = -crop.y
-    for (const s of strokes) {
-      ctx.strokeStyle = s.color
-      ctx.lineWidth = s.size
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctx.beginPath()
-      for (let i = 0; i < s.points.length; i += 1) {
-        const p = s.points[i]
-        if (i === 0) ctx.moveTo(p.x + offX, p.y + offY)
-        else ctx.lineTo(p.x + offX, p.y + offY)
-      }
-      ctx.stroke()
-    }
-    for (const a of annotations) {
-      ctx.fillStyle = a.color
-      ctx.font = `bold ${a.size}px "Plus Jakarta Sans", system-ui, sans-serif`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.lineWidth = 4
-      ctx.strokeStyle = 'rgba(0,0,0,0.5)'
-      ctx.strokeText(a.text, a.x + offX, a.y + offY)
-      ctx.fillText(a.text, a.x + offX, a.y + offY)
-    }
-
-    canvas.toBlob((blob) => {
-      if (!blob) { setBusy(false); return }
-      // Re-encode with size cap: if too big, downscale
-      if (blob.size > MAX_BYTES) {
-        const minDim = 1600
-        const scale = Math.sqrt(MAX_BYTES / blob.size)
-        const target = document.createElement('canvas')
-        target.width = Math.max(1, Math.round(canvas.width * scale))
-        target.height = Math.max(1, Math.round(canvas.height * scale))
-        const tctx = target.getContext('2d')
-        tctx!.drawImage(canvas, 0, 0, target.width, target.height)
-        target.toBlob((smallBlob) => {
-          if (!smallBlob) { setBusy(false); return }
-          const f = new File([smallBlob], 'photo.jpg', { type: 'image/jpeg' })
-          onSend(f)
-          setBusy(false)
-        }, 'image/jpeg', 0.82)
-        return
-      }
-      onSend(new File([blob], 'photo.jpg', { type: 'image/jpeg' }))
-      setBusy(false)
-    }, 'image/jpeg', 0.88)
+    setTextPos(null)
+    setTick((n) => n + 1)
   }
 
   function undoLast() {
-    if (strokes.length) setStrokes(strokes.slice(0, -1))
-    else if (annotations.length) setAnnotations(annotations.slice(0, -1))
-    setHistoryTick((n) => n + 1)
+    if (strokes.length > 0) setStrokes((prev) => prev.slice(0, -1))
+    else if (annotations.length > 0) setAnnotations((prev) => prev.slice(0, -1))
+    setTick((n) => n + 1)
   }
 
   function clearAll() {
     setStrokes([])
     setAnnotations([])
     setCurrentStroke(null)
-    setHistoryTick((n) => n + 1)
+    setTextPos(null)
+    setTick((n) => n + 1)
   }
+
+  /* ---------------------------------------------------------------- */
+  /* Export                                                            */
+  /* ---------------------------------------------------------------- */
+
+  function send() {
+    const img = imageRef.current
+    if (!img || !natural.w || busy) return
+    const region: CropRect = crop.w >= MIN_CROP && crop.h >= MIN_CROP
+      ? crop
+      : { x: 0, y: 0, w: natural.w, h: natural.h }
+
+    setBusy(true)
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(region.w)
+    canvas.height = Math.round(region.h)
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      setBusy(false)
+      return
+    }
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(img, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h)
+
+    const offX = -region.x
+    const offY = -region.y
+
+    ctx.save()
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    for (const stroke of strokes) {
+      ctx.strokeStyle = stroke.color
+      ctx.lineWidth = Math.max(1, stroke.size)
+      ctx.beginPath()
+      stroke.points.forEach((p, i) => {
+        if (i === 0) ctx.moveTo(p.x + offX, p.y + offY)
+        else ctx.lineTo(p.x + offX, p.y + offY)
+      })
+      ctx.stroke()
+    }
+    ctx.restore()
+
+    ctx.save()
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    for (const a of annotations) {
+      const fontPx = Math.max(6, a.size)
+      ctx.font = `700 ${fontPx}px "Plus Jakarta Sans", system-ui, sans-serif`
+      ctx.lineWidth = Math.max(2, fontPx * 0.1)
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)'
+      ctx.strokeText(a.text, a.x + offX, a.y + offY)
+      ctx.fillStyle = a.color
+      ctx.fillText(a.text, a.x + offX, a.y + offY)
+    }
+    ctx.restore()
+
+    const finish = (blob: Blob) => {
+      onSend(new File([blob], 'photo.jpg', { type: 'image/jpeg' }))
+      setBusy(false)
+    }
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setBusy(false)
+          return
+        }
+        if (blob.size <= MAX_BYTES) {
+          finish(blob)
+          return
+        }
+        const factor = Math.sqrt(MAX_BYTES / blob.size)
+        const smaller = document.createElement('canvas')
+        smaller.width = Math.max(1, Math.round(canvas.width * factor))
+        smaller.height = Math.max(1, Math.round(canvas.height * factor))
+        const sctx = smaller.getContext('2d')
+        if (!sctx) {
+          finish(blob)
+          return
+        }
+        sctx.imageSmoothingQuality = 'high'
+        sctx.drawImage(canvas, 0, 0, smaller.width, smaller.height)
+        smaller.toBlob(
+          (smallBlob) => finish(smallBlob ?? blob),
+          'image/jpeg',
+          0.84,
+        )
+      },
+      'image/jpeg',
+      0.9,
+    )
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* UI                                                                */
+  /* ---------------------------------------------------------------- */
+
+  const toolButton = (value: Tool, icon: React.ReactNode, label: string) => (
+    <button
+      type="button"
+      aria-pressed={tool === value}
+      onClick={() => setTool((current) => (current === value ? 'none' : value))}
+      className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-semibold transition ${
+        tool === value ? 'bg-[#FF9F1C] text-[#0B0B0F]' : 'bg-white/10 text-white'
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  )
 
   return (
     <div className="fixed inset-0 z-[70] flex flex-col bg-black">
-      {/* Top bar */}
-      <div className="flex items-center justify-between gap-2 px-3 py-3 text-white">
-        <button type="button" className="rounded-full bg-white/10 p-2 text-white" onClick={onCancel} aria-label="Cancel">
-          <X size={19} />
-        </button>
-        <span className="font-display text-[15px] font-bold">Edit photo</span>
-        <button type="button" className="rounded-full bg-amber p-2 text-ink disabled:opacity-60" onClick={commitSend} disabled={busy || !crop} aria-label="Send">
-          <Check size={19} />
-        </button>
+      {/* Top: cancel + title + undo/clear, then the tool row */}
+      <div className="shrink-0 space-y-2 px-3 pb-3 pt-3">
+        <div className="flex items-center justify-between gap-2 text-white">
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="Cancel"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white"
+          >
+            <X size={19} />
+          </button>
+          <span className="font-display text-[15px] font-bold">Edit photo</span>
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={undoLast}
+              disabled={strokes.length === 0 && annotations.length === 0}
+              aria-label="Undo"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white disabled:opacity-30"
+            >
+              <Undo2 size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={clearAll}
+              disabled={strokes.length === 0 && annotations.length === 0}
+              aria-label="Clear all"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white disabled:opacity-30"
+            >
+              <Eraser size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-1.5">
+          {toolButton('crop', <Crop size={16} />, 'Crop')}
+          {toolButton('text', <Type size={16} />, 'Text')}
+          {toolButton('brush', <Brush size={16} />, 'Draw')}
+        </div>
       </div>
 
-      {/* Canvas area */}
+      {/* Canvas */}
       <div
         ref={containerRef}
-        className="relative flex-1 touch-none overflow-hidden bg-black"
+        className="relative flex-1 touch-none select-none overflow-hidden bg-black"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
         <canvas ref={canvasRef} className="h-full w-full" />
-        {mode === 'text' && (
-          <input
-            autoFocus
-            placeholder="Add text…"
-            value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                addAnnotation()
-              }
-            }}
-            className="absolute bottom-2 left-3 right-3 rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-white outline-none placeholder-white/50"
-          />
+        {tool === 'crop' && (
+          <p className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/60 px-3 py-1 text-[11px] font-medium text-white/80">
+            Drag corners to resize · drag inside to move
+          </p>
+        )}
+        {!ready && (
+          <p className="absolute inset-0 flex items-center justify-center text-[13px] text-white/60">Loading photo…</p>
         )}
       </div>
 
-      {/* Toolbar */}
-      <div className="space-y-2 border-t border-white/10 bg-[#111] px-3 pb-4 pt-2 text-white">
-        {/* Mode switcher + undo/clear */}
-        <div className="flex items-center justify-between gap-3">
+      {/* Bottom: tool options + send */}
+      <div className="shrink-0 space-y-2 border-t border-white/10 bg-[#0B0B0F] px-3 pb-4 pt-3">
+        {tool === 'crop' && (
           <div className="flex gap-1.5">
-            <button type="button" aria-pressed={mode === 'crop'} onClick={() => setMode('crop')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${mode === 'crop' ? 'bg-amber text-ink' : 'bg-white/10 text-white'}`} aria-label="Crop"><Crop size={19}/></button>
-            <button type="button" aria-pressed={mode === 'text'} onClick={() => setMode('text')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${mode === 'text' ? 'bg-amber text-ink' : 'bg-white/10 text-white'}`} aria-label="Text"><Type size={19}/></button>
-            <button type="button" aria-pressed={mode === 'brush'} onClick={() => setMode('brush')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${mode === 'brush' ? 'bg-amber text-ink' : 'bg-white/10 text-white'}`} aria-label="Brush"><Brush size={19}/></button>
-          </div>
-          <div className="flex gap-1.5">
-            <button type="button" onClick={undoLast} disabled={strokes.length === 0 && annotations.length === 0} className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white disabled:opacity-30" aria-label="Undo"><Undo2 size={19}/></button>
-            <button type="button" onClick={clearAll} disabled={strokes.length === 0 && annotations.length === 0} className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white disabled:opacity-30" aria-label="Clear all"><Eraser size={19}/></button>
-          </div>
-        </div>
-
-        {/* Aspect / size / color per mode */}
-        {mode === 'crop' && (
-          <div className="flex gap-1.5">
-            {(['free', 'square', 'portrait', 'wide'] as AspectMode[]).map((a) => (
-              <button key={a} type="button" onClick={() => updateAspect(a)} className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold ${aspect === a ? 'bg-white text-ink' : 'bg-white/10 text-white'}`}>
-                {a === 'free' ? 'Free' : a === 'square' ? '1:1' : a === 'portrait' ? '4:5' : '16:9'}
+            {(['free', 'square', 'portrait', 'wide'] as AspectMode[]).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => applyAspect(value)}
+                className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition ${
+                  aspect === value ? 'bg-white text-[#0B0B0F]' : 'bg-white/10 text-white'
+                }`}
+              >
+                {value === 'free' ? 'Free' : value === 'square' ? '1:1' : value === 'portrait' ? '4:5' : '16:9'}
               </button>
             ))}
           </div>
         )}
 
-        {mode === 'brush' && (
+        {tool === 'brush' && (
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex gap-1.5">
-              {PALETTE.map((c) => (
-                <button key={c} type="button" onClick={() => setColor(c)} aria-label={`Color ${c}`} className={`h-8 w-8 rounded-full border-2 ${color === c ? 'border-amber' : 'border-transparent'}`} style={{ background: c }} />
+              {PALETTE.map((swatch) => (
+                <button
+                  key={swatch}
+                  type="button"
+                  onClick={() => setColor(swatch)}
+                  aria-label={`Colour ${swatch}`}
+                  className={`h-7 w-7 rounded-full border-2 ${color === swatch ? 'border-[#FF9F1C]' : 'border-transparent'}`}
+                  style={{ background: swatch }}
+                />
               ))}
             </div>
-            <input type="range" min={4} max={28} step={2} value={strokeSize} aria-label="Brush size" onChange={(e) => setStrokeSize(Number(e.target.value))} className="h-1 flex-1 accent-[#FF9F1C]" />
+            <input
+              type="range"
+              min={BRUSH_SIZES[0]}
+              max={BRUSH_SIZES[BRUSH_SIZES.length - 1]}
+              step={2}
+              value={strokeSize}
+              aria-label="Brush size"
+              onChange={(event) => setStrokeSize(Number(event.target.value))}
+              className="h-1 min-w-[90px] flex-1 accent-[#FF9F1C]"
+            />
           </div>
         )}
 
-        {mode === 'text' && (
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex gap-1.5">
-              {PALETTE.map((c) => (
-                <button key={c} type="button" onClick={() => setColor(c)} aria-label={`Color ${c}`} className={`h-8 w-8 rounded-full border-2 ${color === c ? 'border-amber' : 'border-transparent'}`} style={{ background: c }} />
-              ))}
+        {tool === 'text' && (
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <input
+                value={textInput}
+                onChange={(event) => setTextInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    addAnnotation()
+                  }
+                }}
+                placeholder={textPos ? 'Type your text…' : 'Tap the photo to place text'}
+                className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[13px] text-white outline-none placeholder-white/50"
+              />
+              <button
+                type="button"
+                onClick={addAnnotation}
+                disabled={!textInput.trim() || !textPos}
+                className="rounded-xl bg-[#FF9F1C] px-3 py-2 text-[12px] font-bold text-[#0B0B0F] disabled:opacity-40"
+              >
+                Add
+              </button>
             </div>
-            <div className="flex gap-1">
-              {TEXT_SIZES.map((s) => (
-                <button key={s} type="button" onClick={() => setTextSize(s)} className={`rounded-lg px-2 py-1.5 text-[10px] font-bold ${textSize === s ? 'bg-white text-ink' : 'bg-white/10 text-white'}`}>{s}</button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex gap-1.5">
+                {PALETTE.map((swatch) => (
+                  <button
+                    key={swatch}
+                    type="button"
+                    onClick={() => setColor(swatch)}
+                    aria-label={`Colour ${swatch}`}
+                    className={`h-7 w-7 rounded-full border-2 ${color === swatch ? 'border-[#FF9F1C]' : 'border-transparent'}`}
+                    style={{ background: swatch }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-1">
+                {TEXT_SIZES.map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setTextSize(size)}
+                    className={`rounded-lg px-2 py-1 text-[10px] font-bold transition ${
+                      textSize === size ? 'bg-white text-[#0B0B0F]' : 'bg-white/10 text-white'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
             </div>
-            <button type="button" onClick={addAnnotation} disabled={!textInput.trim()} className="ml-auto rounded-lg bg-amber px-3 py-1.5 text-[12px] font-bold text-ink disabled:opacity-40">Add text</button>
           </div>
         )}
 
-        {/* Zoom slider for crop */}
-        {mode === 'crop' && (
-          <label className="flex items-center gap-3">
-            <span className="text-[11px] text-white/60">Zoom</span>
-            <input type="range" min={1} max={3} step={0.02} value={zoom} aria-label="Zoom" onChange={(e) => setZoom(Number(e.target.value))} className="h-1 flex-1 accent-[#FF9F1C]" />
-          </label>
-        )}
+        <button
+          type="button"
+          onClick={send}
+          disabled={busy || !ready}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(180deg,#f7a233,#ee7b1e)] text-[15px] font-bold text-[#0B0B0F] disabled:opacity-50"
+        >
+          <Check size={18} />
+          {busy ? 'Sending…' : 'Send photo'}
+        </button>
       </div>
     </div>
   )
+}
+
+/* ------------------------------------------------------------------ */
+/* Crop maths                                                          */
+/* ------------------------------------------------------------------ */
+
+function resizeCrop(start: CropRect, handle: Handle, imgPt: Point, aspect: AspectMode, natural: { w: number; h: number }): CropRect {
+  const px = clamp(imgPt.x, 0, natural.w)
+  const py = clamp(imgPt.y, 0, natural.h)
+
+  let left = start.x
+  let top = start.y
+  let right = start.x + start.w
+  let bottom = start.y + start.h
+
+  if (handle === 'tl' || handle === 'bl') left = Math.min(px, right - MIN_CROP)
+  if (handle === 'tr' || handle === 'br') right = Math.max(px, left + MIN_CROP)
+  if (handle === 'tl' || handle === 'tr') top = Math.min(py, bottom - MIN_CROP)
+  if (handle === 'bl' || handle === 'br') bottom = Math.max(py, top + MIN_CROP)
+
+  let w = right - left
+  let h = bottom - top
+
+  const ratio = ratioFor(aspect)
+  if (ratio > 0) {
+    // Width leads. Then anchor the moving edge and pull the other one.
+    h = w / ratio
+    if (handle === 'br') {
+      if (top + h > natural.h) {
+        h = natural.h - top
+        w = h * ratio
+      }
+      right = left + w
+      bottom = top + h
+    } else if (handle === 'tl') {
+      if (bottom - h < 0) {
+        h = bottom
+        w = h * ratio
+      }
+      left = right - w
+      top = bottom - h
+    } else if (handle === 'tr') {
+      if (bottom - h < 0) {
+        h = bottom
+        w = h * ratio
+      }
+      left = right - w
+      top = bottom - h
+    } else {
+      if (top + h > natural.h) {
+        h = natural.h - top
+        w = h * ratio
+      }
+      right = left + w
+      bottom = top + h
+    }
+  }
+
+  return {
+    x: clamp(left, 0, Math.max(0, natural.w - MIN_CROP)),
+    y: clamp(top, 0, Math.max(0, natural.h - MIN_CROP)),
+    w: clamp(right - left, MIN_CROP, natural.w),
+    h: clamp(bottom - top, MIN_CROP, natural.h),
+  }
 }
