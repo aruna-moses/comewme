@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MessageCircle, Clock, MapPin } from 'lucide-react'
+import { MessageCircle, Clock, MapPin, Pin, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
+import { usePersistedState } from '../lib/drafts'
 import { supabase } from '../lib/supabase'
 import type { Task } from '../types'
 import { formatTime, taskEmoji } from '../lib/format'
@@ -110,29 +111,41 @@ export default function ChatList() {
     }
   }, [profile?.id])
 
+  const [pinnedIds, setPinnedIds] = usePersistedState<string[]>('chats:pinned', [])
+  const isPinned = (id: string) => pinnedIds.includes(id)
+  const togglePin = (id: string) => {
+    setPinnedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
   if (loading) return <Spinner full />
 
-  // Split: anything with an unread ping or starting in the next 24h goes above the fold.
+  // Split: Pinned > Attention > Catch-up > Brand-new (say hi first)
   const now = Date.now()
   const buckets = {
+    pinned: pinnedIds.map((id) => chats.find((c) => c.task.id === id)).filter(Boolean) as typeof chats,
     attention: chats.filter((c) => {
+      if (pinnedIds.includes(c.task.id)) return false
       if ((unreadByTask[c.task.id] ?? 0) > 0) return true
       const start = new Date(c.task.date_time).getTime()
       return start > now - 6 * 3600_000 && start - now < 24 * 3600_000
     }),
     quiet: [] as typeof chats,
+    newChats: [] as typeof chats,
   }
   for (const c of chats) {
-    if (!buckets.attention.includes(c)) buckets.quiet.push(c)
+    if (pinnedIds.includes(c.task.id)) continue
+    if (buckets.attention.includes(c)) continue
+    if (c.lastMessage) buckets.quiet.push(c)
+    else buckets.newChats.push(c)
   }
 
-  // One row, used by both sections.
   const renderRow = (c: typeof chats[number]) => {
     const unread = unreadByTask[c.task.id] ?? 0
+    const pinned = isPinned(c.task.id)
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+    const start = new Date(c.task.date_time)
+    const days = Math.round((startOfDay(start) - startOfDay(new Date(now))) / 86_400_000)
     const countdownLabel = (() => {
-      const start = new Date(c.task.date_time)
-      const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
-      const days = Math.round((startOfDay(start) - startOfDay(new Date(now))) / 86_400_000)
       if (days < -364) return 'Over a year ago'
       if (days < -30) return `${Math.round(days / 30)} months ago`
       if (days < -1) return `${Math.abs(days)} days ago`
@@ -143,12 +156,18 @@ export default function ChatList() {
       if (days < 365) return `In ${Math.round(days / 30)} months`
       return `In ${Math.round(days / 365)} years`
     })()
+    const countdownTone =
+      days === 0
+        ? 'bg-verified/15 text-verified'
+        : days > 0
+          ? 'bg-sun/15 text-amber'
+          : 'bg-line/50 text-muted'
     return (
-      <Link
-        key={c.task.id}
-        to={`/task/${c.task.id}/chat`}
-        className="card flex items-start gap-3 rounded-[18px] p-3.5 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
-      >
+      <div key={c.task.id} className="relative">
+        <Link
+          to={`/task/${c.task.id}/chat`}
+          className="card flex items-start gap-3 rounded-[18px] p-3.5 pr-10 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+        >
         <div className="relative shrink-0">
           <div className="-space-x-2 flex">
             {c.members.slice(0, 3).map((m, idx) => (
@@ -174,7 +193,7 @@ export default function ChatList() {
             )}
           </div>
           <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted">
-            <span className="inline-flex items-center gap-1 rounded-full bg-line/50 px-2 py-0.5 font-semibold text-ink/70">
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${countdownTone}`}>
               <span aria-hidden="true">{taskEmoji(c.task.category)}</span> {countdownLabel}
             </span>
             <span aria-hidden="true">·</span>
@@ -189,6 +208,16 @@ export default function ChatList() {
           </p>
         </div>
       </Link>
+        <button
+          type="button"
+          onClick={() => togglePin(c.task.id)}
+          aria-pressed={pinned}
+          aria-label={pinned ? `Unpin ${c.task.title}` : `Pin ${c.task.title}`}
+          className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full transition ${pinned ? 'bg-sun/25 text-amber' : 'text-muted hover:bg-canvas hover:text-ink'}`}
+        >
+          <Pin size={16} aria-hidden />
+        </button>
+      </div>
     )
   }
 
@@ -229,6 +258,16 @@ export default function ChatList() {
           </div>
         ) : (
           <div className="space-y-5">
+            {buckets.pinned.length > 0 && (
+              <section aria-labelledby="pinned-heading">
+                <p id="pinned-heading" className="flex items-center gap-1.5 px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-amber">
+                  <Pin size={12} aria-hidden /> Pinned
+                </p>
+                <div className="mt-2 space-y-2">
+                  {buckets.pinned.map((c) => renderRow(c))}
+                </div>
+              </section>
+            )}
             {buckets.attention.length > 0 && (
               <section aria-labelledby="attention-heading">
                 <p id="attention-heading" className="px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
@@ -246,6 +285,16 @@ export default function ChatList() {
                 </p>
                 <div className="mt-2 space-y-2">
                   {buckets.quiet.map((c) => renderRow(c))}
+                </div>
+              </section>
+            )}
+            {buckets.newChats.length > 0 && (
+              <section aria-labelledby="new-chats-heading">
+                <p id="new-chats-heading" className="flex items-center gap-1.5 px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+                  <Sparkles size={12} aria-hidden /> Just created — say hi
+                </p>
+                <div className="mt-2 space-y-2">
+                  {buckets.newChats.map((c) => renderRow(c))}
                 </div>
               </section>
             )}
