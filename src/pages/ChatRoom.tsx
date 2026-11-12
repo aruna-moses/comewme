@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Reply, Send, Square, Trash2, X, Clock3, MapPin, ArrowRight, Volume2, VolumeX, BookmarkCheck, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Pause, Play, Reply, Send, Trash2, X, Clock3, MapPin, ArrowRight, Volume2, VolumeX, BookmarkCheck, MessageSquare } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
@@ -12,6 +12,8 @@ import {
   fetchCheckins,
   fetchMessages,
   fetchMessageReactions,
+  fetchMessageViews,
+  markMessageViewed,
   fetchMyJoinRequest,
   fetchRecap,
   fetchSystemEvents,
@@ -34,6 +36,8 @@ import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
 import VoiceNotePlayer from '../components/VoiceNotePlayer'
 import ChatPhotoEditor from '../components/ChatPhotoEditor'
+import ViewOnceCard from '../components/ViewOnceCard'
+import ViewOnceViewer from '../components/ViewOnceViewer'
 
 const REACTIONS = ['👍', '❤️', '😂', '😎']
 
@@ -57,7 +61,10 @@ export default function ChatRoom() {
   const [draft, setDraft] = usePersistedState(`chat:${id}:draft`, '')
   const [uploading, setUploading] = useState(false)
   const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
+  const [viewOnceOpen, setViewOnceOpen] = useState<Message | null>(null)
   const [recording, setRecording] = useState(false)
+  const [recordingPaused, setRecordingPaused] = useState(false)
+  const [recordingElapsed, setRecordingElapsed] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [replyTarget, setReplyTarget] = useState<Message | null>(null)
   const [actionMessageId, setActionMessageId] = useState<string | null>(null)
@@ -68,7 +75,9 @@ export default function ChatRoom() {
   const chatEnd = useRef<HTMLDivElement | null>(null)
   const mediaRecorder = useRef<MediaRecorder | null>(null)
   const recordingChunks = useRef<Blob[]>([])
-  const recordingStartedAt = useRef(0)
+  const recordingElapsedRef = useRef(0)
+  const recordingTimer = useRef<number | null>(null)
+  const discardRecording = useRef(false)
   const activeAudio = useRef<HTMLAudioElement | null>(null)
   const longPressTimer = useRef<number | null>(null)
   const pointerStart = useRef<{ messageId: string; x: number; y: number } | null>(null)
@@ -142,7 +151,21 @@ export default function ChatRoom() {
     fetchMessages(task.id)
       .then(async (rows) => {
         if (!active) return
-        setMessages(rows)
+        const views = await fetchMessageViews(rows.map((r) => r.id)).catch(() => [])
+        if (!active) return
+        const viewedByMe = new Set(views.filter((v) => v.user_id === profile?.id).map((v) => v.message_id))
+        const counts = new Map<string, number>()
+        for (const view of views) counts.set(view.message_id, (counts.get(view.message_id) ?? 0) + 1)
+        setMessages(rows.map((row) => (
+          row.view_once
+            ? {
+                ...row,
+                url: viewedByMe.has(row.id) ? null : row.url,
+                view_once_viewed: viewedByMe.has(row.id),
+                view_once_count: counts.get(row.id) ?? 0,
+              }
+            : row
+        )))
         fetchMessageReactions(rows.map((r) => r.id))
           .then((all) => {
             if (!active) return
@@ -306,7 +329,7 @@ export default function ChatRoom() {
     }
   }, [reactions])
 
-  const handleAttach = useCallback(async (file: File, duration: number | null = null, caption = '') => {
+  const handleAttach = useCallback(async (file: File, duration: number | null = null, caption = '', viewOnce = false) => {
     if (!task || !profile) return
     const image = file.type.startsWith('image/') && file.type !== 'image/svg+xml'
     const audio = file.type.startsWith('audio/')
@@ -349,6 +372,9 @@ export default function ChatRoom() {
         : null,
       created_at: new Date().toISOString(),
       pending: true,
+      view_once: viewOnce,
+      view_once_viewed: false,
+      view_once_count: 0,
     }
     setMessages((current) => [...current, optimistic])
 
@@ -358,7 +384,7 @@ export default function ChatRoom() {
       uploadedPath = path
       // Insert the row and sign the media URL in parallel: one round trip, not two.
       const [created, signedUrl] = await Promise.all([
-        sendMessage(task.id, profile, captionText, type, path, duration, replyTarget, { resolveMedia: false }),
+        sendMessage(task.id, profile, captionText, type, path, duration, replyTarget, { resolveMedia: false, viewOnce }),
         signChatMedia(path),
       ])
       const resolved: Message = { ...created, url: signedUrl, pending: false }
@@ -389,23 +415,30 @@ export default function ChatRoom() {
     }
   }, [task, profile, replyTarget])
 
-  async function toggleRecording() {
-    if (recording) {
-      if (mediaRecorder.current?.state === 'recording') {
-        setUploading(true)
-        mediaRecorder.current.stop()
-      }
-      setRecording(false)
-      return
-    }
+  function startRecordingTicker() {
+    if (recordingTimer.current !== null) window.clearInterval(recordingTimer.current)
+    recordingTimer.current = window.setInterval(() => {
+      recordingElapsedRef.current += 1
+      setRecordingElapsed(recordingElapsedRef.current)
+    }, 1000)
+  }
 
-    let stream: MediaStream | null = null
+  function stopRecordingTicker() {
+    if (recordingTimer.current !== null) {
+      window.clearInterval(recordingTimer.current)
+      recordingTimer.current = null
+    }
+  }
+
+  useEffect(() => () => stopRecordingTicker(), [])
+
+  async function startRecording() {
+    if (recording) return
     try {
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
         throw new Error('Voice recording is not supported in this browser.')
       }
       const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      stream = audioStream
       const supportedTypes = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus']
       const mimeType = typeof MediaRecorder.isTypeSupported === 'function'
         ? supportedTypes.find((type) => MediaRecorder.isTypeSupported(type))
@@ -418,14 +451,22 @@ export default function ChatRoom() {
       })
       mediaRecorder.current = recorder
       recordingChunks.current = []
-      recordingStartedAt.current = Date.now()
+      discardRecording.current = false
       setError(null)
       recorder.ondataavailable = (event) => {
         if (event.data.size) recordingChunks.current.push(event.data)
       }
       recorder.onstop = async () => {
+        stopRecordingTicker()
         setRecording(false)
+        setRecordingPaused(false)
         audioStream.getTracks().forEach((track) => track.stop())
+        const discarded = discardRecording.current
+        discardRecording.current = false
+        if (discarded) {
+          setUploading(false)
+          return
+        }
         const mime = recorder.mimeType || recordingChunks.current[0]?.type || 'audio/webm'
         const blob = new Blob(recordingChunks.current, { type: mime })
         if (!blob.size) {
@@ -436,41 +477,82 @@ export default function ChatRoom() {
         const baseMime = mime.split(';')[0]
         const extension = baseMime === 'audio/mp4' ? 'm4a' : baseMime === 'audio/ogg' ? 'ogg' : 'webm'
         const file = new File([blob], `voice-${Date.now()}.${extension}`, { type: baseMime })
-        const duration = Math.max(1, Math.ceil((Date.now() - recordingStartedAt.current) / 1000))
+        const duration = Math.max(1, recordingElapsedRef.current)
         await handleAttach(file, duration)
       }
       recorder.onerror = () => {
+        stopRecordingTicker()
         setRecording(false)
+        setRecordingPaused(false)
         setUploading(false)
         audioStream.getTracks().forEach((track) => track.stop())
         setError('Voice recording failed. Please try again.')
       }
       recorder.start()
+      recordingElapsedRef.current = 0
+      setRecordingElapsed(0)
+      setRecordingPaused(false)
       setRecording(true)
+      startRecordingTicker()
     } catch (e) {
-      stream?.getTracks().forEach((track) => track.stop())
       setError(e instanceof Error ? e.message : 'Microphone access was denied.')
     }
   }
 
+  function pauseRecording() {
+    if (mediaRecorder.current?.state === 'recording') {
+      mediaRecorder.current.pause()
+      stopRecordingTicker()
+      setRecordingPaused(true)
+    }
+  }
+
+  function resumeRecording() {
+    if (mediaRecorder.current?.state === 'paused') {
+      mediaRecorder.current.resume()
+      startRecordingTicker()
+      setRecordingPaused(false)
+    }
+  }
+
+  function cancelRecording() {
+    discardRecording.current = true
+    if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+      mediaRecorder.current.stop()
+    } else {
+      stopRecordingTicker()
+      setRecording(false)
+      setRecordingPaused(false)
+    }
+  }
+
+  function sendRecording() {
+    if (!mediaRecorder.current || mediaRecorder.current.state === 'inactive') return
+    discardRecording.current = false
+    setUploading(true)
+    mediaRecorder.current.stop()
+  }
+
   function toggleAudio(messageId: string, audio: HTMLAudioElement) {
-    if (activeAudio.current === audio && playingMessageId === messageId) {
+    // Starting a different voice note stops the previous one.
+    if (activeAudio.current && activeAudio.current !== audio) {
+      activeAudio.current.pause()
+      activeAudio.current.currentTime = 0
+    }
+
+    if (playingMessageId === messageId) {
       audio.pause()
-      audio.currentTime = 0
-      activeAudio.current = null
       setPlayingMessageId(null)
       setProgressMessageId(messageId)
-      setAudioProgress(0)
+      setAudioProgress(audio.currentTime)
       return
     }
 
-    activeAudio.current?.pause()
-    if (activeAudio.current) activeAudio.current.currentTime = 0
-    audio.currentTime = 0
+    if (audio.ended) audio.currentTime = 0
     activeAudio.current = audio
     setPlayingMessageId(messageId)
     setProgressMessageId(messageId)
-    setAudioProgress(0)
+    setAudioProgress(audio.currentTime)
     void audio.play().catch(() => {
       if (activeAudio.current === audio) activeAudio.current = null
       setPlayingMessageId(null)
@@ -484,6 +566,28 @@ export default function ChatRoom() {
     setProgressMessageId(messageId)
     setPlayingMessageId(null)
     activeAudio.current = null
+  }
+
+  function openViewOnce(message: Message) {
+    if (message.pending || message.view_once_viewed || message.sender_id === profile?.id || !message.url) return
+    setViewOnceOpen(message)
+    setMessages((current) => current.map((item) => (
+      item.id === message.id
+        ? { ...item, view_once_viewed: true, view_once_count: (item.view_once_count ?? 0) + 1 }
+        : item
+    )))
+    void markMessageViewed(message.id).catch(() => undefined)
+  }
+
+  function closeViewOnce() {
+    const current = viewOnceOpen
+    setViewOnceOpen(null)
+    // Drop the signed URL locally so the photo cannot be reopened from this page.
+    if (current) {
+      setMessages((messages) => messages.map((item) => (
+        item.id === current.id ? { ...item, url: null } : item
+      )))
+    }
   }
 
   function handleMessagePointerDown(message: Message, event: PointerEvent<HTMLDivElement>) {
@@ -789,7 +893,16 @@ export default function ChatRoom() {
                               <p className="truncate text-[11px] text-muted">{message.reply_to_preview}</p>
                             </div>
                           )}
-                          {!message.deleted_at && message.type === 'image' && message.url && (
+                          {!message.deleted_at && message.type === 'image' && message.view_once && (
+                            <ViewOnceCard
+                              mine={mine}
+                              viewed={Boolean(message.view_once_viewed)}
+                              viewCount={message.view_once_count ?? 0}
+                              pending={Boolean(message.pending)}
+                              onOpen={() => openViewOnce(message)}
+                            />
+                          )}
+                          {!message.deleted_at && message.type === 'image' && !message.view_once && message.url && (
                             <a href={message.url} target="_blank" rel="noreferrer">
                               <img
                                 src={message.url}
@@ -798,8 +911,11 @@ export default function ChatRoom() {
                               />
                             </a>
                           )}
-                          {!message.deleted_at && message.type === 'image' && message.body && (
+                          {!message.deleted_at && message.type === 'image' && !message.view_once && message.body && (
                             <p className="whitespace-pre-wrap px-1 pt-1 text-[14px] leading-snug">{message.body}</p>
+                          )}
+                          {!message.deleted_at && message.type === 'image' && message.view_once && message.body && (
+                            <p className="whitespace-pre-wrap px-1 pt-1 text-[13px] leading-snug text-muted">{message.body}</p>
                           )}
                           {!message.deleted_at && message.type === 'audio' && message.url && (
                             <VoiceNotePlayer
@@ -976,26 +1092,61 @@ export default function ChatRoom() {
               </button>
             </div>
           )}
+          {recording ? (
+            <div className="flex items-center gap-2 rounded-2xl bg-canvas px-2 py-1.5">
+              <button
+                type="button"
+                onClick={cancelRecording}
+                aria-label="Discard recording"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-alert transition hover:bg-white"
+              >
+                <Trash2 size={18} />
+              </button>
+              <span className="flex items-center gap-1.5 text-[13px] font-bold tabular-nums text-alert">
+                <span className={`h-2 w-2 rounded-full bg-alert ${recordingPaused ? '' : 'animate-pulse'}`} aria-hidden />
+                {Math.floor(recordingElapsed / 60)}:{String(recordingElapsed % 60).padStart(2, '0')}
+              </span>
+              <button
+                type="button"
+                onClick={recordingPaused ? resumeRecording : pauseRecording}
+                aria-label={recordingPaused ? 'Resume recording' : 'Pause recording'}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink shadow-sm transition active:scale-95"
+              >
+                {recordingPaused ? <Play size={15} fill="currentColor" /> : <Pause size={15} fill="currentColor" />}
+              </button>
+              <p className="min-w-0 flex-1 truncate text-[11px] text-muted">
+                {recordingPaused ? 'Paused — resume or send' : 'Recording…'}
+              </p>
+              <button
+                type="button"
+                onClick={sendRecording}
+                aria-label="Send voice note"
+                className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(180deg,#f7a233,#ee7b1e)] px-3 text-[12px] font-bold text-ink"
+              >
+                <Send size={14} /> Send
+              </button>
+            </div>
+          ) : (
           <div className="flex items-end gap-1.5">
-            <label className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-canvas ${uploading || recording ? 'pointer-events-none opacity-50' : ''}`} title="Take a photo">
+            <label className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-canvas ${uploading ? 'pointer-events-none opacity-50' : ''}`} title="Take a photo">
               <Camera size={19} aria-hidden />
-              <input type="file" accept="image/*" capture="environment" aria-label="Take a photo" className="sr-only" disabled={uploading || recording} onChange={(event) => {
+              <input type="file" accept="image/*" capture="environment" aria-label="Take a photo" className="sr-only" disabled={uploading} onChange={(event) => {
                 const file = event.currentTarget.files?.[0]
                 if (file) setPendingPhoto(file)
                 event.currentTarget.value = ''
               }} />
             </label>
-            <label className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-canvas ${uploading || recording ? 'pointer-events-none opacity-50' : ''}`} title="Attach a photo or audio">
+            <label className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-canvas ${uploading ? 'pointer-events-none opacity-50' : ''}`} title="Attach a photo or audio">
               <Paperclip size={19} aria-hidden />
-              <input type="file" accept="image/*,audio/*" aria-label="Attach a photo or audio" className="sr-only" disabled={uploading || recording} onChange={(event) => {
+              <input type="file" accept="image/*,audio/*" aria-label="Attach a photo or audio" className="sr-only" disabled={uploading} onChange={(event) => {
                 const file = event.currentTarget.files?.[0]
                 if (file && file.type.startsWith('image/') && file.type !== 'image/svg+xml') setPendingPhoto(file)
                 else if (file) void handleAttach(file)
                 event.currentTarget.value = ''
               }} />
             </label>
-            <button type="button" onClick={() => void toggleRecording()} disabled={uploading} className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${recording ? 'animate-pulse bg-alert text-white' : 'bg-canvas text-muted'} disabled:opacity-50`} aria-label={recording ? 'Stop and send voice note' : 'Record voice note'}>
-              {recording ? <Square size={16} fill="currentColor" aria-hidden /> : <Mic size={19} aria-hidden />}
+            <button type="button" onClick={() => void startRecording()} disabled={uploading} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-canvas text-muted disabled:opacity-50" aria-label="Record voice note">
+              <Mic size={19} aria-hidden />
             </button>
             <input
               className="field min-h-[42px] min-w-0 flex-1 border-0 bg-canvas px-3"
@@ -1009,12 +1160,13 @@ export default function ChatRoom() {
                 }
               }}
               maxLength={2000}
-              disabled={uploading || recording}
+              disabled={uploading}
             />
-            <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber text-white disabled:opacity-50" onClick={() => void handleSend(draft)} disabled={!draft.trim() || uploading || recording} aria-label="Send message">
+            <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber text-white disabled:opacity-50" onClick={() => void handleSend(draft)} disabled={!draft.trim() || uploading} aria-label="Send message">
               {uploading ? <span className="text-xs">…</span> : <Send size={17} aria-hidden />}
             </button>
           </div>
+          )}
         </div>
       </section>
       <ConfirmDialog
@@ -1027,13 +1179,20 @@ export default function ChatRoom() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => void handleDeleteMessage()}
       />
+      {viewOnceOpen && viewOnceOpen.url && (
+        <ViewOnceViewer
+          url={viewOnceOpen.url}
+          caption={viewOnceOpen.body}
+          onClose={closeViewOnce}
+        />
+      )}
       {pendingPhoto && (
         <ChatPhotoEditor
           file={pendingPhoto}
           onCancel={() => setPendingPhoto(null)}
-          onSend={(file, caption) => {
+          onSend={(file, caption, viewOnce) => {
             setPendingPhoto(null)
-            void handleAttach(file, null, caption)
+            void handleAttach(file, null, caption, viewOnce)
           }}
         />
       )}

@@ -320,6 +320,37 @@ export async function signChatMedia(path: string): Promise<string> {
   return data.signedUrl
 }
 
+export interface MessageViewRow {
+  message_id: string
+  user_id: string
+}
+
+/** Views on the given messages that RLS allows us to see (our own, plus our own sent media). */
+export async function fetchMessageViews(messageIds: string[]): Promise<MessageViewRow[]> {
+  const unique = Array.from(new Set(messageIds.filter(Boolean)))
+  if (unique.length === 0) return []
+  const { data, error } = await supabase
+    .from('message_views')
+    .select('message_id, user_id')
+    .in('message_id', unique)
+  if (error) {
+    // Migration 029 may not be applied yet — degrade quietly.
+    if (/message_views|does not exist|schema cache/i.test(error.message)) return []
+    throw error
+  }
+  return (data ?? []) as MessageViewRow[]
+}
+
+/** Record that the signed-in member opened a view-once photo. */
+export async function markMessageViewed(messageId: string): Promise<void> {
+  const { data } = await supabase.auth.getUser()
+  if (!data.user) return
+  const { error } = await supabase
+    .from('message_views')
+    .insert({ message_id: messageId, user_id: data.user.id })
+  if (error && !/duplicate key/i.test(error.message)) throw error
+}
+
 export async function sendMessage(
   taskId: string,
   profile: Profile,
@@ -328,7 +359,7 @@ export async function sendMessage(
   url: string | null = null,
   duration: number | null = null,
   replyTo: Message | null = null,
-  options?: { resolveMedia?: boolean },
+  options?: { resolveMedia?: boolean; viewOnce?: boolean },
 ): Promise<Message> {
   const replyPreview = replyTo
     ? replyTo.type === 'image'
@@ -346,6 +377,7 @@ export async function sendMessage(
     type,
     url,
     duration,
+    ...(options?.viewOnce ? { view_once: true } : {}),
     reply_to_message_id: replyTo?.id ?? null,
     reply_to_sender_id: replyTo?.sender_id ?? null,
     reply_to_sender_name: replyTo?.sender_name ?? null,

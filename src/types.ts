@@ -121,6 +121,12 @@ export interface Message {
   deleted_at?: string | null
   /** Client-only: media is still uploading; the bubble shows a spinner. */
   pending?: boolean
+  /** Media that disappears after a single open. */
+  view_once?: boolean
+  /** Client-only: the current viewer has already opened this view-once media. */
+  view_once_viewed?: boolean
+  /** Client-only: how many people have opened this view-once media (sender side). */
+  view_once_count?: number
   created_at: string
 }
 

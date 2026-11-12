@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Brush, Check, Crop, Eraser, Undo2, X } from 'lucide-react'
+import { Brush, Check, Crop, Eraser, Eye, Undo2, X } from 'lucide-react'
 
 type Props = {
   file: File
   onCancel: () => void
-  onSend: (file: File, caption: string) => void
+  onSend: (file: File, caption: string, viewOnce: boolean) => void
 }
 
 type Point = { x: number; y: number }
@@ -49,6 +49,7 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
   const [strokes, setStrokes] = useState<Stroke[]>([])
   const [currentStroke, setCurrentStroke] = useState<Stroke | null>(null)
   const [caption, setCaption] = useState('')
+  const [viewOnce, setViewOnce] = useState(false)
   const [busy, setBusy] = useState(false)
   const [tick, setTick] = useState(0)
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 })
@@ -385,7 +386,7 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
     ctx.restore()
 
     const finish = (blob: Blob) => {
-      onSend(new File([blob], 'photo.jpg', { type: 'image/jpeg' }), caption.trim())
+      onSend(new File([blob], 'photo.jpg', { type: 'image/jpeg' }), caption.trim(), viewOnce)
       setBusy(false)
     }
 
@@ -554,6 +555,26 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
           maxLength={500}
           className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-[13px] text-white outline-none placeholder-white/50"
         />
+
+        <button
+          type="button"
+          onClick={() => setViewOnce((value) => !value)}
+          aria-pressed={viewOnce}
+          className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
+            viewOnce ? 'border-[#FF9F1C] bg-[#FF9F1C]/15' : 'border-white/15 bg-white/5'
+          }`}
+        >
+          <span className="flex items-center gap-2.5">
+            <Eye size={17} className="shrink-0 text-[#FF9F1C]" />
+            <span>
+              <span className="block text-[13px] font-semibold text-white">View once</span>
+              <span className="block text-[11px] text-white/55">Opens once, then it&apos;s gone</span>
+            </span>
+          </span>
+          <span className={`h-6 w-11 shrink-0 rounded-full p-0.5 transition ${viewOnce ? 'bg-[#FF9F1C]' : 'bg-white/25'}`}>
+            <span className={`block h-5 w-5 rounded-full bg-white transition-transform ${viewOnce ? 'translate-x-5' : ''}`} />
+          </span>
+        </button>
 
         <button
           type="button"
