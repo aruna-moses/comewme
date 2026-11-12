@@ -79,9 +79,9 @@ export default function TaskDetail() {
   const isFull = Boolean(task && task.spots_filled >= task.spots_needed)
   const communityCheckPassed = Boolean(profile?.community_check_passed_at)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (quiet?: boolean) => {
     if (!id) return
-    setLoading(true)
+    if (!quiet) setLoading(true)
     try {
       const t = await fetchTask(id)
       setTask(t)
@@ -101,13 +101,39 @@ export default function TaskDetail() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load this activity')
     } finally {
-      setLoading(false)
+      if (!quiet) setLoading(false)
     }
   }, [id, profile?.id])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  // Keep the task page live: new applicants, acceptances and capacity refreshes land without a manual reload.
+  useEffect(() => {
+    if (!id || !profile) return
+    const channel = supabase
+      .channel(`task-activity:${id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'join_requests', filter: `task_id=eq.${id}` },
+        () => { void load(true) },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks', filter: `id=eq.${id}` },
+        () => { void load(true) },
+      )
+      .subscribe()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void load(true)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      void supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [id, profile?.id, load])
 
   useEffect(() => {
     const state = location.state
@@ -402,6 +428,11 @@ export default function TaskDetail() {
           <section className="mt-6">
             <h2 className="mb-1 font-display text-base font-bold">Applicants</h2>
             <p className="mb-3 text-[12px] text-muted">Review each person, then accept, waitlist, or kindly decline.</p>
+            {spotsLeft === 0 && (
+              <p className="mb-3 rounded-xl border border-[#edd996] bg-[#fff4d1] p-3 text-[12px] leading-relaxed text-[#7a622f]">
+                All spots are taken. You can waitlist extra applicants now and move them in later if a spot opens up.
+              </p>
+            )}
             <div className="space-y-2">
               {requests.filter((r) => r.status === 'pending' || r.status === 'waitlisted').map((r) => (
                 <div key={r.id} className="card p-4">
