@@ -38,6 +38,7 @@ import VoiceNotePlayer from '../components/VoiceNotePlayer'
 import ChatPhotoEditor from '../components/ChatPhotoEditor'
 import ViewOnceCard from '../components/ViewOnceCard'
 import ViewOnceViewer from '../components/ViewOnceViewer'
+import PhotoLightbox from '../components/PhotoLightbox'
 
 const REACTIONS = ['👍', '❤️', '😂', '😎']
 
@@ -62,6 +63,7 @@ export default function ChatRoom() {
   const [uploading, setUploading] = useState(false)
   const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
   const [viewOnceOpen, setViewOnceOpen] = useState<Message | null>(null)
+  const [lightboxPhoto, setLightboxPhoto] = useState<Message | null>(null)
   const [recording, setRecording] = useState(false)
   const [recordingPaused, setRecordingPaused] = useState(false)
   const [recordingElapsed, setRecordingElapsed] = useState(0)
@@ -944,13 +946,18 @@ export default function ChatRoom() {
                             />
                           )}
                           {!message.deleted_at && message.type === 'image' && !message.view_once && message.url && (
-                            <a href={message.url} target="_blank" rel="noreferrer">
+                            <button
+                              type="button"
+                              onClick={() => setLightboxPhoto(message)}
+                              className="block overflow-hidden rounded-xl"
+                              aria-label="Open photo"
+                            >
                               <img
                                 src={message.url}
-                                alt="Photo shared in the group chat"
-                                className={`max-h-72 max-w-full rounded-xl object-cover transition ${message.pending ? 'opacity-75' : ''}`}
+                                alt={message.body || 'Photo shared in the group chat'}
+                                className={`max-h-72 max-w-full object-cover transition ${message.pending ? 'opacity-75' : ''}`}
                               />
-                            </a>
+                            </button>
                           )}
                           {!message.deleted_at && message.type === 'image' && !message.view_once && message.body && (
                             <p className="whitespace-pre-wrap px-1 pt-1 text-[14px] leading-snug">{message.body}</p>
@@ -1226,6 +1233,14 @@ export default function ChatRoom() {
           caption={viewOnceOpen.body}
           viewerName={profile?.display_name ?? 'You'}
           onClose={closeViewOnce}
+        />
+      )}
+      {lightboxPhoto && lightboxPhoto.url && (
+        <PhotoLightbox
+          url={lightboxPhoto.url}
+          caption={lightboxPhoto.body}
+          senderName={lightboxPhoto.sender_id === profile?.id ? 'You' : lightboxPhoto.sender_name}
+          onClose={() => setLightboxPhoto(null)}
         />
       )}
       {pendingPhoto && (
