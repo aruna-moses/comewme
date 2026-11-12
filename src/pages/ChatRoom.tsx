@@ -32,6 +32,7 @@ import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
 import VoiceNotePlayer from '../components/VoiceNotePlayer'
+import ChatPhotoSheet from '../components/ChatPhotoSheet'
 
 const REACTIONS = ['👍', '❤️', '😂', '😎']
 
@@ -54,6 +55,7 @@ export default function ChatRoom() {
   const [reactions, setReactions] = useState<Record<string, Record<string, { count: number; mine: boolean }>>>({})
   const [draft, setDraft] = usePersistedState(`chat:${id}:draft`, '')
   const [uploading, setUploading] = useState(false)
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
   const [recording, setRecording] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [replyTarget, setReplyTarget] = useState<Message | null>(null)
@@ -914,7 +916,7 @@ export default function ChatRoom() {
               <Camera size={19} aria-hidden />
               <input type="file" accept="image/*" capture="environment" aria-label="Take a photo" className="sr-only" disabled={uploading || recording} onChange={(event) => {
                 const file = event.currentTarget.files?.[0]
-                if (file) void handleAttach(file)
+                if (file) setPendingPhoto(file)
                 event.currentTarget.value = ''
               }} />
             </label>
@@ -922,7 +924,8 @@ export default function ChatRoom() {
               <Paperclip size={19} aria-hidden />
               <input type="file" accept="image/*,audio/*" aria-label="Attach a photo or audio" className="sr-only" disabled={uploading || recording} onChange={(event) => {
                 const file = event.currentTarget.files?.[0]
-                if (file) void handleAttach(file)
+                if (file && file.type.startsWith('image/') && file.type !== 'image/svg+xml') setPendingPhoto(file)
+                else if (file) void handleAttach(file)
                 event.currentTarget.value = ''
               }} />
             </label>
@@ -959,6 +962,16 @@ export default function ChatRoom() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => void handleDeleteMessage()}
       />
+      {pendingPhoto && (
+        <ChatPhotoSheet
+          file={pendingPhoto}
+          onCancel={() => setPendingPhoto(null)}
+          onSend={(file) => {
+            setPendingPhoto(null)
+            void handleAttach(file)
+          }}
+        />
+      )}
     </main>
   )
 }
