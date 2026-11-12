@@ -22,7 +22,7 @@ export default function GuidelinesModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] overflow-y-auto bg-ink/60 px-4 py-8">
+    <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/60 px-4 py-8">
       <section
         role="dialog"
         aria-modal="true"

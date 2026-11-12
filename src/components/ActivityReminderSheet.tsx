@@ -36,7 +36,7 @@ export default function ActivityReminderSheet({
                 onClick={onClose}
                 className="flex items-center gap-3 rounded-2xl border border-sun/30 bg-sun/10 p-3 transition active:scale-[0.99]"
               >
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl" style={{ background: '#fff4d1' }} aria-hidden>
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sun/20 text-2xl" aria-hidden>
                   {emoji}
                 </span>
                 <span className="min-w-0 flex-1">

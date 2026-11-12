@@ -32,7 +32,7 @@ export default function AppealForm({
 
   if (existingAppeal) {
     return (
-      <p className="mt-3 rounded-xl bg-[#f7f6f1] p-3 text-[12px] leading-relaxed">
+      <p className="mt-3 rounded-xl bg-canvas p-3 text-[12px] leading-relaxed">
         Appeal status: <strong className="capitalize">{existingAppeal.status}</strong>
         {existingAppeal.admin_response && <span className="mt-1 block text-muted">{existingAppeal.admin_response}</span>}
       </p>

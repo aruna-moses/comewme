@@ -30,7 +30,7 @@ export default function Sheet({
       <button
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
       />
       <div className="relative w-full max-w-[480px] rounded-t-[24px] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-lift animate-[slideUp_.18s_ease-out]">
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-line" />

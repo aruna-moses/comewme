@@ -241,14 +241,14 @@ export default function ProfileMediaGallery({
                 )}
               </button>
               {item.media_type === 'video' && (
-                <span className="pointer-events-none absolute left-2 top-2 z-[1] flex h-7 w-7 items-center justify-center rounded-full bg-ink/60 text-white">
+                <span className="pointer-events-none absolute left-2 top-2 z-[1] flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white">
                   <Play size={14} fill="currentColor" aria-hidden />
                 </span>
               )}
               {isOwner && (
                 <button
                   type="button"
-                  className="absolute right-2 top-2 z-[2] flex h-8 w-8 items-center justify-center rounded-full bg-ink/65 text-white transition hover:bg-alert disabled:opacity-60"
+                  className="absolute right-2 top-2 z-[2] flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-white transition hover:bg-alert disabled:opacity-60"
                   aria-label="Remove public media"
                   disabled={deletingId === item.id}
                   onClick={() => setRemovePending(item)}

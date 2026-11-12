@@ -107,7 +107,7 @@ export default function CommunityCheck() {
     return (
       <div className="flex min-h-[100dvh] flex-col px-5 pb-6 pt-8">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white" style={{ backgroundImage: 'linear-gradient(180deg,#f7a233,#ee7b1e)' }}>
+          <span className="flex h-8 w-8 items-center justify-center rounded-[10px] text-[#0B0B0F]" style={{ backgroundImage: 'linear-gradient(180deg,#f7a233,#ee7b1e)' }}>
             <Footprints size={21} aria-hidden />
           </span>
           <span className="font-display text-[20px] font-bold tracking-tight">Come w&apos; me</span>

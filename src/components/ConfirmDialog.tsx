@@ -46,7 +46,7 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-ink/55 p-5 backdrop-blur-sm"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-5 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !busy) onCancel()
       }}
@@ -58,7 +58,7 @@ export default function ConfirmDialog({
         aria-describedby="confirm-dialog-message"
         className="w-full max-w-[360px] overflow-hidden rounded-[26px] bg-white shadow-lift"
       >
-        <div className={`px-6 pb-5 pt-6 text-center ${destructive ? 'bg-gradient-to-br from-[#fff2e9] to-[#fffaf2]' : 'bg-gradient-to-br from-[#fff5dd] to-[#f8eee3]'}`}>
+        <div className={`px-6 pb-5 pt-6 text-center ${destructive ? 'bg-alert/10' : 'bg-sun/20'}`}>
           <span className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${destructive ? 'bg-alert/10 text-alert' : 'bg-sun/20 text-amber'}`}>
             <Sparkles size={25} aria-hidden />
           </span>

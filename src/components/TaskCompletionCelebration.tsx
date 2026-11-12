@@ -79,7 +79,7 @@ export default function TaskCompletionCelebration({
           )
         })}
       </div>
-      <div className="milestone-overlay fixed inset-0 z-[70] flex items-center justify-center bg-ink/55 p-5 backdrop-blur-sm">
+      <div className="milestone-overlay fixed inset-0 z-[70] flex items-center justify-center bg-black/55 p-5 backdrop-blur-sm">
         <div
           ref={dialogRef}
           role="dialog"

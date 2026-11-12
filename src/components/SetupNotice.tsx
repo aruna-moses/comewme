@@ -47,7 +47,7 @@ export default function SetupNotice() {
           {STEPS.map((s) => (
             <div key={s.n} className="card flex gap-3 p-4">
               <span
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[13px] font-bold"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[13px] font-bold text-[#0B0B0F]"
                 style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)' }}
               >
                 {s.n}

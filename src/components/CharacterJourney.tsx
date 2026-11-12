@@ -100,7 +100,7 @@ export default function CharacterJourney({
                 className="h-full w-full object-contain object-bottom"
               />
               {level > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-7 min-w-7 items-center justify-center rounded-full border-2 border-white bg-amber px-1 text-[10px] font-extrabold text-white shadow">
+                <span className="absolute -right-1 -top-1 flex h-7 min-w-7 items-center justify-center rounded-full border-2 border-white bg-amber px-1 text-[10px] font-extrabold text-[#0B0B0F] shadow">
                   {level}
                 </span>
               )}
@@ -212,7 +212,7 @@ export default function CharacterJourney({
       </section>
 
       {celebrationOpen && (
-        <div className="milestone-overlay fixed inset-0 z-[70] flex items-center justify-center bg-ink/55 p-5 backdrop-blur-sm">
+        <div className="milestone-overlay fixed inset-0 z-[70] flex items-center justify-center bg-black/55 p-5 backdrop-blur-sm">
           <div
             role="dialog"
             aria-modal="true"
@@ -241,13 +241,13 @@ export default function CharacterJourney({
                 />
               ))}
             </div>
-            <div className="relative mx-auto flex h-[150px] w-[130px] items-end justify-center overflow-hidden rounded-[24px] bg-gradient-to-br from-[#fff5dd] to-[#f8e6d9]">
+            <div className="relative mx-auto flex h-[150px] w-[130px] items-end justify-center overflow-hidden rounded-[24px] bg-sun/20">
               <img
                 src={personaImage}
                 alt={`${personaName}, your journey character`}
                 className="journey-persona-bob h-full w-full object-contain object-bottom"
               />
-              <span className="absolute -right-2 top-1 flex h-10 w-10 items-center justify-center rounded-full bg-amber text-sm font-extrabold text-white shadow">
+              <span className="absolute -right-2 top-1 flex h-10 w-10 items-center justify-center rounded-full bg-amber text-sm font-extrabold text-[#0B0B0F] shadow">
                 {level}
               </span>
             </div>

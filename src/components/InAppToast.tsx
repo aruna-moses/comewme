@@ -132,7 +132,7 @@ export default function InAppToast() {
       <Link
         to={active.link_path ?? '/notifications'}
         onClick={dismiss}
-        className="flex items-start gap-3 rounded-2xl border border-line bg-white/95 p-3.5 shadow-lift backdrop-blur dark:bg-[#1b2029]/95"
+        className="flex items-start gap-3 rounded-2xl border border-line bg-white/95 p-3.5 shadow-lift backdrop-blur"
       >
         <img src="/logo.png" alt="" aria-hidden className="h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm" />
         <span className="min-w-0 flex-1">

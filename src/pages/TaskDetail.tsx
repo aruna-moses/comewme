@@ -476,7 +476,7 @@ export default function TaskDetail() {
               </div>
               <button
                 type="button"
-                className="ml-2 shrink-0 rounded-full bg-line p-1.5 text-muted transition hover:bg-ink hover:text-white"
+                className="ml-2 shrink-0 rounded-full bg-line p-1.5 text-muted transition hover:bg-ink hover:text-canvas"
                 aria-label="More options"
                 onClick={(event) => {
                   event.stopPropagation()
@@ -520,7 +520,7 @@ export default function TaskDetail() {
               </div>
               <button
                 type="button"
-                className="p-1.5 rounded-full bg-line text-muted hover:bg-ink hover:text-white transition"
+                className="p-1.5 rounded-full bg-line text-muted hover:bg-ink hover:text-canvas transition"
                 aria-label="Close"
                 onClick={() => setGroupInfoOpen(false)}
               >

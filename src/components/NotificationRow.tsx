@@ -37,7 +37,7 @@ export default function NotificationRow({
   const inner = (
     <div
       className={`flex items-start gap-3 rounded-2xl border p-3 transition ${
-        unread ? 'border-amber/30 bg-sun/10' : 'border-line bg-white'
+        unread ? 'border-amber/40 bg-sun/15' : 'border-line bg-white'
       }`}
     >
       <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${config.className}`} aria-hidden>

@@ -67,7 +67,7 @@ export default function VoiceNotePlayer({
         onClick={() => {
           if (audioRef.current) onToggle(messageId, audioRef.current)
         }}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-white transition active:scale-95"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-canvas transition active:scale-95"
         aria-label={isPlaying ? 'Pause voice note' : finished ? 'Play voice note again' : 'Play voice note'}
       >
         {isPlaying ? (

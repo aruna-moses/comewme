@@ -102,7 +102,7 @@ export default function BottomNav() {
           <div className="flex flex-1 justify-center">
             <button
               onClick={() => (session ? navigate('/post') : navigate('/login'))}
-              className="-mt-2 flex h-[54px] w-[54px] items-center justify-center rounded-full text-white shadow-lift"
+              className="-mt-2 flex h-[54px] w-[54px] items-center justify-center rounded-full text-[#0B0B0F] shadow-lift"
               style={{ backgroundImage: 'linear-gradient(180deg,#f7a233,#ee7b1e)' }}
               aria-label="Post an activity"
             >

@@ -90,7 +90,7 @@
 
   /* Yellow is a fill, never text. Text on yellow is always ink. */
   .btn-primary {
-    @apply btn text-white shadow-card hover:brightness-105;
+    @apply btn text-[#0B0B0F] shadow-card hover:brightness-105;
     background-image: linear-gradient(180deg, #f7a233, #ee7b1e);
   }
 
@@ -99,16 +99,12 @@
   }
 
   .join-task-pill {
-    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white transition hover:brightness-105;
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-[#0B0B0F] transition hover:brightness-105;
     background-image: linear-gradient(180deg, #f7a233, #ee7b1e);
   }
 
-  [data-theme='dark'] .join-task-pill {
-    color: #0b0b0f;
-  }
-
   .btn-dark {
-    @apply btn bg-ink text-white;
+    @apply btn bg-ink text-canvas;
   }
 
   .btn-sm {
@@ -121,7 +117,7 @@
   }
 
   .chip-active {
-    @apply border-transparent text-white;
+    @apply border-transparent text-[#0B0B0F];
     background-image: linear-gradient(180deg, #f7a233, #ee7b1e);
   }
 
@@ -477,6 +473,35 @@
 
 [data-theme='dark'] .bg-\[\#eaf6ee\] {
   color: rgb(132 219 184);
+}
+
+/* Notice / info blocks that were hardcoded light — keep them readable on dark surfaces. */
+[data-theme='dark'] .bg-\[\#f7f6f1\],
+[data-theme='dark'] .bg-\[\#e4f4ef\],
+[data-theme='dark'] .bg-\[\#e8eef7\],
+[data-theme='dark'] .bg-\[\#ffebdc\],
+[data-theme='dark'] .bg-\[\#f1ecfa\],
+[data-theme='dark'] .bg-\[\#fdeef3\],
+[data-theme='dark'] .bg-\[\#f0efee\] {
+  background-color: rgb(255 255 255 / 0.08) !important;
+}
+
+[data-theme='dark'] .text-\[\#9c8621\],
+[data-theme='dark'] .text-amber-900 {
+  color: rgb(250 202 139) !important;
+}
+
+[data-theme='dark'] .text-\[\#98a0ae\] {
+  color: rgb(var(--color-muted)) !important;
+}
+
+[data-theme='dark'] .border-\[\#4273a8\]\/20 {
+  border-color: rgb(255 255 255 / 0.14) !important;
+}
+
+/* Amber is a fill colour; on white it is too light for small text, so deepen it in light mode only. */
+:root:not([data-theme='dark']) .text-amber {
+  color: rgb(180 83 9);
 }
 
 [data-theme='dark'] .journey-hero {

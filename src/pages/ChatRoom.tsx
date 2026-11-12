@@ -1254,7 +1254,7 @@ export default function ChatRoom() {
               maxLength={2000}
               disabled={uploading}
             />
-            <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber text-white disabled:opacity-50" onClick={() => void handleSend(draft)} disabled={!draft.trim() || uploading} aria-label="Send message">
+            <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber text-[#0B0B0F] disabled:opacity-50" onClick={() => void handleSend(draft)} disabled={!draft.trim() || uploading} aria-label="Send message">
               {uploading ? <span className="text-xs">…</span> : <Send size={17} aria-hidden />}
             </button>
           </div>

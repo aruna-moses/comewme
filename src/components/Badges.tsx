@@ -21,7 +21,7 @@ export function TrustPill({ level }: { level: string }) {
     Newcomer: 'bg-line text-muted',
     Explorer: 'bg-sun/30 text-amber-900',
     Regular: 'bg-sun/50 text-ink',
-    Trusted: 'bg-ink text-sun',
+    Trusted: 'bg-ink text-canvas',
   }
   return (
     <span className={`pill ${styles[level] ?? 'bg-line text-muted'}`}>{level}</span>

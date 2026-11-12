@@ -258,7 +258,7 @@ export default function PersonalitySelector({
                         className="h-full w-full object-contain object-bottom"
                       />
                       {isSelected && (
-                        <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber text-white">
+                        <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber text-[#0B0B0F]">
                           <Check size={14} aria-hidden />
                         </span>
                       )}

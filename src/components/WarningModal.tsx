@@ -80,7 +80,7 @@ export default function WarningModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[65] flex items-center justify-center overflow-y-auto bg-ink/65 p-4">
+    <div className="fixed inset-0 z-[65] flex items-center justify-center overflow-y-auto bg-black/65 p-4">
       <section role="dialog" aria-modal="true" aria-labelledby="warning-title" className="my-auto w-full max-w-[440px] rounded-[24px] bg-white p-6 shadow-lift">
         <p className="text-[11px] font-bold uppercase tracking-[.14em] text-amber">
           {isWarning ? 'A note from the moderation team' : permanent ? 'Account access' : 'Temporary account suspension'}
@@ -88,7 +88,7 @@ export default function WarningModal({
         <h1 id="warning-title" className="mt-2 font-display text-[23px] font-bold">
           {isWarning ? 'Please keep this in mind' : permanent ? 'Your account has been suspended' : 'Your account is temporarily paused'}
         </h1>
-        <div className="mt-4 rounded-2xl bg-[#f7f6f1] p-4 text-[13px] leading-relaxed">
+        <div className="mt-4 rounded-2xl bg-canvas p-4 text-[13px] leading-relaxed">
           <p><span className="font-semibold">Topic:</span> {category}</p>
           <p className="mt-2"><span className="font-semibold">Reason:</span> {reason}</p>
           <p className="mt-2"><span className="font-semibold">Date:</span> {new Date(violation.created_at).toLocaleDateString()}</p>
