@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
@@ -32,6 +32,8 @@ export default function Login() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [guidelinesFlash, setGuidelinesFlash] = useState(false)
+  const guidelinesRef = useRef<HTMLLabelElement>(null)
 
   useEffect(() => {
     if (session && profile) navigate(location.state?.from ?? '/', { replace: true })
@@ -50,6 +52,13 @@ export default function Login() {
       window.removeEventListener('pageshow', resetBusy)
     }
   }, [])
+
+  const flashGuidelinesNotice = (message: string) => {
+    setError(message)
+    guidelinesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setGuidelinesFlash(true)
+    window.setTimeout(() => setGuidelinesFlash(false), 2500)
+  }
 
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -74,7 +83,7 @@ export default function Login() {
     }
 
     if (!guidelinesChecked) {
-      setError('Please agree to follow the Community Guidelines before continuing.')
+      flashGuidelinesNotice('Please tick the guidelines first — it takes two seconds.')
       return
     }
     setBusy(true)
@@ -101,7 +110,7 @@ export default function Login() {
   async function handleGoogleSignIn() {
     setError(null)
     if (!guidelinesChecked) {
-      setError('Please agree to follow the Community Guidelines before continuing.')
+      flashGuidelinesNotice('Please tick the guidelines first — it takes two seconds.')
       return
     }
     setBusy(true)
@@ -152,7 +161,12 @@ export default function Login() {
                     required
                   />
                 </div>
-                {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>}
+                {error && (
+                  <p role="alert" className="flex items-start gap-2 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">
+                    <AlertTriangle size={17} className="mt-0.5 shrink-0" aria-hidden />
+                    <span>{error}</span>
+                  </p>
+                )}
                 {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[13px] font-medium text-verified">{notice}</p>}
                 <button type="submit" className="btn-primary w-full rounded-[16px]" disabled={busy || !email.trim()}>
                   {busy ? 'Sending…' : 'Send reset link'}
@@ -234,7 +248,14 @@ export default function Login() {
                     </button>
                   </div>
                 </div>
-                <label className="flex cursor-pointer items-start gap-2 pt-1 text-[12px] leading-relaxed text-muted">
+                <label
+                  ref={guidelinesRef}
+                  className={`flex cursor-pointer items-start gap-2 pt-1 text-[12px] leading-relaxed transition ${
+                    guidelinesFlash
+                      ? 'rounded-xl border-2 border-alert bg-alert/10 p-2 text-alert ring-4 ring-alert/20'
+                      : 'text-muted'
+                  }`}
+                >
                   <input
                     type="checkbox"
                     className="mt-0.5 h-4 w-4 accent-[#ff9f1c]"
@@ -246,6 +267,7 @@ export default function Login() {
                     I agree to follow the Community Guidelines and understand that violations may lead to a warning,
                     temporary suspension, or permanent ban.
                   </span>
+                  {guidelinesFlash && <AlertTriangle size={22} className="ml-auto shrink-0 text-alert" aria-hidden />}
                 </label>
                 {mode === 'in' && (
                   <button
@@ -256,7 +278,12 @@ export default function Login() {
                     Forgot password?
                   </button>
                 )}
-                {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>}
+                {error && (
+                  <p role="alert" className="flex items-start gap-2 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">
+                    <AlertTriangle size={17} className="mt-0.5 shrink-0" aria-hidden />
+                    <span>{error}</span>
+                  </p>
+                )}
                 {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[13px] font-medium text-verified">{notice}</p>}
                 <button type="submit" className="btn-primary w-full" disabled={busy || !guidelinesChecked}>
                   {busy ? 'One moment…' : mode === 'in' ? 'Sign in' : 'Create account'}
