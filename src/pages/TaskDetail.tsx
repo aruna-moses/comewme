@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { CheckCircle2, Ban, RotateCcw } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import {
@@ -388,28 +389,6 @@ export default function TaskDetail() {
             </Link>
           )}
 
-          {session && isHost && ['open', 'full'].includes(task.status) && (
-            <button
-              className={`w-full ${requests.some((r) => r.status === 'accepted') ? 'btn-primary' : 'btn-ghost text-muted'}`}
-              disabled={busy}
-              onClick={() => setDoneConfirmOpen(true)}
-            >
-              Mark as done
-            </button>
-          )}
-          {session && isHost && ['open', 'full'].includes(task.status) && <button className="btn-ghost mt-2 w-full" disabled={busy} onClick={() => setCancelConfirmOpen(true)}>Cancel activity</button>}
-          {session && isHost && task.status === 'completed' && (
-            <div className="rounded-card border border-[#edd996] bg-[#fff4d1] p-4">
-              <p className="text-[13px] font-semibold text-[#7a622f]">This activity was marked done</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-[#7a622f]">
-                New requests and the group chat were closed. If that was by mistake, reopen the activity and accept
-                people again.
-              </p>
-              <button type="button" className="btn-primary btn-sm mt-3 w-full" disabled={busy} onClick={() => void handleReopen()}>
-                {busy ? 'Reopening…' : 'Reopen activity'}
-              </button>
-            </div>
-          )}
 
           {session && !isHost && task.status === 'open' && (!myRequest || myRequest.status === 'declined') && (
             <button
@@ -605,23 +584,54 @@ export default function TaskDetail() {
               </button>
             </div>
 
-            {/* Host controls - Mark as done left, Cancel activity right */}
-            {isHost && task.status === 'open' && (
-              <div className="grid grid-cols-2 gap-3 rounded-xl border border-line bg-white p-3">
-                <button
-                  onClick={() => setDoneConfirmOpen(true)}
-                  disabled={busy}
-                  className="btn-primary w-full px-3 py-2 text-sm font-semibold"
-                >
-                  {busy ? 'Marking…' : 'Mark as done'}
-                </button>
-                <button
-                  onClick={() => setCancelConfirmOpen(true)}
-                  disabled={busy}
-                  className="btn-ghost w-full px-3 py-2 text-sm text-alert hover:bg-alert/5"
-                >
-                  Cancel activity
-                </button>
+            {/* Host controls — tuck host actions away from the page body */}
+            {isHost && (
+              <div className="rounded-xl border border-line bg-white p-2">
+                <p className="px-2 pb-1 pt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+                  Host controls
+                </p>
+                {['open', 'full'].includes(task.status) && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGroupInfoOpen(false)
+                        setDoneConfirmOpen(true)
+                      }}
+                      disabled={busy}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[13px] font-semibold transition hover:bg-canvas disabled:opacity-50"
+                    >
+                      <CheckCircle2 size={17} className="shrink-0 text-verified" aria-hidden />
+                      Mark as done
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGroupInfoOpen(false)
+                        setCancelConfirmOpen(true)
+                      }}
+                      disabled={busy}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[13px] font-semibold text-alert transition hover:bg-alert/5 disabled:opacity-50"
+                    >
+                      <Ban size={17} className="shrink-0" aria-hidden />
+                      Cancel activity
+                    </button>
+                  </>
+                )}
+                {task.status === 'completed' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGroupInfoOpen(false)
+                      void handleReopen()
+                    }}
+                    disabled={busy}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[13px] font-semibold transition hover:bg-canvas disabled:opacity-50"
+                  >
+                    <RotateCcw size={17} className="shrink-0 text-amber" aria-hidden />
+                    Reopen activity
+                  </button>
+                )}
               </div>
             )}
 
@@ -815,7 +825,7 @@ export default function TaskDetail() {
         <ConfirmDialog
           open={doneConfirmOpen}
           title="Mark this activity as done?"
-          message="Everyone in the activity will all be asked to rate each other. This can't be undone."
+          message="Everyone in the activity will be asked to rate each other. If this was by mistake, you can reopen the activity from the ⋯ → Host controls any time."
           cancelLabel="Not yet"
           confirmLabel="Mark as done"
           busy={busy}
