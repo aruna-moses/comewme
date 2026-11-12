@@ -150,6 +150,16 @@ export async function markTaskDone(taskId: string) {
   if (error) throw toError(error)
 }
 
+export async function changeUsername(newUsername: string): Promise<void> {
+  const { error } = await supabase.rpc('change_username', { p_new: newUsername })
+  if (error) throw toError(error)
+}
+
+export async function deleteOwnAccount(): Promise<void> {
+  const { error } = await supabase.rpc('delete_own_account')
+  if (error) throw toError(error)
+}
+
 export async function cancelTask(taskId: string) {
   const { error } = await supabase.from('tasks').update({ status: 'cancelled' }).eq('id', taskId)
   if (error) throw toError(error)

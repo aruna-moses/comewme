@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Loader2, ShieldCheck, Camera } from 'lucide-react'
+import { Check, Loader2, ShieldCheck, Camera, AlertCircle } from 'lucide-react'
 import Sheet from './Sheet'
 import { useAuth } from '../context/AuthContext'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category } from '../types'
-import { fetchMyVerification, submitVerification, updateProfile } from '../lib/api'
+import { fetchMyVerification, submitVerification, updateProfile, isUsernameTaken, changeUsername } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { toError } from '../lib/errors'
 
@@ -17,6 +17,8 @@ export default function ProfileDetailsSheet({
 }) {
   const { profile, refreshProfile } = useAuth()
   const [name, setName] = useState(profile?.display_name ?? '')
+  const [handle, setHandle] = useState(profile?.username ?? '')
+  const [handleStatus, setHandleStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle')
   const [bio, setBio] = useState(profile?.bio ?? '')
   const [area, setArea] = useState(profile?.area ?? 'Yaba')
   const [interests, setInterests] = useState<Category[]>(profile?.interests ?? [])
@@ -32,10 +34,34 @@ export default function ProfileDetailsSheet({
   useEffect(() => {
     if (!profile || !open) return
     setName(profile.display_name ?? '')
+    setHandle(profile.username ?? '')
+    setHandleStatus('idle')
     setBio(profile.bio ?? '')
     setArea(profile.area ?? 'Yaba')
     setInterests(profile.interests ?? [])
   }, [profile, open])
+
+  // Live availability check for the username field.
+  useEffect(() => {
+    if (!profile?.username) return
+    const current = profile.username
+    const trimmed = handle.trim()
+    if (trimmed === current) {
+      setHandleStatus('idle')
+      return
+    }
+    if (!/^[a-z0-9_]{3,24}$/.test(trimmed)) {
+      setHandleStatus('invalid')
+      return
+    }
+    setHandleStatus('checking')
+    const t = window.setTimeout(() => {
+      isUsernameTaken(trimmed)
+        .then((taken) => setHandleStatus(taken ? 'taken' : 'available'))
+        .catch(() => setHandleStatus('idle'))
+    }, 350)
+    return () => window.clearTimeout(t)
+  }, [handle, profile?.username])
 
   useEffect(() => {
     if (!open || !profile?.id) return
@@ -78,6 +104,18 @@ export default function ProfileDetailsSheet({
   }
 
 
+  function cleanHandle(value: string) {
+    const clean = value
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+/, '')
+      .slice(0, 24)
+    setHandle(clean)
+  }
+
   function toggleInterest(category: Category) {
     setInterests((prev) => (prev.includes(category) ? prev.filter((x) => x !== category) : [...prev, category]))
   }
@@ -86,6 +124,10 @@ export default function ProfileDetailsSheet({
     if (!profile) return
     setSaving(true)
     try {
+      const desiredHandle = handle.trim()
+      if (desiredHandle !== (profile.username ?? '')) {
+        await changeUsername(desiredHandle)
+      }
       await updateProfile(profile.id, {
         display_name: name.trim(),
         bio: bio.trim() || null,
@@ -203,6 +245,41 @@ export default function ProfileDetailsSheet({
         </section>
 
         <div>
+          <label className="label" htmlFor="handle">Username</label>
+          <div className="flex items-center gap-2">
+            <span className="text-[15px] font-semibold text-muted">@</span>
+            <input
+              id="handle"
+              className="field"
+              value={handle}
+              onChange={(event) => cleanHandle(event.target.value)}
+              maxLength={24}
+              autoCapitalize="none"
+              autoComplete="username"
+              spellCheck={false}
+              aria-invalid={handleStatus === 'taken' || handleStatus === 'invalid'}
+              aria-describedby="handle-status"
+            />
+          </div>
+          <div id="handle-status" className="mt-1 text-[11px]" role="status" aria-live="polite">
+            {handleStatus === 'checking' && (
+              <span className="text-muted">Checking availability…</span>
+            )}
+            {handleStatus === 'available' && (
+              <span className="font-semibold text-verified">@{handle} is available</span>
+            )}
+            {handleStatus === 'taken' && (
+              <span className="flex items-center gap-1 text-alert"><AlertCircle size={11} aria-hidden /> That username is taken.</span>
+            )}
+            {handleStatus === 'invalid' && (
+              <span className="flex items-center gap-1 text-alert"><AlertCircle size={11} aria-hidden /> 3 to 24 letters, numbers and underscores.</span>
+            )}
+          </div>
+          <p className="mt-1 text-[10px] leading-snug text-muted">
+            Your display name and how friends reach you won&apos;t change — this is just your public handle.
+          </p>
+        </div>
+        <div>
           <label className="label" htmlFor="name">Display name</label>
           <input id="name" className="field" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} />
         </div>
@@ -233,7 +310,7 @@ export default function ProfileDetailsSheet({
             ))}
           </div>
         </div>
-        <button type="button" className="btn-primary w-full" disabled={saving || !name.trim()} onClick={() => void save()}>
+        <button type="button" className="btn-primary w-full" disabled={saving || !name.trim() || handleStatus === 'taken' || handleStatus === 'invalid' || handleStatus === 'checking'} onClick={() => void save()}>
           {saving ? (
             <><Loader2 size={16} className="animate-spin" aria-hidden /> Saving…</>
           ) : saved ? (

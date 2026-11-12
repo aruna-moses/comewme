@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
-import { Moon, Sun, Megaphone, ShieldCheck, BookOpen, FileText, ChevronRight, Pencil } from 'lucide-react'
+import { Moon, Sun, Megaphone, ShieldCheck, BookOpen, FileText, ChevronRight, Pencil, AlertTriangle, Trash2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import ConfirmDialog from '../components/ConfirmDialog'
-import { updateProfile } from '../lib/api'
+import Sheet from '../components/Sheet'
+import { updateProfile, deleteOwnAccount } from '../lib/api'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 import { toError } from '../lib/errors'
@@ -23,6 +24,10 @@ export default function Settings() {
   const [avatarBusy, setAvatarBusy] = useState(false)
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const { moderation } = useNotifications()
 
   if (!profile || !session) return null
@@ -44,6 +49,25 @@ export default function Settings() {
       alert(e instanceof Error ? e.message : 'Could not upload photo')
     } finally {
       setAvatarBusy(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!profile) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteOwnAccount()
+      // The session references a user that no longer exists — clear it locally.
+      try {
+        await signOut()
+      } catch {
+        // Already gone; that's the point.
+      }
+      window.location.replace('/')
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'Could not delete your account. Please try again or email comewme.app@gmail.com.')
+      setDeleting(false)
     }
   }
 
@@ -241,6 +265,26 @@ export default function Settings() {
           ))}
         </div>
 
+        <SectionLabel className="mt-8">Danger zone</SectionLabel>
+        <div className="card mt-2 border-alert/20 p-4">
+          <p className="text-[14px] font-semibold text-alert">Delete your account</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-muted">
+            Erase your profile, photos, activities, messages, trust score and verification — forever. There is no recovery.
+          </p>
+          <button
+            type="button"
+            className="btn-ghost mt-3 inline-flex w-full items-center justify-center gap-2 border-alert/40 text-alert hover:bg-alert/5"
+            onClick={() => {
+              setConfirmText('')
+              setDeleteError(null)
+              setDeleteOpen(true)
+            }}
+          >
+            <Trash2 size={15} aria-hidden />
+            Delete account
+          </button>
+        </div>
+
         <button
           className="btn-ghost w-full text-alert"
           onClick={() => setSignOutOpen(true)}
@@ -263,6 +307,53 @@ export default function Settings() {
         onCancel={() => setSignOutOpen(false)}
         onConfirm={() => void confirmSignOut()}
       />
+      {deleteOpen && (
+        <Sheet open={deleteOpen} onClose={() => { if (!deleting) setDeleteOpen(false) }} title="Delete account">
+          <div className="space-y-4 pb-2">
+            <div className="rounded-2xl border border-alert/30 bg-alert/10 p-4">
+              <p className="flex items-start gap-2 text-[13px] font-semibold text-alert">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden />
+                Deleting your account erases everything:
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-6 text-[12px] leading-relaxed text-alert">
+                <li>Your profile, username, avatar and selfie</li>
+                <li>Every activity you hosted — the group chat disappears for everyone in it</li>
+                <li>Every message, photo and voice note you ever sent</li>
+                <li>Your trust score, reputation, verification and reviews</li>
+                <li>Your notifications and activity history</li>
+              </ul>
+              <p className="mt-2 text-[12px] font-bold text-alert">This cannot be undone.</p>
+            </div>
+            <div>
+              <label htmlFor="delete-confirm" className="label">
+                Type <span className="font-bold text-ink">DELETE</span> to confirm
+              </label>
+              <input
+                id="delete-confirm"
+                className="field"
+                placeholder="DELETE"
+                value={confirmText}
+                onChange={(event) => setConfirmText(event.target.value.toUpperCase())}
+                autoCapitalize="characters"
+                autoComplete="off"
+                spellCheck={false}
+                aria-invalid={confirmText.length > 0 && confirmText !== 'DELETE'}
+              />
+            </div>
+            {deleteError && (
+              <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[12px] font-medium text-alert">{deleteError}</p>
+            )}
+            <button
+              type="button"
+              className="flex w-full items-center justify-center rounded-full bg-alert py-3 text-[14px] font-bold text-white transition enabled:hover:brightness-110 disabled:opacity-40"
+              disabled={confirmText !== 'DELETE' || deleting}
+              onClick={() => void handleDelete()}
+            >
+              {deleting ? 'Deleting your account…' : 'Permanently delete my account'}
+            </button>
+          </div>
+        </Sheet>
+      )}
     </div>
   )
 }
