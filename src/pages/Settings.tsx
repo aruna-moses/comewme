@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { Moon, Sun, Megaphone, ShieldCheck, BookOpen, FileText, ChevronRight, Pencil, AlertTriangle, Trash2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import PushNotificationCard from '../components/PushNotificationCard'
 import ConfirmDialog from '../components/ConfirmDialog'
 import Sheet from '../components/Sheet'
 import { updateProfile, deleteOwnAccount } from '../lib/api'
@@ -142,6 +143,11 @@ export default function Settings() {
         </div>
         <ChevronRight size={18} className="mt-0.5 shrink-0 text-muted" aria-hidden />
       </Link>
+
+      <SectionLabel className="mt-5">Notifications</SectionLabel>
+      <div className="mt-2">
+        <PushNotificationCard />
+      </div>
 
       <SectionLabel className="mt-5">Appearance</SectionLabel>
 
