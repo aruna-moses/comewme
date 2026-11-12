@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Reply, Send, Square, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Reply, Send, Square, Trash2, X, Clock3, MapPin, ArrowRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import {
@@ -17,7 +17,7 @@ import {
   subscribeToMessages,
   uploadChatMedia,
 } from '../lib/api'
-import { formatTime, isSameDay } from '../lib/format'
+import { formatTime, isSameDay, formatDateTime } from '../lib/format'
 import { usePersistedState } from '../lib/drafts'
 import type { JoinRequest, Message, Task } from '../types'
 import Avatar from '../components/Avatar'
@@ -493,6 +493,36 @@ export default function ChatRoom() {
             </Link>
             ))}
           </section>
+        </div>
+
+        {/* Quick facts + one-tap replies */}
+        <div className="mt-2 flex flex-wrap gap-2" aria-label="Meeting quick facts">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[10px] font-semibold text-muted">
+            <Clock3 size={11} aria-hidden />
+            {formatDateTime(task.date_time)}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[10px] font-semibold text-muted">
+            <MapPin size={11} aria-hidden />
+            <span className="max-w-[140px] truncate">{task.meeting_point}</span>
+          </span>
+        </div>
+
+        <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Quick messages">
+          {[
+            'On my way',
+            'Running 5 mins late',
+            "I'm here ✋",
+            'Traffic is bad',
+          ].map((text) => (
+            <button
+              key={text}
+              type="button"
+              onClick={() => void handleSend(text, 'text')}
+              className="rounded-full border border-amber/40 bg-sun/15 px-3 py-1.5 text-[11px] font-semibold text-amber transition hover:bg-sun/25"
+            >
+              {text}
+            </button>
+          ))}
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto py-4">
