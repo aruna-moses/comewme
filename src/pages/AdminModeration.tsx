@@ -353,6 +353,7 @@ export default function AdminModeration() {
   }
 
   const pendingSOS = alerts.filter((a) => a.status === 'pending')
+  const openFeedback = feedback.filter((f) => f.status !== 'resolved')
 
   if (loading) return <Spinner />
 
@@ -379,20 +380,20 @@ export default function AdminModeration() {
               title="SOS alerts"
               count={pendingSOS.length}
               sub={pendingSOS.length === 0 ? 'All clear' : 'Tap to review'}
-              urgent
+              urgent={pendingSOS.length > 0}
               open={openSection.sos}
               onToggle={() => toggleSection('sos')}
               preview={pendingSOS.length > 0 ? `${pendingSOS[0].display_name || 'Member'} · ${timeAgo(pendingSOS[0].created_at)}` : undefined}
             >
-              {alerts.length === 0 && (
+              {pendingSOS.length === 0 && (
                 <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
-                  No SOS alerts yet. When someone presses SOS during an activity, it lands here and a
-                  red banner appears on every moderator screen.
+                  No open SOS alerts right now. When someone presses SOS during an activity, it lands here and a
+                  red banner appears on every moderator screen — and it clears itself here the moment it’s triaged.
                 </p>
               )}
 
               <div className="space-y-3">
-                {alerts.map((alert) => {
+                {pendingSOS.map((alert) => {
                   const map = mapLink(alert.location_lat, alert.location_lng, alert.location_address)
                   return (
                     <article
@@ -492,29 +493,26 @@ export default function AdminModeration() {
             {/* Member feedback */}
             <CollapsibleSection
               title="Member feedback"
-              count={feedback.filter((f) => f.status !== 'resolved').length}
-              sub={feedback.filter((f) => f.status !== 'resolved').length > 0 ? 'Tap to review feedback' : 'No new feedback'}
-              urgent={feedback.some((f) => f.status === 'open')}
+              count={openFeedback.length}
+              sub={openFeedback.length > 0 ? 'Tap to review feedback' : 'No new feedback'}
+              urgent={openFeedback.some((f) => f.status === 'open')}
               open={openSection.feedback}
               onToggle={() => toggleSection('feedback')}
-              preview={
-                (() => {
-                  const open = feedback.filter((f) => f.status !== 'resolved')
-                  const next = open[0]
-                  if (!next) return undefined
-                  const snippet = next.details.trim().replace(/\s+/g, ' ')
-                  return `${next.reporter_name || 'Member'}: "${snippet.length > 70 ? snippet.slice(0, 70) + '…' : snippet}"`
-                })()
-              }
+              preview={(() => {
+                const next = openFeedback[0]
+                if (!next) return undefined
+                const snippet = next.details.trim().replace(/\s+/g, ' ')
+                return `${next.reporter_name || 'Member'}: "${snippet.length > 70 ? snippet.slice(0, 70) + '…' : snippet}"`
+              })()}
             >
-              {feedback.length === 0 && (
+              {openFeedback.length === 0 && (
                 <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
                   Nothing yet. Bug reports, complaints and suggestions arrive here — you read them, decide what to do, and optionally send a short note back.
                 </p>
               )}
 
               <div className="space-y-3">
-                {feedback.map((item) => {
+                {openFeedback.map((item) => {
                   const name = item.reporter_name || 'Member'
                   const handle = item.reporter_username ? `@${item.reporter_username}` : null
                   const STATUS_TONE: Record<string, string> = {

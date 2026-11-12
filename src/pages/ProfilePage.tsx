@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ChevronDown, MapPin, Pencil } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useNotifications } from '../context/NotificationContext'
 import { fetchProfile, fetchReviews } from '../lib/api'
 import { VerifiedBadge } from '../components/Badges'
 import { supabase } from '../lib/supabase'
@@ -20,6 +21,8 @@ import { calculateTrustScore } from '../lib/trustScore'
 export default function ProfilePage() {
   const { id } = useParams<{ id: string }>()
   const { profile: me } = useAuth()
+  const { moderation } = useNotifications()
+  const moderationPending = moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications + moderation.feedback
   const navigate = useNavigate()
 
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -104,8 +107,20 @@ export default function ProfilePage() {
               <Pencil size={13} aria-hidden />
               Edit
             </button>
-            <Link to="/settings" className="btn-ghost btn-sm" aria-label="Open settings">
+            <Link
+              to="/settings"
+              className="btn-ghost btn-sm relative"
+              aria-label={moderationPending > 0 ? `Open settings, ${moderationPending} pending moderation task${moderationPending === 1 ? '' : 's'}` : 'Open settings'}
+            >
               Settings
+              {moderation.is_moderator && moderationPending > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-canvas bg-[#e53935] px-1 text-[9px] font-bold leading-none text-white shadow-sm"
+                >
+                  {moderationPending > 99 ? '99+' : moderationPending}
+                </span>
+              )}
             </Link>
           </div>
         )}
