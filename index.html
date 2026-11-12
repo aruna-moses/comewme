@@ -4,15 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0B0B0F" />
-    <script>
-      try {
-        if (localStorage.getItem('comewme-theme') === 'dark') {
-          document.documentElement.dataset.theme = 'dark'
-        }
-      } catch {
-        // The app defaults to light mode when persistent storage is unavailable.
-      }
-    </script>
+    <script src="/theme-init.js"></script>
     <title>Come w' me</title>
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
