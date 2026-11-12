@@ -633,6 +633,46 @@ export default function ChatRoom() {
     }
   }, [task, authorized, refreshViewCounts])
 
+  const applyReactions = useCallback((rows: Array<{ message_id: string; user_id: string; emoji: string }>) => {
+    const map: Record<string, Record<string, { count: number; mine: boolean }>> = {}
+    for (const row of rows) {
+      map[row.message_id] = map[row.message_id] ?? {}
+      const bucket = map[row.message_id][row.emoji] ?? { count: 0, mine: false }
+      bucket.count += 1
+      if (row.user_id === profile?.id) bucket.mine = true
+      map[row.message_id][row.emoji] = bucket
+    }
+    setReactions(map)
+  }, [profile?.id])
+
+  const refreshReactions = useCallback(async () => {
+    const ids = messageIdsRef.current.filter((id) => !id.startsWith('temp-'))
+    if (ids.length === 0) return
+    try {
+      applyReactions(await fetchMessageReactions(ids))
+    } catch {
+      // Non-fatal — the next refresh reconciles.
+    }
+  }, [applyReactions])
+
+  useEffect(() => {
+    if (!task || !authorized) return
+    const channel = supabase
+      .channel(`message-reactions:${task.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reactions' }, () => {
+        void refreshReactions()
+      })
+      .subscribe()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refreshReactions()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      void supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [task, authorized, refreshReactions])
+
   function handleMessagePointerDown(message: Message, event: PointerEvent<HTMLDivElement>) {
     if (message.pending || message.deleted_at) return
     const target = event.target as HTMLElement
@@ -993,26 +1033,30 @@ export default function ChatRoom() {
                           )}
                         </div>
                         {!message.deleted_at && message.type === 'text' && (
-                          <div className={`mt-1 flex flex-wrap gap-1 ${mine ? 'justify-end' : ''}`} aria-label="React to message">
+                          <div className={`mt-1.5 flex flex-wrap items-center gap-1 ${mine ? 'justify-end' : ''}`} aria-label="Reactions">
                             {REACTIONS.map((emoji) => {
                               const info = reactions[message.id]?.[emoji]
                               const count = info?.count ?? 0
-                              const mine = info?.mine ?? false
+                              const reacted = count > 0
+                              const iReacted = info?.mine ?? false
                               return (
                                 <button
                                   key={emoji}
                                   type="button"
                                   onClick={() => void onToggleReaction(message.id, emoji)}
-                                  className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] transition ${
-                                    mine
-                                      ? 'border-amber bg-sun/25 text-amber'
-                                      : 'border-line bg-canvas text-muted hover:text-ink'
+                                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] transition ${
+                                    iReacted
+                                      ? 'border-amber bg-sun/35 text-ink'
+                                      : reacted
+                                        ? 'border-amber/40 bg-sun/15 text-ink'
+                                        : 'border-transparent bg-canvas/60 text-muted opacity-70 hover:opacity-100'
                                   }`}
-                                  aria-pressed={mine}
-                                  aria-label={`React ${emoji} (${count})`}
+                                  aria-pressed={iReacted}
+                                  aria-label={`${reacted ? `${count} ${count === 1 ? 'reaction' : 'reactions'}, ` : ''}react ${emoji}`}
+                                  title={iReacted ? 'You reacted' : reacted ? `${count} reacted` : 'Add reaction'}
                                 >
                                   <span aria-hidden="true">{emoji}</span>
-                                  {count > 0 && <span className="font-semibold">{count}</span>}
+                                  {reacted && <span className="font-bold tabular-nums">{count}</span>}
                                 </button>
                               )
                             })}

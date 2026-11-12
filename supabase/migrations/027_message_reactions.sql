@@ -46,3 +46,17 @@ create policy message_reactions_delete_own on public.message_reactions
   using (auth.uid() = user_id);
 
 create index if not exists message_reactions_message_idx on public.message_reactions (message_id);
+
+-- Realtime so reactions appear for everyone instantly (sender included).
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'message_reactions'
+  ) then
+    alter publication supabase_realtime add table public.message_reactions;
+  end if;
+end $$;
