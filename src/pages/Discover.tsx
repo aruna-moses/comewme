@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Search, ShieldCheck, SlidersHorizontal, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -50,11 +50,12 @@ export default function Discover() {
 
   const interests = profile?.interests ?? []
 
+  const refreshTimer = useRef<number | null>(null)
   const load = useCallback(
-    async (offset = 0) => {
+    async (offset = 0, quiet = false) => {
       try {
         if (offset === 0) {
-          setLoading(true)
+          if (!quiet) setLoading(true)
           setError(null)
         } else {
           setLoadingMore(true)
@@ -91,8 +92,10 @@ export default function Discover() {
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not load activities')
       } finally {
-        setLoading(false)
-        setLoadingMore(false)
+        if (!quiet) {
+          setLoading(false)
+          setLoadingMore(false)
+        }
       }
     },
     [category, area, forYou, interests.join(','), search, profile?.id],
@@ -100,6 +103,40 @@ export default function Discover() {
 
   useEffect(() => {
     void load(0)
+  }, [load])
+
+  // Keep Discover live: any task insert/update/delete refreshes the feed silently.
+  useEffect(() => {
+    if (refreshTimer.current) window.clearTimeout(refreshTimer.current)
+
+    const channel = supabase
+      .channel('discover-feed')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks' },
+        () => {
+          if (refreshTimer.current) window.clearTimeout(refreshTimer.current)
+          refreshTimer.current = window.setTimeout(() => {
+            void load(0, true)
+          }, 600)
+        },
+      )
+      .subscribe()
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void load(0, true)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+
+    return () => {
+      if (refreshTimer.current) {
+        window.clearTimeout(refreshTimer.current)
+        refreshTimer.current = null
+      }
+      void supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [load])
 
   // Pop the reminder sheet once per day for activities starting tomorrow.
