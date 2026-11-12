@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Camera, UserRound } from 'lucide-react'
+import { Camera, UserRound, Check, AlertCircle, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { isUsernameTaken } from '../lib/api'
@@ -28,6 +28,40 @@ export default function Onboarding() {
   const [interests, setInterests] = useState<Category[]>(profile?.interests ?? [])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle')
+
+  const suggestedHandle = useMemo(() => {
+    const base = displayName
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .replace(/_+/g, '_')
+      .slice(0, 20)
+    return base.length >= 3 ? base : null
+  }, [displayName])
+
+  // Live availability feedback so nobody reaches the final page only to fail there.
+  useEffect(() => {
+    const handle = username.trim()
+    if (!handle) {
+      setUsernameStatus('idle')
+      return
+    }
+    if (!/^[a-z0-9_]{3,24}$/.test(handle)) {
+      setUsernameStatus('invalid')
+      return
+    }
+    setUsernameStatus('checking')
+    const t = window.setTimeout(() => {
+      isUsernameTaken(handle)
+        .then((taken) => setUsernameStatus(taken ? 'taken' : 'available'))
+        .catch(() => setUsernameStatus('idle'))
+    }, 350)
+    return () => window.clearTimeout(t)
+  }, [username])
 
   // Already onboarded? Nothing to do here.
   useEffect(() => {
@@ -37,6 +71,19 @@ export default function Onboarding() {
   useEffect(() => () => {
     if (avatarPreview?.startsWith('blob:')) URL.revokeObjectURL(avatarPreview)
   }, [avatarPreview])
+
+  function cleanUsername(value: string) {
+    const clean = value
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+/, '')
+      .slice(0, 24)
+    setUsername(clean)
+    setError(null)
+  }
 
   function toggleInterest(c: Category) {
     setInterests((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
@@ -48,11 +95,12 @@ export default function Onboarding() {
     setBusy(true)
     try {
       const handle = username.trim().toLowerCase()
-      if (handle.length < 3) throw new Error('Your username needs at least 3 characters.')
-      if (!/^[a-z0-9_]+$/.test(handle)) {
-        throw new Error('Usernames can only use letters, numbers and underscores.')
+      if (!/^[a-z0-9_]{3,24}$/.test(handle)) {
+        setStep(0)
+        throw new Error('Check your username — 3 to 24 letters, numbers and underscores.')
       }
-      if (await isUsernameTaken(handle)) {
+      if (usernameStatus === 'taken' || (await isUsernameTaken(handle))) {
+        setStep(0)
         throw new Error('That username is taken. Try another.')
       }
 
@@ -176,9 +224,61 @@ export default function Onboarding() {
                     className="field"
                     placeholder="amaka_b"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                    onChange={(event) => cleanUsername(event.target.value)}
                     maxLength={24}
+                    autoCapitalize="none"
+                    autoComplete="username"
+                    spellCheck={false}
+                    aria-invalid={usernameStatus === 'taken' || usernameStatus === 'invalid'}
+                    aria-describedby="handle-status"
                   />
+                </div>
+                <div id="handle-status" className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px]" aria-live="polite">
+                  {usernameStatus === 'idle' && !username.trim() && (
+                    <>
+                      <span className="text-muted">3–24 letters, numbers and underscores.</span>
+                      {suggestedHandle && suggestedHandle !== username && (
+                        <>
+                          <span className="text-muted">Try:</span>
+                          <button type="button" onClick={() => cleanUsername(suggestedHandle)} className="rounded-full border border-line bg-white px-2 py-0.5 font-semibold text-ink transition hover:border-amber">
+                            @{suggestedHandle}
+                          </button>
+                          <button type="button" onClick={() => cleanUsername(`${suggestedHandle}_1`)} className="rounded-full border border-line bg-white px-2 py-0.5 font-semibold text-ink transition hover:border-amber">
+                            @{suggestedHandle}_1
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+                  {usernameStatus === 'checking' && (
+                    <span className="flex items-center gap-1.5 text-muted">
+                      <Loader2 size={12} className="animate-spin" aria-hidden />
+                      Checking availability…
+                    </span>
+                  )}
+                  {usernameStatus === 'available' && (
+                    <span className="flex items-center gap-1.5 font-semibold text-verified">
+                      <Check size={12} aria-hidden />
+                      @{username} is available
+                    </span>
+                  )}
+                  {usernameStatus === 'taken' && (
+                    <span className="flex items-center gap-1.5 text-alert">
+                      <AlertCircle size={12} aria-hidden />
+                      That username is taken
+                      {suggestedHandle && suggestedHandle !== username && (
+                        <button type="button" onClick={() => cleanUsername(`${suggestedHandle}`)} className="font-semibold text-amber underline">
+                          Try @{suggestedHandle}
+                        </button>
+                      )}
+                    </span>
+                  )}
+                  {usernameStatus === 'invalid' && (
+                    <span className="flex items-center gap-1.5 text-alert">
+                      <AlertCircle size={12} aria-hidden />
+                      {username.trim().length < 3 ? 'At least 3 characters.' : 'Only letters, numbers and underscores.'}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -313,7 +413,7 @@ export default function Onboarding() {
             <button
               className="btn-primary flex-1"
               disabled={
-                (step === 0 && (!displayName.trim() || username.trim().length < 3)) ||
+                (step === 0 && (!displayName.trim() || usernameStatus === 'taken' || usernameStatus === 'invalid' || usernameStatus === 'checking' || username.trim().length < 3)) ||
                 (step === 2 && interests.length === 0)
               }
               onClick={() => setStep((s) => s + 1)}
