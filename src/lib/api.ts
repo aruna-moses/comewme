@@ -313,6 +313,13 @@ export async function deleteChatMedia(path: string): Promise<void> {
   if (error) throw error
 }
 
+/** Sign a single private chat object path — used to shorten the media send path. */
+export async function signChatMedia(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from('chat-media').createSignedUrl(path, 3600)
+  if (error) throw error
+  return data.signedUrl
+}
+
 export async function sendMessage(
   taskId: string,
   profile: Profile,
@@ -321,6 +328,7 @@ export async function sendMessage(
   url: string | null = null,
   duration: number | null = null,
   replyTo: Message | null = null,
+  options?: { resolveMedia?: boolean },
 ): Promise<Message> {
   const replyPreview = replyTo
     ? replyTo.type === 'image'
@@ -344,6 +352,7 @@ export async function sendMessage(
     reply_to_preview: replyPreview,
   }).select('*').single()
   if (error) throw error
+  if (options?.resolveMedia === false) return data as Message
   const [message] = await resolveChatMedia([data as Message])
   return message
 }

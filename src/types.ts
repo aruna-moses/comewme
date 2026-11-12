@@ -119,6 +119,8 @@ export interface Message {
   reply_to_sender_name?: string | null
   reply_to_preview?: string | null
   deleted_at?: string | null
+  /** Client-only: media is still uploading; the bubble shows a spinner. */
+  pending?: boolean
   created_at: string
 }
 

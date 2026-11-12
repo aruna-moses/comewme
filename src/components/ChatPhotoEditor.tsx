@@ -16,7 +16,8 @@ type Tool = 'none' | 'crop' | 'brush'
 
 const PALETTE = ['#ffffff', '#111111', '#ffb703', '#48cae4', '#06d6a0', '#ef476f', '#8338ec', '#ffd166']
 const BRUSH_SIZES = [4, 8, 14, 20, 28]
-const MAX_BYTES = 1_500_000
+const MAX_BYTES = 700_000
+const MAX_DIM = 1280
 const MIN_CROP = 40
 const HANDLE_HIT = 24
 
@@ -349,9 +350,12 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
       : { x: 0, y: 0, w: natural.w, h: natural.h }
 
     setBusy(true)
+    // Export at chat resolution (max 1280px) instead of the camera's full
+    // resolution: identical on a phone screen, 3–10x faster to upload.
+    const exportScale = Math.min(1, MAX_DIM / Math.max(region.w, region.h))
     const canvas = document.createElement('canvas')
-    canvas.width = Math.round(region.w)
-    canvas.height = Math.round(region.h)
+    canvas.width = Math.max(1, Math.round(region.w * exportScale))
+    canvas.height = Math.max(1, Math.round(region.h * exportScale))
     const ctx = canvas.getContext('2d')
     if (!ctx) {
       setBusy(false)
@@ -359,6 +363,7 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
     }
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
+    ctx.scale(exportScale, exportScale)
     ctx.drawImage(img, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h)
 
     const offX = -region.x
@@ -408,11 +413,11 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
         smaller.toBlob(
           (smallBlob) => finish(smallBlob ?? blob),
           'image/jpeg',
-          0.84,
+          0.78,
         )
       },
       'image/jpeg',
-      0.9,
+      0.82,
     )
   }
 

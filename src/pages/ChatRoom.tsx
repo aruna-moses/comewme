@@ -20,6 +20,7 @@ import {
   markChatRead,
   resolveChatMedia,
   sendMessage,
+  signChatMedia,
   subscribeToMessages,
   toggleMessageReaction,
   uploadChatMedia,
@@ -306,7 +307,7 @@ export default function ChatRoom() {
   }, [reactions])
 
   const handleAttach = useCallback(async (file: File, duration: number | null = null, caption = '') => {
-    if (!task) return
+    if (!task || !profile) return
     const image = file.type.startsWith('image/') && file.type !== 'image/svg+xml'
     const audio = file.type.startsWith('audio/')
     if (!image && !audio) {
@@ -320,16 +321,59 @@ export default function ChatRoom() {
 
     setUploading(true)
     setError(null)
+
+    const type = image ? 'image' : 'audio'
+    const captionText = caption.trim()
+    const tempId = `temp-${crypto.randomUUID()}`
+    const localUrl = URL.createObjectURL(file)
+    // Show the bubble immediately — WhatsApp-style — then swap in the real row.
+    const optimistic: Message = {
+      id: tempId,
+      task_id: task.id,
+      sender_id: profile.id,
+      sender_name: profile.display_name,
+      sender_avatar_url: profile.avatar_url,
+      body: captionText,
+      type,
+      url: localUrl,
+      duration,
+      reply_to_message_id: replyTarget?.id ?? null,
+      reply_to_sender_id: replyTarget?.sender_id ?? null,
+      reply_to_sender_name: replyTarget?.sender_name ?? null,
+      reply_to_preview: replyTarget
+        ? replyTarget.type === 'image'
+          ? replyTarget.body?.trim() || 'Photo'
+          : replyTarget.type === 'audio'
+            ? 'Voice note'
+            : replyTarget.body.slice(0, 200)
+        : null,
+      created_at: new Date().toISOString(),
+      pending: true,
+    }
+    setMessages((current) => [...current, optimistic])
+
     let uploadedPath: string | null = null
     try {
       const { path } = await uploadChatMedia(task.id, file)
       uploadedPath = path
-      const sent = await handleSend(caption, image ? 'image' : 'audio', path, duration)
-      if (!sent) {
-        await deleteChatMedia(path)
-        uploadedPath = null
-      }
+      // Insert the row and sign the media URL in parallel: one round trip, not two.
+      const [created, signedUrl] = await Promise.all([
+        sendMessage(task.id, profile, captionText, type, path, duration, replyTarget, { resolveMedia: false }),
+        signChatMedia(path),
+      ])
+      const resolved: Message = { ...created, url: signedUrl, pending: false }
+      setMessages((current) => {
+        const next = current.map((item) => (item.id === tempId ? resolved : item))
+        const seen = new Set<string>()
+        return next.filter((item) => {
+          if (seen.has(item.id)) return false
+          seen.add(item.id)
+          return true
+        })
+      })
+      setReplyTarget(null)
     } catch (e) {
+      setMessages((current) => current.filter((item) => item.id !== tempId))
       let message = e instanceof Error ? e.message : 'Could not attach the file.'
       if (uploadedPath) {
         try {
@@ -340,9 +384,10 @@ export default function ChatRoom() {
       }
       setError(message)
     } finally {
+      URL.revokeObjectURL(localUrl)
       setUploading(false)
     }
-  }, [task, handleSend])
+  }, [task, profile, replyTarget])
 
   async function toggleRecording() {
     if (recording) {
@@ -365,7 +410,12 @@ export default function ChatRoom() {
       const mimeType = typeof MediaRecorder.isTypeSupported === 'function'
         ? supportedTypes.find((type) => MediaRecorder.isTypeSupported(type))
         : undefined
-      const recorder = mimeType ? new MediaRecorder(audioStream, { mimeType }) : new MediaRecorder(audioStream)
+      const recorder = new MediaRecorder(audioStream, {
+        ...(mimeType ? { mimeType } : {}),
+        // Voice notes are speech: 32 kbps opus uploads ~4x faster than the
+        // browser default and still sounds clean in a chat.
+        audioBitsPerSecond: 32_000,
+      })
       mediaRecorder.current = recorder
       recordingChunks.current = []
       recordingStartedAt.current = Date.now()
@@ -437,6 +487,7 @@ export default function ChatRoom() {
   }
 
   function handleMessagePointerDown(message: Message, event: PointerEvent<HTMLDivElement>) {
+    if (message.pending || message.deleted_at) return
     const target = event.target as HTMLElement
     if (target.closest('a') || (message.type !== 'audio' && target.closest('button, input'))) return
     if (event.button !== 0) return
@@ -480,6 +531,7 @@ export default function ChatRoom() {
 
   function handleMessageContextMenu(messageId: string, event: MouseEvent<HTMLDivElement>) {
     event.preventDefault()
+    if (messageId.startsWith('temp-')) return
     if (longPressTimer.current !== null) window.clearTimeout(longPressTimer.current)
     longPressTimer.current = null
     setActionMessageId(messageId)
@@ -739,7 +791,11 @@ export default function ChatRoom() {
                           )}
                           {!message.deleted_at && message.type === 'image' && message.url && (
                             <a href={message.url} target="_blank" rel="noreferrer">
-                              <img src={message.url} alt="Photo shared in the group chat" className="max-h-72 max-w-full rounded-xl object-cover" />
+                              <img
+                                src={message.url}
+                                alt="Photo shared in the group chat"
+                                className={`max-h-72 max-w-full rounded-xl object-cover transition ${message.pending ? 'opacity-75' : ''}`}
+                              />
                             </a>
                           )}
                           {!message.deleted_at && message.type === 'image' && message.body && (
@@ -763,6 +819,12 @@ export default function ChatRoom() {
                           {message.type === 'text' && message.body && (
                             <p className="whitespace-pre-wrap px-1 py-0.5 text-[14px] leading-snug">
                               {message.body}
+                            </p>
+                          )}
+                          {message.pending && (
+                            <p className="mt-1 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber" aria-hidden />
+                              Sending…
                             </p>
                           )}
                         </div>
