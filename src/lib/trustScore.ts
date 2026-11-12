@@ -17,8 +17,8 @@ export interface TrustScoreResult {
  *
  * Rules:
  *  0-10   Signed up + accepted community guidelines
- *  10-20  Profile photos (2-6)
- *  20-30  Phone verified
+ *  10-20  Profile photo set
+ *  20-30  Bio written
  *  30-40  First activity completed
  *  40-60  3-5 activities completed
  *  60-80  5+ activities with good reviews / no reports
@@ -28,7 +28,7 @@ export function calculateTrustScore(input: {
   tasks_completed: number;
   verification_status: 'unverified' | 'pending' | 'verified';
   avatar_url: string | null;
-  phone: string | null;
+  bio: string | null;
   has_good_reviews?: boolean;
   has_reports?: boolean;
 }): TrustScoreResult {
@@ -50,11 +50,11 @@ export function calculateTrustScore(input: {
       description: 'Upload 2 to 6 photos so others can see who you are.',
     },
     {
-      label: 'Phone verified',
+      label: 'Bio written',
       points: 0,
       max: 10,
       earned: false,
-      description: 'Confirm your phone number with a code.',
+      description: 'Tell everyone who you are — one honest line is enough.',
     },
     {
       label: 'First activity completed',
@@ -97,8 +97,8 @@ export function calculateTrustScore(input: {
     score += 10;
   }
 
-  // 3. Phone verified
-  if (input.phone) {
+  // 3. Bio written
+  if (input.bio && input.bio.trim().length > 0) {
     breakdown[2].points = 10;
     breakdown[2].earned = true;
     score += 10;

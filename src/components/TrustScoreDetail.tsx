@@ -6,7 +6,7 @@ interface Props {
   tasks_completed: number;
   verification_status: 'unverified' | 'pending' | 'verified';
   avatar_url: string | null;
-  phone: string | null;
+  bio: string | null;
   has_good_reviews?: boolean;
   has_reports?: boolean;
   open: boolean;
@@ -20,7 +20,7 @@ export default function TrustScoreDetail({
   tasks_completed,
   verification_status,
   avatar_url,
-  phone,
+  bio,
   has_good_reviews = true,
   has_reports = false,
   open,
@@ -31,7 +31,7 @@ export default function TrustScoreDetail({
     tasks_completed,
     verification_status,
     avatar_url,
-    phone,
+    bio,
     has_good_reviews,
     has_reports,
   });
