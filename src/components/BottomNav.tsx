@@ -83,10 +83,10 @@ export default function BottomNav() {
       {({ isActive }) => (
         <>
           <span
-            className={`relative flex h-11 w-11 items-center justify-center rounded-full border-[2.5px] transition-all duration-300 ease-out ${
+            className={`relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 ease-out ${
               isActive
-                ? 'scale-105 border-amber bg-amber/10 text-amber shadow-[0_0_0_3px_rgb(var(--color-sun)/0.15)]'
-                : 'border-transparent text-muted'
+                ? 'scale-110 bg-amber/15 text-amber shadow-[0_0_0_4px_rgb(var(--color-sun)/0.18)]'
+                : 'bg-transparent text-muted'
             }`}
           >
             {icon(isActive)}
@@ -118,12 +118,12 @@ export default function BottomNav() {
           <div className="flex flex-1 justify-center">
             <button
               onClick={() => (session ? navigate('/post') : navigate('/login'))}
-              className="-mt-2 flex h-[54px] w-[54px] items-center justify-center rounded-full text-[#0B0B0F] shadow-lift"
+              className="-mt-3.5 flex h-[64px] w-[64px] items-center justify-center rounded-full text-[#0B0B0F] shadow-lift transition-transform duration-200 ease-out hover:scale-105 active:scale-95"
               style={{ backgroundImage: 'linear-gradient(180deg,#f7a233,#ee7b1e)' }}
               aria-label="Post an activity"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
               </svg>
             </button>
           </div>
