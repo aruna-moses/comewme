@@ -169,7 +169,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sessionStorage.setItem(GOOGLE_GUIDELINES_CONSENT_KEY, String(Date.now()))
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: `${window.location.origin}/onboarding?returnTo=${encodeURIComponent(returnTo)}` },
+          options: {
+            redirectTo: `${window.location.origin}/onboarding?returnTo=${encodeURIComponent(returnTo)}`,
+            // Show the user's list of Google accounts instead of forcing them down the "create account" path.
+            queryParams: { prompt: 'select_account' },
+          },
         })
         if (error) {
           sessionStorage.removeItem(GOOGLE_GUIDELINES_CONSENT_KEY)

@@ -37,6 +37,20 @@ export default function Login() {
     if (session && profile) navigate(location.state?.from ?? '/', { replace: true })
   }, [session, profile, navigate, location.state])
 
+  // If the user cancels the Google flow and comes back to this page,
+  // reset the button so it doesn't look stuck on "One moment…".
+  useEffect(() => {
+    const resetBusy = () => {
+      if (document.visibilityState === 'visible') setBusy(false)
+    }
+    document.addEventListener('visibilitychange', resetBusy)
+    window.addEventListener('pageshow', resetBusy)
+    return () => {
+      document.removeEventListener('visibilitychange', resetBusy)
+      window.removeEventListener('pageshow', resetBusy)
+    }
+  }, [])
+
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
