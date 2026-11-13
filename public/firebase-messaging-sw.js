@@ -5,12 +5,12 @@
 
 // ---------- set these to your Firebase web app config ----------
 const FIREBASE_CONFIG = {
-  apiKey: 'REPLACE_WITH_YOUR_FIREBASE_API_KEY',
-  authDomain: 'REPLACE_WITH_YOUR_PROJECT.firebaseapp.com',
-  projectId: 'REPLACE_WITH_YOUR_PROJECT_ID',
-  storageBucket: 'REPLACE_WITH_YOUR_PROJECT.firebasestorage.app',
-  messagingSenderId: 'REPLACE_WITH_YOUR_SENDER_ID',
-  appId: 'REPLACE_WITH_YOUR_APP_ID',
+  apiKey: 'AIzaSyBUwJ2xJIpu1_ANmJTUNCKYFAwNZx4uMhk',
+  authDomain: 'comewme-push.firebaseapp.com',
+  projectId: 'comewme-push',
+  storageBucket: 'comewme-push.firebasestorage.app',
+  messagingSenderId: '205882745478',
+  appId: '1:205882745478:web:a8d7802e08fe0fcfe62707',
 }
 // ----------------------------------------------------------------
 
