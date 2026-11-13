@@ -48,7 +48,10 @@ export type PushRegisterStep =
   | 'token'
 
 /** Full iOS-safe registration flow. Never hangs forever; always settles. */
-export async function registerForPush(vapidKey: string | undefined): Promise<{
+export async function registerForPush(
+  vapidKey: string | undefined,
+  preRequestedPermission?: NotificationPermission,
+): Promise<{
   token: string | null
   step: PushRegisterStep
   error?: string
@@ -57,25 +60,31 @@ export async function registerForPush(vapidKey: string | undefined): Promise<{
     return { token: null, step: 'not-configured' }
   }
 
+  // iOS may refuse permission outside a direct tap handler, so when permission
+  // is provided up front we skip the support/permission prologue entirely.
   let permissionSupported = true
-  try {
-    permissionSupported = await withTimeout(Promise.resolve(isSupported()), 8000, 'checking push support')
-  } catch {
-    permissionSupported = false
+  if (preRequestedPermission !== 'granted') {
+    try {
+      permissionSupported = await withTimeout(Promise.resolve(isSupported()), 8000, 'checking push support')
+    } catch {
+      permissionSupported = false
+    }
   }
   if (!permissionSupported || !('Notification' in window) || !('serviceWorker' in navigator)) {
     return { token: null, step: 'unsupported' }
   }
 
   // Ask permission (returns instantly if already granted or denied).
-  let permission: NotificationPermission = Notification.permission
-  try {
-    permission = await withTimeout(Notification.requestPermission(), 10000, 'waiting for permission')
-  } catch (error) {
-    return {
-      token: null,
-      step: 'permission',
-      error: error instanceof Error ? error.message : 'Permission request timed out',
+  let permission: NotificationPermission = preRequestedPermission ?? Notification.permission
+  if (preRequestedPermission !== 'granted') {
+    try {
+      permission = await withTimeout(Notification.requestPermission(), 10000, 'waiting for permission')
+    } catch (error) {
+      return {
+        token: null,
+        step: 'permission',
+        error: error instanceof Error ? error.message : 'Permission request timed out',
+      }
     }
   }
   if (permission !== 'granted') {

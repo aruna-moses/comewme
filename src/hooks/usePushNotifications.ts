@@ -104,7 +104,14 @@ export function usePushNotifications(): PushNotificationsState {
       }
 
       setPhase('asking-permission')
-      const result = await registerForPush(import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined)
+      // iOS only honours Notification.requestPermission() inside the tap handler,
+      // so we ask synchronously here before any awaits.
+      const preRequestedPermission =
+        'Notification' in window ? await Notification.requestPermission() : undefined
+      const result = await registerForPush(
+        import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined,
+        preRequestedPermission,
+      )
 
       if (!result.token) {
         if (result.step === 'unsupported') setStatus('unsupported')
