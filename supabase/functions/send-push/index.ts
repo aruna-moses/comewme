@@ -141,14 +141,33 @@ async function handle(req: Request) {
     return new Response(JSON.stringify({ error: 'FIREBASE_SERVICE_ACCOUNT is not valid JSON' }), { status: 500, headers: CORS })
   }
 
-  let payload: { userId?: string; title?: string; body?: string; url?: string }
+  let payload: { userId?: string; title?: string; body?: string; url?: string; type?: string; table?: string; record?: { user_id?: string; title?: string; body?: string; link_path?: string | null } }
   try {
     payload = await req.json()
   } catch {
     return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { status: 400, headers: CORS })
   }
 
-  const { userId, title, body, url } = payload
+  // Two payload shapes supported:
+  //   Direct: { userId, title, body, url? }
+  //   Supabase Database Webhook: { type: 'INSERT', table: 'notifications', record: { user_id, title, body, link_path } }
+  let userId: string | undefined
+  let title: string | undefined
+  let body: string | undefined
+  let url: string = '/'
+
+  if (payload.record && payload.table === 'notifications') {
+    userId = payload.record.user_id
+    title = payload.record.title
+    body = payload.record.body
+    url = payload.record.link_path ?? '/'
+  } else {
+    userId = payload.userId
+    title = payload.title
+    body = payload.body
+    url = payload.url ?? '/'
+  }
+
   if (!userId || !title || !body) {
     return new Response(JSON.stringify({ error: 'userId, title and body are required' }), { status: 400, headers: CORS })
   }
