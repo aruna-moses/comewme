@@ -111,6 +111,18 @@ export async function registerForPush(
     }
   }
 
+  // FCM refuses to subscribe until a service worker controls the page —
+  // wait for activation rather than firing getToken() immediately.
+  try {
+    registration = await withTimeout(navigator.serviceWorker.ready, 10000, 'waiting for the service worker to activate')
+  } catch (error) {
+    return {
+      token: null,
+      step: 'sw-register',
+      error: error instanceof Error ? error.message : 'Service worker did not activate in time',
+    }
+  }
+
   try {
     const token = await withTimeout(
       getToken(messaging, { vapidKey, serviceWorkerRegistration: registration }),
