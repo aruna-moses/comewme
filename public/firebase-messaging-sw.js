@@ -26,10 +26,9 @@ if (FIREBASE_CONFIG.apiKey.startsWith('REPLACE_WITH')) {
   // Messaging not configured yet — acknowledge pushes silently and skip wiring.
   console.info("[Come w' me SW] Firebase messaging not configured yet. Fill FIREBASE_CONFIG in firebase-messaging-sw.js and .env to enable push.")
 } else {
-  self.importScripts(
-    'https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js',
-    'https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js',
-  )
+  // Self-hosted compat SDK — some mobile networks block gstatic.com; without these,
+  // the service worker never activates and pushes silently fail.
+  self.importScripts('/sw-compat/firebase-app-compat.js', '/sw-compat/firebase-messaging-compat.js')
 
   firebase.initializeApp(FIREBASE_CONFIG)
   const messaging = firebase.messaging()
