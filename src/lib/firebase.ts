@@ -10,17 +10,6 @@ const config = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID as string | undefined,
 }
 
-/** True when the browser will actually run FCM (iOS Safari requires standalone PWA mode). */
-export async function isPushSupported(): Promise<boolean> {
-  if (!('Notification' in window)) return false
-  if (!('serviceWorker' in navigator)) return false
-  try {
-    return await isSupported()
-  } catch {
-    return false
-  }
-}
-
 export function isFirebaseConfigured(): boolean {
   return Boolean(config.apiKey && config.projectId && config.appId)
 }
@@ -31,7 +20,7 @@ function app(): FirebaseApp | null {
   return existing ?? initializeApp(config)
 }
 
-export function getMessagingInstance(): Messaging | null {
+function messagingOrNull(): Messaging | null {
   const instance = app()
   if (!instance) return null
   try {
@@ -41,17 +30,90 @@ export function getMessagingInstance(): Messaging | null {
   }
 }
 
-/** Request permission and resolve the FCM registration token, or null when unavailable. */
-export async function getFcmToken(vapidKey: string | undefined): Promise<string | null> {
-  if (!vapidKey) return null
-  if (!isFirebaseConfigured()) return null
-  if (!(await isPushSupported())) return null
+async function withTimeout<T>(promise: Promise<T>, ms: number, step: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      window.setTimeout(() => reject(new Error(`Timed out while ${step}`)), ms),
+    ),
+  ])
+}
 
-  const messaging = getMessagingInstance()
-  if (!messaging) return null
+export type PushRegisterStep =
+  | 'idle'
+  | 'not-configured'
+  | 'unsupported'
+  | 'permission'
+  | 'sw-register'
+  | 'token'
 
-  const registration = await navigator.serviceWorker.ready
-  return getToken(messaging, { vapidKey, serviceWorkerRegistration: registration })
-    .then((token) => token || null)
-    .catch(() => null)
+/** Full iOS-safe registration flow. Never hangs forever; always settles. */
+export async function registerForPush(vapidKey: string | undefined): Promise<{
+  token: string | null
+  step: PushRegisterStep
+  error?: string
+}> {
+  if (!isFirebaseConfigured()) {
+    return { token: null, step: 'not-configured' }
+  }
+
+  let permissionSupported = true
+  try {
+    permissionSupported = await withTimeout(Promise.resolve(isSupported()), 8000, 'checking push support')
+  } catch {
+    permissionSupported = false
+  }
+  if (!permissionSupported || !('Notification' in window) || !('serviceWorker' in navigator)) {
+    return { token: null, step: 'unsupported' }
+  }
+
+  // Ask permission (returns instantly if already granted or denied).
+  let permission: NotificationPermission = Notification.permission
+  try {
+    permission = await withTimeout(Notification.requestPermission(), 10000, 'waiting for permission')
+  } catch (error) {
+    return {
+      token: null,
+      step: 'permission',
+      error: error instanceof Error ? error.message : 'Permission request timed out',
+    }
+  }
+  if (permission !== 'granted') {
+    return { token: null, step: 'permission', error: 'Permission was not granted' }
+  }
+
+  const messaging = messagingOrNull()
+  if (!messaging) {
+    return { token: null, step: 'token', error: 'Firebase messaging could not start' }
+  }
+
+  let registration: ServiceWorkerRegistration
+  try {
+    registration = await withTimeout(
+      navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' }),
+      15000,
+      'registering the push service worker',
+    )
+  } catch (error) {
+    return {
+      token: null,
+      step: 'sw-register',
+      error: error instanceof Error ? error.message : 'Service worker registration timed out',
+    }
+  }
+
+  try {
+    const token = await withTimeout(
+      getToken(messaging, { vapidKey, serviceWorkerRegistration: registration }),
+      15000,
+      'getting the FCM registration token',
+    )
+    return { token: token || null, step: token ? 'idle' : 'token', error: token ? undefined : 'FCM returned an empty token' }
+  } catch (error) {
+    return {
+      token: null,
+      step: 'token',
+      error: error instanceof Error ? error.message : 'Could not get the push token',
+    }
+  }
 }

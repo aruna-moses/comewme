@@ -11,7 +11,7 @@ const STATUS_META: Record<string, { badge: string; tone: string; blurb: string }
 }
 
 export default function PushNotificationCard() {
-  const { status, busy, error, requestPermissionAndRegister, removePush } = usePushNotifications()
+  const { status, busy, error, phase, requestPermissionAndRegister, removePush } = usePushNotifications()
   const enabled = status === 'enabled'
   const needsInstall = status === 'needs-install'
   const meta = STATUS_META[status]
@@ -79,7 +79,13 @@ export default function PushNotificationCard() {
                 aria-pressed={false}
               >
                 {busy ? (
-                  <span>Working…</span>
+                  <span>
+                    {phase === 'asking-permission'
+                      ? 'Tap Allow in the popup…'
+                      : phase === 'registering'
+                        ? 'Finishing up…'
+                        : 'Working…'}
+                  </span>
                 ) : (
                   <>
                     <Bell size={12} aria-hidden />

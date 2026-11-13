@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { isPushSupported, isFirebaseConfigured, getFcmToken } from '../lib/firebase'
+import { useEffect, useState, useCallback } from 'react'
+import { registerForPush, isFirebaseConfigured } from '../lib/firebase'
 import { supabase } from '../lib/supabase'
 import { toError } from '../lib/errors'
 
@@ -17,10 +17,12 @@ export type PushStatus =
   /** Fires when Firebase env keys aren't wired up yet; the app still works. */
   | 'not-configured'
 
+type PushPhase = 'idle' | 'asking-permission' | 'registering' | 'getting-token'
 export interface PushNotificationsState {
   status: PushStatus
   busy: boolean
   error: string | null
+  phase: PushPhase
   requestPermissionAndRegister: () => Promise<boolean>
   removePush: () => Promise<boolean>
 }
@@ -37,6 +39,7 @@ export function usePushNotifications(): PushNotificationsState {
   const [status, setStatus] = useState<PushStatus>('default')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [phase, setPhase] = useState<PushPhase>('idle')
 
   useEffect(() => {
     let alive = true
@@ -53,7 +56,8 @@ export function usePushNotifications(): PushNotificationsState {
         if (alive) setStatus('needs-install')
         return
       }
-      if (!(await isPushSupported())) {
+      const pushApis = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window
+      if (!pushApis) {
         if (alive) setStatus('unsupported')
         return
       }
@@ -93,44 +97,37 @@ export function usePushNotifications(): PushNotificationsState {
         setBusy(false)
         return false
       }
-      if (!(await isPushSupported())) {
-        setStatus('unsupported')
-        setBusy(false)
-        return false
-      }
       if (!isFirebaseConfigured()) {
         setStatus('not-configured')
         setBusy(false)
         return false
       }
 
-      const permission = await Notification.requestPermission()
-      if (permission === 'denied') {
-        setStatus('denied')
+      setPhase('asking-permission')
+      const result = await registerForPush(import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined)
+
+      if (!result.token) {
+        if (result.step === 'unsupported') setStatus('unsupported')
+        else if (result.step === 'not-configured') setStatus('not-configured')
+        else if (result.error === 'Permission was not granted') setStatus('denied')
+        else setError(result.error ?? 'Could not set up push notifications.')
+        setPhase('idle')
         setBusy(false)
         return false
       }
 
-      await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/firebase-cloud-messaging-push-scope' })
-      const token = await getFcmToken(import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined)
-      if (!token) {
-        setError('Could not register this device for notifications. Please check your connection and try again.')
-        setBusy(false)
-        return false
-      }
-
-      // Tie token to this device type; insert quietly returns on duplicate.
+      setPhase('registering')
       const deviceType = detectDeviceType()
       const { data: userData } = await supabase.auth.getUser()
       const userId = userData.user?.id
       if (!userId) throw new Error('You must be signed in to enable notifications.')
       const { error: upsertError } = await supabase
         .from('user_push_tokens')
-        .upsert({ user_id: userId, token, device_type: deviceType, updated_at: new Date().toISOString() }, { onConflict: 'token' })
+        .upsert({ user_id: userId, token: result.token, device_type: deviceType, updated_at: new Date().toISOString() }, { onConflict: 'token' })
       if (upsertError) throw upsertError
 
       try {
-        window.localStorage.setItem('comewme-fcm-token', token)
+        window.localStorage.setItem('comewme-fcm-token', result.token)
       } catch {
         // best effort — token is in the DB anyway
       }
@@ -138,6 +135,7 @@ export function usePushNotifications(): PushNotificationsState {
       setBusy(false)
       return true
     } catch (e) {
+      setPhase('idle')
       setError(toError(e, 'Could not register for push.').message)
       setBusy(false)
       return false
@@ -174,5 +172,5 @@ export function usePushNotifications(): PushNotificationsState {
     }
   }, [])
 
-  return { status, busy, error, requestPermissionAndRegister, removePush }
+  return { status, busy, error, phase, requestPermissionAndRegister, removePush }
 }
