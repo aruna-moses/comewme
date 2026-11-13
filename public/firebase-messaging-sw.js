@@ -46,6 +46,7 @@ if (FIREBASE_CONFIG.apiKey.startsWith('REPLACE_WITH')) {
       badge: '/logo.png',
       data: { url },
       tag: notif.tag || 'comewme-push',
+      requireInteraction: true,
     })
   })
 
