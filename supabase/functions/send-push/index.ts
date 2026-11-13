@@ -1,17 +1,20 @@
-// Supabase Edge Function: send a push notification to one user.
-// POST { userId, title, body, url? } — requires the service-role bearer token.
-// Secrets needed (supabase secrets set ...):
-//   FIREBASE_SERVICE_ACCOUNT = <firebase service-account JSON exactly as downloaded>
-// Auto-available env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+// Supabase Edge Function: push.notify
+// Triggered by a Database Webhook on `public.notifications` INSERT.
+// Delivery: FCM v1 HTTP API (works for Android Chrome, Desktop Chrome/Brave, and
+// iOS PWAs on iOS 16.4+).
+//
+// Webhook config must have:
+//   - Type: HTTP Request
+//   - URL: https://<project-ref>.supabase.co/functions/v1/send-push
+//   - Method: POST
+//   - Headers: Authorization: Bearer <service_role_key>   (use the "Add auth header
+//     with service key" checkbox — it fills this in automatically)
+//   - Timeout: 1500 ms
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const CORS = {
-  'Access-Control-Allow-Origin': 'https://comewme.vercel.app',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
-}
+// ---- FCM v1 service-account JWT -> access token ----
 
 type ServiceAccount = {
   type: string
@@ -24,7 +27,7 @@ type ServiceAccount = {
   token_uri: string
 }
 
-function base64url(data: string | ArrayBuffer): string {
+function b64url(data: string | ArrayBuffer): string {
   const bytes =
     typeof data === 'string'
       ? new TextEncoder().encode(data)
@@ -36,8 +39,8 @@ function base64url(data: string | ArrayBuffer): string {
 
 async function getFcmAccessToken(sa: ServiceAccount): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
-  const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
-  const payload = base64url(
+  const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
+  const payload = b64url(
     JSON.stringify({
       iss: sa.client_email,
       scope: 'https://www.googleapis.com/auth/firebase.messaging',
@@ -46,8 +49,6 @@ async function getFcmAccessToken(sa: ServiceAccount): Promise<string> {
       exp: now + 3600,
     }),
   )
-  const data = `${header}.${payload}`
-
   const pem = sa.private_key
     .replace('-----BEGIN PRIVATE KEY-----', '')
     .replace('-----END PRIVATE KEY-----', '')
@@ -64,12 +65,13 @@ async function getFcmAccessToken(sa: ServiceAccount): Promise<string> {
     false,
     ['sign'],
   )
+  const data = `${header}.${payload}`
   const signature = await crypto.subtle.sign(
     'RSASSA-PKCS1-v1_5',
     key,
     new TextEncoder().encode(data),
   )
-  const jwt = `${data}.${base64url(signature)}`
+  const jwt = `${data}.${b64url(signature)}`
 
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -92,89 +94,89 @@ async function sendToToken(
   body: string,
   url: string,
 ): Promise<{ ok: boolean; unregistered: boolean }> {
-  const res = await fetch(`https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      message: {
-        token,
-        notification: { title, body },
-        data: { url },
-        android: { priority: 'high' },
-        webpush: {
-          headers: { Urgency: 'high' },
-          notification: { icon: '/logo.png', badge: '/logo.png' },
-        },
+  const res = await fetch(
+    `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       },
-    }),
-  })
-
+      body: JSON.stringify({
+        message: {
+          token,
+          notification: { title, body },
+          data: { url },
+          webpush: {
+            notification: { icon: '/logo.png', badge: '/logo.png' },
+            fcmOptions: { link: url },
+            headers: { Urgency: 'high' },
+          },
+        },
+      }),
+    },
+  )
   if (res.ok) return { ok: true, unregistered: false }
 
   const errText = await res.text()
-  // UNREGISTERED / NOT_FOUND = dead device token → caller should prune it.
-  const unregistered = errText.includes('UNREGISTERED') || errText.includes('NOT_FOUND')
+  const unregistered =
+    errText.includes('UNREGISTERED') || errText.includes('NOT_FOUND')
   console.error('push send failed', { status: res.status, body: errText.slice(0, 300) })
   return { ok: false, unregistered }
 }
 
-async function handle(req: Request) {
-  const authHeader = req.headers.get('authorization') ?? ''
+serve(async (req) => {
+  // Webhook authentication: "Add auth header with service key" sets this up.
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  const expected = `Bearer ${serviceKey}`
-  if (!serviceKey || authHeader !== expected) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: CORS })
+  const incoming = req.headers.get('authorization') ?? ''
+  if (!serviceKey || incoming !== `Bearer ${serviceKey}`) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'content-type': 'application/json' },
+    })
+  }
+
+  // Body from Database Webhook:
+  // { type: 'INSERT', table: 'notifications', record: { user_id, title, body, link_path } }
+  let payload: {
+    type?: string
+    table?: string
+    record?: { user_id?: string; title?: string; body?: string; link_path?: string | null }
+    // Also support invoking the function directly:
+    userId?: string
+    title?: string
+    body?: string
+    url?: string
+  } = {}
+  try {
+    payload = await req.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 })
+  }
+
+  let userId = payload.record?.user_id ?? payload.userId
+  let title = payload.record?.title ?? payload.title ?? "Come w' me"
+  let body = payload.record?.body ?? payload.body ?? ''
+  let url = payload.record?.link_path ?? payload.url ?? '/'
+
+  if (!userId) {
+    return new Response(JSON.stringify({ error: 'No userId in payload' }), { status: 400 })
   }
 
   const saRaw = Deno.env.get('FIREBASE_SERVICE_ACCOUNT')
   if (!saRaw) {
-    return new Response(JSON.stringify({ error: 'FIREBASE_SERVICE_ACCOUNT secret is not set' }), { status: 500, headers: CORS })
+    return new Response(JSON.stringify({ error: 'FIREBASE_SERVICE_ACCOUNT secret is not set' }), { status: 500 })
   }
-
   let sa: ServiceAccount
   try {
     sa = JSON.parse(saRaw)
   } catch {
-    return new Response(JSON.stringify({ error: 'FIREBASE_SERVICE_ACCOUNT is not valid JSON' }), { status: 500, headers: CORS })
-  }
-
-  let payload: { userId?: string; title?: string; body?: string; url?: string; type?: string; table?: string; record?: { user_id?: string; title?: string; body?: string; link_path?: string | null } }
-  try {
-    payload = await req.json()
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { status: 400, headers: CORS })
-  }
-
-  // Two payload shapes supported:
-  //   Direct: { userId, title, body, url? }
-  //   Supabase Database Webhook: { type: 'INSERT', table: 'notifications', record: { user_id, title, body, link_path } }
-  let userId: string | undefined
-  let title: string | undefined
-  let body: string | undefined
-  let url: string = '/'
-
-  if (payload.record && payload.table === 'notifications') {
-    userId = payload.record.user_id
-    title = payload.record.title
-    body = payload.record.body
-    url = payload.record.link_path ?? '/'
-  } else {
-    userId = payload.userId
-    title = payload.title
-    body = payload.body
-    url = payload.url ?? '/'
-  }
-
-  if (!userId || !title || !body) {
-    return new Response(JSON.stringify({ error: 'userId, title and body are required' }), { status: 400, headers: CORS })
+    return new Response(JSON.stringify({ error: 'FIREBASE_SERVICE_ACCOUNT is not valid JSON' }), { status: 500 })
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-  const service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  const db = createClient(supabaseUrl, service)
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  const db = createClient(supabaseUrl, supabaseKey)
 
   const { data: rows, error } = await db
     .from('user_push_tokens')
@@ -182,20 +184,18 @@ async function handle(req: Request) {
     .eq('user_id', userId)
 
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: CORS })
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 })
   }
 
   const tokens = (rows ?? []).map((r: { token: string }) => r.token)
   if (tokens.length === 0) {
-    return new Response(JSON.stringify({ sent: 0, pruned: 0 }), { status: 200, headers: { ...CORS, 'content-type': 'application/json' } })
+    return new Response(JSON.stringify({ sent: 0, pruned: 0 }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    })
   }
 
-  let accessToken: string
-  try {
-    accessToken = await getFcmAccessToken(sa)
-  } catch (e) {
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'FCM auth failed' }), { status: 500, headers: CORS })
-  }
+  const accessToken = await getFcmAccessToken(sa)
 
   let sent = 0
   let pruned = 0
@@ -211,21 +211,6 @@ async function handle(req: Request) {
 
   return new Response(JSON.stringify({ sent, pruned }), {
     status: 200,
-    headers: { ...CORS, 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json' },
   })
-}
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS })
-  }
-  try {
-    return await handle(req)
-  } catch (e) {
-    console.error('send-push edge function error', e)
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), {
-      status: 500,
-      headers: CORS,
-    })
-  }
 })
