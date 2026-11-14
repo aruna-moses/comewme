@@ -42,7 +42,7 @@ export default function ShareTaskButton({ task }: { task: Task }) {
         await copyToClipboard(url)
         setMessage('Link copied')
       } catch {
-        setMessage('Could not copy — long-press the link instead')
+        setMessage('Could not copy')
       }
     }
   }
@@ -53,11 +53,11 @@ export default function ShareTaskButton({ task }: { task: Task }) {
     <button
       type="button"
       onClick={() => void shareTask()}
-      className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-ink px-4 text-[12px] font-semibold text-canvas shadow-[0_6px_18px_rgba(11,11,15,0.35)] transition hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber active:scale-[0.97]"
+      className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-[12px] font-semibold text-muted transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
       aria-label={`Share ${task.title}`}
     >
-      {done ? <Check size={14} aria-hidden /> : <Send size={13} strokeWidth={2.3} aria-hidden />}
-      <span className="text-[11px] font-bold uppercase tracking-[0.12em]">{done ? 'Shared' : 'Share'}</span>
+      {done ? <Check size={14} aria-hidden /> : <Send size={13} aria-hidden />}
+      <span>{done ? 'Shared' : 'Share'}</span>
       <span className="sr-only" aria-live="polite">{message}</span>
     </button>
   )
