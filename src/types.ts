@@ -138,6 +138,8 @@ export interface JoinRequest {
   message: string | null
   status: JoinStatus
   created_at: string
+  /** Stamped by trigger when the host accepts the request. Drives history gating. */
+  accepted_at?: string | null
 }
 
 export interface Message {

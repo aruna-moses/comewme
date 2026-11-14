@@ -748,6 +748,56 @@ export async function writeRecap(taskId: string, hostId: string, hostName: strin
   if (eventError) throw eventError
 }
 
+/* Pinned message                                                       */
+/* One pinned message per activity, host-only write (WhatsApp-style).    */
+
+export async function fetchPinnedMessage(taskId: string): Promise<Message | null> {
+  const { data, error } = await supabase
+    .from('activity_pinned_messages')
+    .select('message_id')
+    .eq('task_id', taskId)
+    .maybeSingle()
+  if (error) return null // pre-migration or transient failure: fail soft, banner hidden
+  const messageId = (data as { message_id: string } | null)?.message_id
+  if (!messageId) return null
+  const { data: row, error: msgError } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('id', messageId)
+    .maybeSingle()
+  if (msgError || !row) return null
+  const message = row as Message
+  return message.deleted_at ? null : message
+}
+
+export async function pinMessage(taskId: string, messageId: string): Promise<void> {
+  const { data: u } = await supabase.auth.getUser()
+  const userId = u.user?.id
+  if (!userId) throw new Error('Sign in first.')
+  const { error } = await supabase
+    .from('activity_pinned_messages')
+    .upsert(
+      { task_id: taskId, message_id: messageId, pinned_by: userId, pinned_at: new Date().toISOString() },
+      { onConflict: 'task_id' },
+    )
+  if (error) throw toError(error)
+}
+
+export async function unpinMessage(taskId: string): Promise<void> {
+  const { error } = await supabase.from('activity_pinned_messages').delete().eq('task_id', taskId)
+  if (error) throw toError(error)
+}
+
+export function subscribeToPinned(taskId: string, onChange: () => void): () => void {
+  const channel = supabase
+    .channel(`pinned:${taskId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_pinned_messages' }, () => onChange())
+    .subscribe()
+  return () => {
+    void supabase.removeChannel(channel)
+  }
+}
+
 /* Message reactions                                                     */
 
 export interface MessageReaction {

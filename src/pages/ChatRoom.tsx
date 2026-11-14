@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Pause, Play, Reply, Send, Trash2, X, Clock3, MapPin, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, Camera, ChevronDown, Copy, Mic, MoreVertical, Paperclip, Pause, Pin, Play, Reply, Send, Trash2, X, Clock3, MapPin, Volume2, VolumeX } from 'lucide-react'
 import { playSend } from '../lib/sounds'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import {
   checkInToActivity,
   deleteMessage,
@@ -16,15 +17,19 @@ import {
   fetchMessageViews,
   markMessageViewed,
   fetchMyJoinRequest,
+  fetchPinnedMessage,
   fetchSystemEvents,
   fetchParticipants,
   fetchTask,
   markChatRead,
   resolveChatMedia,
   sendMessage,
+  pinMessage,
   signChatMedia,
   subscribeToMessages,
+  subscribeToPinned,
   toggleMessageReaction,
+  unpinMessage,
   uploadChatMedia,
   writeRecap,
 } from '../lib/api'
@@ -75,7 +80,19 @@ export default function ChatRoom() {
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null)
   const [progressMessageId, setProgressMessageId] = useState<string | null>(null)
   const [audioProgress, setAudioProgress] = useState(0)
-  const chatEnd = useRef<HTMLDivElement | null>(null)
+  const [pinnedMessage, setPinnedMessage] = useState<Message | null>(null)
+const [flashMessageId, setFlashMessageId] = useState<string | null>(null)
+const [isNearBottom, setIsNearBottom] = useState(true)
+const [newSinceScroll, setNewSinceScroll] = useState(0)
+const [typingOthers, setTypingOthers] = useState<Array<{ id: string; name: string }>>([])
+const joinGateRef = useRef<number | null>(null)
+const containerRef = useRef<HTMLDivElement | null>(null)
+const isNearBottomRef = useRef(true)
+const forceScrollRef = useRef(false)
+const typingChannelRef = useRef<RealtimeChannel | null>(null)
+const typingStopTimer = useRef<number | null>(null)
+const lastTypingAtRef = useRef(0)
+const chatEnd = useRef<HTMLDivElement | null>(null)
   const mediaRecorder = useRef<MediaRecorder | null>(null)
   const recordingChunks = useRef<Blob[]>([])
   const recordingElapsedRef = useRef(0)
@@ -95,9 +112,15 @@ export default function ChatRoom() {
       try {
         const currentTask = await fetchTask(id)
         if (!currentTask) throw new Error('This group chat could not be found.')
-        const membership = currentTask.host_id === profile.id
-          ? true
-          : (await fetchMyJoinRequest(currentTask.id, profile.id))?.status === 'accepted'
+        const mineRequest = currentTask.host_id === profile.id
+          ? null
+          : await fetchMyJoinRequest(currentTask.id, profile.id).catch(() => null)
+        // New members only see history from the moment they were accepted.
+        const gateAt = mineRequest?.status === 'accepted'
+          ? Date.parse(mineRequest.accepted_at ?? mineRequest.created_at)
+          : null
+        joinGateRef.current = Number.isFinite(gateAt) ? gateAt : null
+        const membership = currentTask.host_id === profile.id || mineRequest?.status === 'accepted'
         if (!membership) {
           if (active) {
             setTask(currentTask)
@@ -130,7 +153,9 @@ export default function ChatRoom() {
         fetchCheckins(task.id).catch(() => [] as Array<{ user_id: string; checked_in_at: string }>),
       ])
       if (!active) return
-      setSystemEvents(eventsRes)
+      const gate = joinGateRef.current
+      const visibleEvents = gate ? eventsRes.filter((event) => Date.parse(event.created_at) >= gate) : eventsRes
+      setSystemEvents(visibleEvents)
       setCheckins(Object.fromEntries(checkinsRes.map((c) => [c.user_id, c.checked_in_at])))
     }
     void refreshEvents()
@@ -148,18 +173,60 @@ export default function ChatRoom() {
     }
   }, [task?.id])
 
+  // Pinned message: host pin/unpin, everyone sees it live.
+  useEffect(() => {
+    if (!task?.id) return
+    let active = true
+    const refreshPinned = async () => {
+      const pinned = await fetchPinnedMessage(task.id).catch(() => null)
+      if (active) setPinnedMessage(pinned)
+    }
+    void refreshPinned()
+    const unsubscribe = subscribeToPinned(task.id, () => { void refreshPinned() })
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [task?.id])
+
+  // Typing indicator: names only via Realtime presence, never content.
+  useEffect(() => {
+    if (!task?.id || !profile) return
+    const channel = supabase.channel(`typing:${task.id}`, { config: { presence: { key: profile.id } } })
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState<{ typing?: boolean; name?: string }>()
+        const others: Array<{ id: string; name: string }> = []
+        for (const [key, metas] of Object.entries(state)) {
+          if (key === profile.id) continue
+          const latest = metas[metas.length - 1]
+          if (latest?.typing) others.push({ id: key, name: String(latest.name ?? 'Someone') })
+        }
+        setTypingOthers(others)
+      })
+      .subscribe()
+    typingChannelRef.current = channel
+    return () => {
+      typingChannelRef.current = null
+      setTypingOthers([])
+      void supabase.removeChannel(channel)
+    }
+  }, [task?.id, profile?.id, profile?.display_name])
+
   useEffect(() => {
     if (!task || !authorized) return
     let active = true
     fetchMessages(task.id)
       .then(async (rows) => {
         if (!active) return
-        const views = await fetchMessageViews(rows.map((r) => r.id)).catch(() => [])
+        const gate = joinGateRef.current
+        const visibleRows = gate ? rows.filter((row) => Date.parse(row.created_at) >= gate) : rows
+        const views = await fetchMessageViews(visibleRows.map((r) => r.id)).catch(() => [])
         if (!active) return
         const viewedByMe = new Set(views.filter((v) => v.user_id === profile?.id).map((v) => v.message_id))
         const counts = new Map<string, number>()
         for (const view of views) counts.set(view.message_id, (counts.get(view.message_id) ?? 0) + 1)
-        setMessages(rows.map((row) => (
+        setMessages(visibleRows.map((row) => (
           row.view_once
             ? {
                 ...row,
@@ -169,7 +236,7 @@ export default function ChatRoom() {
               }
             : row
         )))
-        fetchMessageReactions(rows.map((r) => r.id))
+        fetchMessageReactions(visibleRows.map((r) => r.id))
           .then((all) => {
             if (!active) return
             const map: Record<string, Record<string, { count: number; mine: boolean }>> = {}
@@ -195,6 +262,7 @@ export default function ChatRoom() {
       .catch((e) => { if (active) setError(e instanceof Error ? e.message : 'Could not load messages.') })
 
     const unsubscribe = subscribeToMessages(task.id, (message) => {
+      if (joinGateRef.current && Date.parse(message.created_at) < joinGateRef.current) return
       void resolveChatMedia([message])
         .then(([resolved]) => {
           if (!active) return
@@ -277,10 +345,74 @@ export default function ChatRoom() {
   }, [actionMessageId])
 
   useEffect(() => {
-    chatEnd.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    if (forceScrollRef.current || isNearBottomRef.current) {
+      forceScrollRef.current = false
+      chatEnd.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      setNewSinceScroll(0)
+    } else {
+      setNewSinceScroll((count) => count + 1)
+    }
   }, [messages.length])
 
   const isHost = Boolean(profile && task?.host_id === profile.id)
+
+  const broadcastTypingState = (typing: boolean) => {
+    const channel = typingChannelRef.current
+    if (!channel || !profile) return
+    void channel.track({ typing, name: (profile.display_name ?? '').trim() || 'Someone' })
+  }
+  const handleDraftChange = (value: string) => {
+    setDraft(value)
+    const now = Date.now()
+    if (now - lastTypingAtRef.current > 2500) {
+      lastTypingAtRef.current = now
+      broadcastTypingState(true)
+    }
+    if (typingStopTimer.current) window.clearTimeout(typingStopTimer.current)
+    typingStopTimer.current = window.setTimeout(() => broadcastTypingState(false), 3000)
+  }
+  const handleMessagesScroll = () => {
+    const element = containerRef.current
+    if (!element) return
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight
+    const near = distanceFromBottom < 120
+    isNearBottomRef.current = near
+    setIsNearBottom(near)
+    if (near) setNewSinceScroll(0)
+  }
+  const scrollToBottom = () => {
+    const element = containerRef.current
+    if (!element) return
+    element.scrollTo({ top: element.scrollHeight, behavior: 'smooth' })
+  }
+  const scrollToMessage = (messageId: string) => {
+    const element = containerRef.current?.querySelector(`[data-message-id="${messageId}"]`)
+    element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setFlashMessageId(messageId)
+    window.setTimeout(() => setFlashMessageId((current) => (current === messageId ? null : current)), 1800)
+  }
+  const togglePin = async (message: Message) => {
+    if (!task || !isHost || message.deleted_at) return
+    setError(null)
+    try {
+      if (pinnedMessage?.id === message.id) {
+        await unpinMessage(task.id)
+        setPinnedMessage(null)
+      } else {
+        await pinMessage(task.id, message.id)
+        setPinnedMessage(await fetchPinnedMessage(task.id).catch(() => message))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update the pin.')
+    }
+  }
+  const typingLabel = typingOthers.length === 0
+    ? ''
+    : typingOthers.length === 1
+      ? `${typingOthers[0].name} is typing`
+      : typingOthers.length === 2
+        ? `${typingOthers[0].name} and ${typingOthers[1].name} are typing`
+        : 'Several people are typing'
   const handleSend = useCallback(async (
     body: string,
     type: 'text' | 'image' | 'audio' = 'text',
@@ -290,6 +422,9 @@ export default function ChatRoom() {
     if (!task || !profile || (type === 'text' && !body.trim())) return false
     playSend()
     setError(null)
+    if (typingStopTimer.current) window.clearTimeout(typingStopTimer.current)
+    broadcastTypingState(false)
+    forceScrollRef.current = true
     try {
       const message = await sendMessage(task.id, profile, body, type, url, duration, replyTarget)
       setMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message])
@@ -873,6 +1008,43 @@ export default function ChatRoom() {
           </section>
         </div>
 
+        {/* Pinned message (host pins from any message's more menu) */}
+        {pinnedMessage && (
+          <div className="mt-2 flex items-center gap-1.5 rounded-xl border border-amber/40 bg-sun/15 px-2 py-1.5">
+            <button
+              type="button"
+              onClick={() => scrollToMessage(pinnedMessage.id)}
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-lg py-0.5 text-left transition hover:bg-white/60"
+              aria-label="Jump to pinned message"
+            >
+              <Pin size={13} className="shrink-0 text-amber" aria-hidden />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[9px] font-extrabold uppercase tracking-[0.16em] text-amber">
+                  Pinned{pinnedMessage.sender_id === profile?.id ? ' · You' : ''}
+                </span>
+                <span className="block truncate text-[12px] font-medium text-ink/85">
+                  {pinnedMessage.type === 'image' ? (pinnedMessage.body || 'Photo') : pinnedMessage.type === 'audio' ? 'Voice note' : pinnedMessage.body}
+                </span>
+              </span>
+            </button>
+            {isHost && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!task) return
+                  void unpinMessage(task.id)
+                    .then(() => setPinnedMessage(null))
+                    .catch(() => setError('Could not unpin the message.'))
+                }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-white hover:text-ink"
+                aria-label="Unpin message"
+              >
+                <X size={15} aria-hidden />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Quick facts + one-tap replies + check-in */}
         <div className="mt-2 flex flex-wrap gap-2" aria-label="Meeting quick facts">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[10px] font-semibold text-muted">
@@ -926,7 +1098,7 @@ export default function ChatRoom() {
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto py-4">
+        <div ref={containerRef} onScroll={handleMessagesScroll} className="relative flex-1 space-y-4 overflow-y-auto py-4">
           {timelineItems.length === 0 && (
             <p className="py-10 text-center text-[13px] text-muted">No messages yet. Say hello to your group.</p>
           )}
@@ -985,7 +1157,7 @@ export default function ChatRoom() {
             const selectedForReply = replyTarget?.id === message.id
             const senderColor = senderColorHex(message.sender_id)
             return (
-              <div key={message.id}>
+              <div key={message.id} data-message-id={message.id}>
                 {showDateSeparator && (
                   <p className="my-3 text-center text-[10px] font-semibold uppercase tracking-wide text-muted">
                     {new Date(message.created_at).toLocaleDateString()}
@@ -1006,10 +1178,12 @@ export default function ChatRoom() {
                     <div className={`flex items-start gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
                       <div className="relative min-w-0 max-w-full" data-chat-message-actions>
                         <div
-                          className={`chat-message-bubble inline-block max-w-full rounded-2xl p-2 text-left transition ${
-                            mine ? 'bg-sun/40' : 'bg-white'
+                          className={`chat-message-bubble inline-block max-w-full p-2 text-left transition ${
+                            mine ? 'rounded-2xl rounded-br-[6px] bg-sun/40' : 'rounded-2xl rounded-bl-[6px] bg-white'
                           } ${message.deleted_at ? 'italic text-muted' : ''}`}
-                          style={selectedForReply ? { boxShadow: `0 0 0 2px ${senderColor}` } : undefined}
+                          style={selectedForReply || flashMessageId === message.id
+                            ? { boxShadow: `0 0 0 2px ${senderColor}`, backgroundColor: senderColorTint(message.sender_id) }
+                            : undefined}
                           onPointerDown={(event) => handleMessagePointerDown(message, event)}
                           onPointerMove={handleMessagePointerMove}
                           onPointerUp={(event) => handleMessagePointerUp(message, event)}
@@ -1159,6 +1333,19 @@ export default function ChatRoom() {
                                 <Copy size={15} aria-hidden /> Copy
                               </button>
                             )}
+                            {isHost && (
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  void togglePin(message)
+                                  setActionMessageId(null)
+                                }}
+                                className="flex min-h-10 items-center gap-2 px-3 text-[12px] font-medium hover:bg-canvas"
+                              >
+                                <Pin size={15} aria-hidden /> {pinnedMessage?.id === message.id ? 'Unpin message' : 'Pin to chat'}
+                              </button>
+                            )}
                             {mine && (
                               <button
                                 type="button"
@@ -1200,6 +1387,21 @@ export default function ChatRoom() {
               </div>
             )
           })}
+          {!isNearBottom && (
+            <button
+              type="button"
+              onClick={scrollToBottom}
+              className="sticky bottom-2 z-10 ml-auto flex h-12 w-12 items-center justify-center rounded-full bg-ink text-canvas shadow-lift transition active:scale-95"
+              aria-label="Jump to latest messages"
+            >
+              <ChevronDown size={22} aria-hidden />
+              {newSinceScroll > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber px-1 text-[9px] font-extrabold tabular-nums text-ink">
+                  {newSinceScroll > 99 ? '99+' : newSinceScroll}
+                </span>
+              )}
+            </button>
+          )}
           <div ref={chatEnd} />
         </div>
 
@@ -1239,6 +1441,16 @@ export default function ChatRoom() {
         )}
 
         <div className="sticky bottom-0 -mx-3 border-t border-line bg-white px-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2">
+          {typingOthers.length > 0 && (
+            <div className="mb-1.5 flex items-center gap-2 px-2" aria-live="polite">
+              <div className="flex h-8 items-end gap-1 rounded-2xl rounded-bl-[6px] border border-line bg-white px-3 py-1.5 shadow-sm">
+                {[0, 1, 2].map((i) => (
+                  <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted" style={{ animationDelay: `${i * 0.18}s` }} />
+                ))}
+              </div>
+              <p className="text-[10px] font-semibold text-muted">{typingLabel}</p>
+            </div>
+          )}
           {error && <p role="alert" className="px-2 pb-2 text-[12px] font-medium text-alert">{error}</p>}
           {replyTarget && (
             <div className="mb-2 flex items-center gap-2 rounded-xl border-l-2 border-amber bg-canvas px-3 py-2">
@@ -1318,7 +1530,7 @@ export default function ChatRoom() {
               className="field min-h-[42px] min-w-0 flex-1 border-0 bg-canvas px-3"
               placeholder="Message the group…"
               value={draft}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) => handleDraftChange(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault()
