@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Pause, Play, Reply, Send, Trash2, X, Clock3, MapPin, ArrowRight, Volume2, VolumeX, BookmarkCheck, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Pause, Play, Reply, Send, Trash2, X, Clock3, MapPin, Volume2, VolumeX, MessageSquare } from 'lucide-react'
 import { playSend } from '../lib/sounds'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
@@ -16,7 +16,6 @@ import {
   fetchMessageViews,
   markMessageViewed,
   fetchMyJoinRequest,
-  fetchRecap,
   fetchSystemEvents,
   fetchParticipants,
   fetchTask,
@@ -305,8 +304,6 @@ export default function ChatRoom() {
   const onToggleReaction = useCallback(async (messageId: string, emoji: string) => {
     setError(null)
     try {
-      const prev = reactions[messageId]?.[emoji]
-      const isMine = prev?.mine ?? false
       const toggled = await toggleMessageReaction(messageId, emoji)
       // Optimistic-ish update
       setReactions((current) => {

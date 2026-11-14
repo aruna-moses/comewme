@@ -19,7 +19,7 @@ import {
 } from '../lib/api'
 import type { JoinRequest, Profile, ReportCategory, Task } from '../types'
 import { REPORT_CATEGORIES, categoryLabel, trustLevel } from '../types'
-import { formatDateTime, isPast, timeOfDay } from '../lib/format'
+import { formatDateTime } from '../lib/format'
 import Avatar from '../components/Avatar'
 import Sheet from '../components/Sheet'
 import ConfirmDialog from '../components/ConfirmDialog'

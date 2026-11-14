@@ -1,5 +1,5 @@
 import Sheet from './Sheet';
-import { calculateTrustScore, trustLabel, TrustScoreItem } from '../lib/trustScore';
+import { calculateTrustScore } from '../lib/trustScore';
 
 interface Props {
   score: number;

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ChevronRight, ShieldCheck, Search, AlertCircle, Send, Loader2, Check } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Search, AlertCircle, Send, Loader2, Check } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { VIOLATION_CATEGORIES } from '../types'
 import { submitReport } from '../lib/api'

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MessageCircle, Clock, MapPin, Pin, Sparkles } from 'lucide-react'
+import { MapPin, Pin, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { usePersistedState } from '../lib/drafts'

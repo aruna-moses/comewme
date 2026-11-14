@@ -5,7 +5,7 @@ import { fetchChatUnreadCounts, fetchNotificationBadgeCounts } from '../lib/api'
 import type { NotificationBadgeCounts } from '../lib/api'
 import { EMPTY_MODERATION, fetchModerationCounts } from '../lib/moderation'
 import type { ModerationCounts } from '../lib/moderation'
-import { fetchNotifications, fetchUnreadCount, markAllNotificationsRead, markNotificationRead } from '../lib/notifications'
+import { fetchNotifications, fetchUnreadCount } from '../lib/notifications'
 import type { InAppNotification } from '../lib/notifications'
 import { supabase } from '../lib/supabase'
 
