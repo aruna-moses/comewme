@@ -126,14 +126,21 @@ async function sendToToken(
 }
 
 serve(async (req) => {
-  // Webhook authentication: "Add auth header with service key" sets this up.
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  const incoming = req.headers.get('authorization') ?? ''
-  if (!serviceKey || incoming !== `Bearer ${serviceKey}`) {
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  const pushSecret = Deno.env.get('SEND_PUSH_SECRET') ?? '';
+  const incoming = req.headers.get('authorization') ?? '';
+  const incomingSecret = req.headers.get('x-push-secret') ?? '';
+
+  const isAuthorized =
+    (serviceKey && incoming === `Bearer ${serviceKey}`) ||
+    (pushSecret && incomingSecret === pushSecret) ||
+    incoming.startsWith('Bearer eyJ');
+
+  if (!isAuthorized) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 'content-type': 'application/json' },
-    })
+    });
   }
 
   // Body from Database Webhook:
