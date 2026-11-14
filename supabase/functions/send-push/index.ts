@@ -27,6 +27,11 @@ type ServiceAccount = {
   token_uri: string
 }
 
+// Cache the short-lived FCM access token between invocations on a warm instance.
+// Without this, every notification re-signs a JWT and re-hits Google's token endpoint.
+let cachedAccessToken: { value: string; expiresAt: number } | null = null
+const ACCESS_TOKEN_MARGIN_MS = 2 * 60_000 // refresh 2 minutes before expiry
+
 function b64url(data: string | ArrayBuffer): string {
   const bytes =
     typeof data === 'string'
@@ -38,6 +43,10 @@ function b64url(data: string | ArrayBuffer): string {
 }
 
 async function getFcmAccessToken(sa: ServiceAccount): Promise<string> {
+  // Google tokens last 1 hour; refresh just before expiry
+  if (cachedAccessToken && cachedAccessToken.expiresAt - Date.now() > ACCESS_TOKEN_MARGIN_MS) {
+    return cachedAccessToken.value
+  }
   const now = Math.floor(Date.now() / 1000)
   const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
   const payload = b64url(
@@ -83,6 +92,8 @@ async function getFcmAccessToken(sa: ServiceAccount): Promise<string> {
     throw new Error(`FCM auth failed: ${tokenRes.status} ${errText}`)
   }
   const tokenJson = await tokenRes.json()
+  const expiresIn = Number(tokenJson.expires_in ?? 3600)
+  cachedAccessToken = { value: tokenJson.access_token as string, expiresAt: Date.now() + expiresIn * 1000 }
   return tokenJson.access_token as string
 }
 
@@ -204,15 +215,18 @@ serve(async (req) => {
 
   const accessToken = await getFcmAccessToken(sa)
 
+  // Fan out in parallel — sequential calls cap throughput at ~1 send/sec/user.
+  const results = await Promise.all(
+    tokens.map((token) => sendToToken(sa, accessToken, token, title, body, url ?? '/')),
+  )
   let sent = 0
   let pruned = 0
-  for (const token of tokens) {
-    const result = await sendToToken(sa, accessToken, token, title, body, url ?? '/')
+  for (const [index, result] of results.entries()) {
     if (result.ok) {
       sent += 1
     } else if (result.unregistered) {
       pruned += 1
-      await db.from('user_push_tokens').delete().eq('token', token)
+      await db.from('user_push_tokens').delete().eq('token', tokens[index])
     }
   }
 
