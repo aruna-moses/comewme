@@ -62,8 +62,13 @@ function htmlPage({ title, description, taskUrl, shareUrl, siteUrl, statusCode =
   const safeDescription = escapeHtml(description)
   const safeTaskUrl = escapeHtml(taskUrl)
   const safeShareUrl = escapeHtml(shareUrl)
-  // Append a cache-busting version so WhatsApp/Telegram pick the new banner up immediately.
-  const imageUrl = `${siteUrl}/signin-banner.png?v=2`
+  // Dynamic per-activity OG card — rendered on demand so every share preview
+  // looks distinct instead of one banner for every activity.
+  const sharePath = safeShareUrl.split('?')[0].split('/').filter(Boolean)
+  const taskId = sharePath[sharePath.length - 1] ?? ''
+  const imageUrl = taskId
+    ? `${siteUrl}/share/task/${taskId}/card.svg?v=1`
+    : `${siteUrl}/signin-banner.png?v=2`
 
   return {
     statusCode,
@@ -81,16 +86,16 @@ function htmlPage({ title, description, taskUrl, shareUrl, siteUrl, statusCode =
     <meta property="og:description" content="${safeDescription}">
     <meta property="og:url" content="${safeShareUrl}">
     <meta property="og:image" content="${imageUrl}">
-    <meta property="og:image:type" content="image/png">
-    <meta property="og:image:width" content="688">
-    <meta property="og:image:height" content="384">
-    <meta property="og:image:alt" content="Friends holding hands — Come w' me, social meetups in Lagos">
+    <meta property="og:image:type" content="image/svg+xml">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Come w' me — the activity, on one card">
     <meta property="og:locale" content="en_NG">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${safeTitle}">
     <meta name="twitter:description" content="${safeDescription}">
     <meta name="twitter:image" content="${imageUrl}">
-    <meta name="twitter:image:alt" content="Friends holding hands — Come w' me">
+    <meta name="twitter:image:alt" content="Come w' me — the activity, on one card">
     <meta http-equiv="refresh" content="1;url=${safeTaskUrl}">
     <style>
       body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; background: #fafaf7; color: #0b0b0f; font: 16px system-ui, sans-serif; }
