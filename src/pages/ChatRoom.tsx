@@ -33,7 +33,7 @@ import {
   uploadChatMedia,
   writeRecap,
 } from '../lib/api'
-import { formatTime, isSameDay, formatDateTime } from '../lib/format'
+import { formatTime, isSameDay, formatDateTime, isToday } from '../lib/format'
 import { senderColorHex, senderColorTint } from '../lib/senderColor'
 import { usePersistedState } from '../lib/drafts'
 import type { JoinRequest, Message, Task, ChatSystemEvent } from '../types'
@@ -912,6 +912,8 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
 
   if (loading) return <Spinner full />
 
+  const happeningToday = task ? isToday(task.date_time) : false
+
   // Merge messages and system events into one chronological, glanceable timeline.
   const timelineItems: Array<{ kind: 'message'; message: Message } | { kind: 'event'; event: ChatSystemEvent }> = []
   {
@@ -943,8 +945,8 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
   }
 
   return (
-    <main className="-mb-24 flex min-h-[100dvh] flex-col bg-canvas">
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-white/95 px-4 py-3 backdrop-blur">
+    <main className="-mb-24 flex h-[100dvh] flex-col overflow-hidden bg-canvas">
+      <header className={`sticky top-0 z-30 flex items-center gap-3 border-b border-line px-4 py-3 backdrop-blur ${happeningToday ? 'border-amber/40 bg-gradient-to-r from-sun/30 via-amber/15 to-canvas' : 'bg-white/95'}`}>
         <button type="button" onClick={() => navigate('/chats')} className="rounded-full p-2 hover:bg-canvas" aria-label="Back to chats">
           <ArrowLeft size={21} aria-hidden />
         </button>
@@ -954,12 +956,18 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           className="flex min-w-0 flex-1 items-center gap-3 rounded-xl py-1 text-left transition hover:bg-canvas"
           aria-label="Open group and activity information"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4d1] text-amber">
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4d1] text-amber">
             <span className="text-sm font-bold" aria-hidden>G</span>
+            {happeningToday && (
+              <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full border-2 border-white bg-amber" aria-hidden />
+            )}
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate font-display text-[16px] font-bold">{task.title}</span>
             <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted">
+              {happeningToday && (
+                <span className="inline-flex shrink-0 items-center rounded-full bg-amber/25 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.16em] text-amber">Today</span>
+              )}
               Group chat · {participants.length + 1} {participants.length === 0 ? 'member' : 'members'}
               <span aria-hidden>·</span>
               {Object.keys(checkins).length > 0 ? `${Object.keys(checkins).length} checked in` : 'nobody here yet'}
@@ -981,7 +989,45 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
         </button>
       </header>
 
-      <section className="flex flex-1 flex-col px-3 pb-3">
+      {/* Pinned message — fixed strip under the header, always visible */}
+      {pinnedMessage && (
+        <div className="flex shrink-0 items-stretch border-b border-amber/40 bg-sun/15">
+          <button
+            type="button"
+            onClick={() => scrollToMessage(pinnedMessage.id)}
+            className="flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5 text-left transition hover:bg-amber/10"
+            aria-label="Jump to pinned message"
+          >
+            <Pin size={13} className="shrink-0 text-amber" aria-hidden />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[9px] font-extrabold uppercase leading-tight tracking-[0.16em] text-amber">
+                Pinned{pinnedMessage.sender_id === profile?.id ? ' · You' : ''}
+              </span>
+              <span className="block truncate text-[12px] font-medium leading-snug text-ink/85">
+                {pinnedMessage.type === 'image' ? (pinnedMessage.body || 'Photo') : pinnedMessage.type === 'audio' ? 'Voice note' : pinnedMessage.body}
+              </span>
+            </span>
+            <ChevronDown size={16} className="shrink-0 text-amber/70" aria-hidden />
+          </button>
+          {isHost && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!task) return
+                void unpinMessage(task.id)
+                  .then(() => setPinnedMessage(null))
+                  .catch(() => setError('Could not unpin the message.'))
+              }}
+              className="flex w-10 shrink-0 items-center justify-center border-l border-amber/30 text-amber transition hover:bg-amber/10"
+              aria-label="Unpin message"
+            >
+              <X size={16} aria-hidden />
+            </button>
+          )}
+        </div>
+      )}
+
+      <section className="flex min-h-0 flex-1 flex-col px-3 pb-3">
         <div className="-mx-1 border-b border-line px-1">
           <section className="no-scrollbar flex gap-2 overflow-x-auto py-3" aria-label="Group members">
             <Link
@@ -1008,46 +1054,9 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           </section>
         </div>
 
-        {/* Pinned message (host pins from any message's more menu) */}
-        {pinnedMessage && (
-          <div className="mt-2 flex items-center gap-1.5 rounded-xl border border-amber/40 bg-sun/15 px-2 py-1.5">
-            <button
-              type="button"
-              onClick={() => scrollToMessage(pinnedMessage.id)}
-              className="flex min-w-0 flex-1 items-center gap-2 rounded-lg py-0.5 text-left transition hover:bg-white/60"
-              aria-label="Jump to pinned message"
-            >
-              <Pin size={13} className="shrink-0 text-amber" aria-hidden />
-              <span className="min-w-0 flex-1">
-                <span className="block text-[9px] font-extrabold uppercase tracking-[0.16em] text-amber">
-                  Pinned{pinnedMessage.sender_id === profile?.id ? ' · You' : ''}
-                </span>
-                <span className="block truncate text-[12px] font-medium text-ink/85">
-                  {pinnedMessage.type === 'image' ? (pinnedMessage.body || 'Photo') : pinnedMessage.type === 'audio' ? 'Voice note' : pinnedMessage.body}
-                </span>
-              </span>
-            </button>
-            {isHost && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (!task) return
-                  void unpinMessage(task.id)
-                    .then(() => setPinnedMessage(null))
-                    .catch(() => setError('Could not unpin the message.'))
-                }}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-white hover:text-ink"
-                aria-label="Unpin message"
-              >
-                <X size={15} aria-hidden />
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Quick facts + one-tap replies + check-in */}
         <div className="mt-2 flex flex-wrap gap-2" aria-label="Meeting quick facts">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[10px] font-semibold text-muted">
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${happeningToday ? 'border-amber/50 bg-sun/25 font-bold text-amber' : 'border-line bg-white text-muted'}`}>
             <Clock3 size={11} aria-hidden />
             {formatDateTime(task.date_time)}
           </span>
@@ -1098,7 +1107,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           </button>
         </div>
 
-        <div ref={containerRef} onScroll={handleMessagesScroll} className="relative flex-1 space-y-4 overflow-y-auto py-4">
+        <div ref={containerRef} onScroll={handleMessagesScroll} className="relative min-h-0 flex-1 space-y-4 overflow-y-auto py-4">
           {timelineItems.length === 0 && (
             <p className="py-10 text-center text-[13px] text-muted">No messages yet. Say hello to your group.</p>
           )}

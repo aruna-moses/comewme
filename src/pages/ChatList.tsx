@@ -102,15 +102,16 @@ export default function ChatList() {
     })()
     const countdownTone =
       days === 0
-        ? 'bg-verified/15 text-verified'
+        ? 'border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 text-amber'
         : days > 0
           ? 'bg-sun/15 text-amber'
           : 'bg-line/50 text-muted'
+    const happeningToday = days === 0
     return (
       <div key={c.task.id} className="relative">
         <Link
           to={`/task/${c.task.id}/chat`}
-          className="card flex items-start gap-3 rounded-[18px] p-3.5 pr-10 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+          className={`card flex items-start gap-3 rounded-[18px] p-3.5 pr-10 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber ${happeningToday ? 'bg-gradient-to-br from-sun/25 via-amber/10 to-canvas ring-2 ring-amber/70 shadow-[0_12px_36px_rgba(247,162,51,0.25)]' : ''}`}
         >
         <div className="relative shrink-0">
           <div
@@ -138,11 +139,18 @@ export default function ChatList() {
             )}
           </div>
           <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted">
-            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${countdownTone}`}>
-              <span aria-hidden="true">{taskEmoji(c.task.category)}</span> {countdownLabel}
-            </span>
+            {happeningToday ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-amber">
+                <span className="h-1.5 w-1.5 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full bg-amber" aria-hidden />
+                Happening today
+              </span>
+            ) : (
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${countdownTone}`}>
+                <span aria-hidden="true">{taskEmoji(c.task.category)}</span> {countdownLabel}
+              </span>
+            )}
             <span aria-hidden="true">·</span>
-            <span className="inline-flex items-center gap-1"><MapPin size={9} aria-hidden />{c.task.area}</span>
+            <span className="inline-flex items-center gap-1 font-semibold text-ink/80"><MapPin size={9} aria-hidden />{c.task.area}</span>
           </div>
           <p className="mt-1.5 line-clamp-1 text-[12px] text-muted">
             {c.lastMessage
