@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Search, ShieldCheck, SlidersHorizontal, X } from 'lucide-react'
+import { ArrowRight, Search, ShieldCheck, SlidersHorizontal, X, Bell } from 'lucide-react'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 import { useAuth } from '../context/AuthContext'
 import Spinner from '../components/Spinner'
 import { fetchFeed, fetchUpcomingForUser, fetchVerificationStatuses } from '../lib/api'
@@ -48,6 +49,14 @@ export default function Discover() {
   const [hideSafetyTip, setHideSafetyTip] = useState(() => {
     try {
       return window.localStorage.getItem('comewme:safety-tip-dismissed') === '1'
+    } catch {
+      return false
+    }
+  })
+  const { status: pushStatus, requestPermissionAndRegister: enablePush, busy: pushBusy } = usePushNotifications()
+  const [hidePushPrompt, setHidePushPrompt] = useState(() => {
+    try {
+      return window.localStorage.getItem('comewme:push-prompt-dismissed') === '1'
     } catch {
       return false
     }
@@ -299,6 +308,52 @@ export default function Discover() {
           >
             <X size={15} />
           </button>
+        </div>
+      )}
+
+      {!hidePushPrompt && (pushStatus === 'default' || pushStatus === 'needs-install') && (
+        <div className="mx-5 mt-3 rounded-[13px] border border-sun/40 bg-sun/10 p-3">
+          <div className="flex items-start gap-2.5">
+            <Bell size={20} className="mt-0.5 shrink-0 text-amber" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-bold leading-snug text-ink">
+                {pushStatus === 'needs-install'
+                  ? 'Install Come w\' me to your home screen to get pop-ups'
+                  : 'Never miss a ping'}
+              </p>
+              <p className="mt-0.5 text-[12px] leading-[1.45] text-ink/75">
+                {pushStatus === 'needs-install'
+                  ? 'On your iPhone or iPad, tap the Share icon → Add to Home Screen → open it from there.'
+                  : 'Turn on push notifications — chat messages, join requests and activity reminders reach you even when the app is closed.'}
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                {pushStatus === 'default' && (
+                  <button
+                    type="button"
+                    onClick={() => void enablePush()}
+                    disabled={pushBusy}
+                    className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full bg-sun px-4 text-[12px] font-bold text-[#0B0B0F] transition enabled:hover:brightness-105 disabled:opacity-60"
+                  >
+                    {pushBusy ? 'Enabling…' : 'Enable push'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="inline-flex min-h-9 items-center justify-center rounded-full px-3 text-[12px] font-semibold text-muted transition hover:text-ink"
+                  onClick={() => {
+                    setHidePushPrompt(true)
+                    try {
+                      window.localStorage.setItem('comewme:push-prompt-dismissed', '1')
+                    } catch {
+                      // best effort
+                    }
+                  }}
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
