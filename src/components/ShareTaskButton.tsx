@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Share2 } from 'lucide-react'
+import { Check, Send } from 'lucide-react'
 import type { Task } from '../types'
 import { formatDateTime } from '../lib/format'
 
@@ -47,17 +47,17 @@ export default function ShareTaskButton({ task }: { task: Task }) {
     }
   }
 
+  const done = message === 'Link copied' || message === 'Shared'
+
   return (
     <button
       type="button"
       onClick={() => void shareTask()}
-      className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold text-amber transition hover:bg-amber/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+      className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-ink px-4 text-[12px] font-semibold text-canvas shadow-[0_6px_18px_rgba(11,11,15,0.35)] transition hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber active:scale-[0.97]"
       aria-label={`Share ${task.title}`}
     >
-      {message === 'Link copied' || message === 'Shared'
-        ? <Check size={15} aria-hidden />
-        : <Share2 size={15} aria-hidden />}
-      {message || 'Share'}
+      {done ? <Check size={14} aria-hidden /> : <Send size={13} strokeWidth={2.3} aria-hidden />}
+      <span className="text-[11px] font-bold uppercase tracking-[0.12em]">{done ? 'Shared' : 'Share'}</span>
       <span className="sr-only" aria-live="polite">{message}</span>
     </button>
   )

@@ -76,6 +76,14 @@ export default function TaskDetail() {
 
   const isHost = Boolean(profile && task && task.host_id === profile.id)
   const hostDisplayName = isHost ? 'You' : task?.host_name ?? ''
+  const happeningToday = (() => {
+    if (!task) return false
+    const d = new Date(task.date_time)
+    const t = new Date()
+    d.setHours(0, 0, 0, 0)
+    t.setHours(0, 0, 0, 0)
+    return d.getTime() === t.getTime()
+  })()
   const isAccepted = myRequest?.status === 'accepted'
   const isParticipant = Boolean(isHost || isAccepted)
   const isFull = Boolean(task && task.spots_filled >= task.spots_needed)
@@ -332,9 +340,16 @@ export default function TaskDetail() {
         </div>
       </div>
 
-      <div className="px-4 pt-5">
+      <div className={`px-4 pt-5 ${happeningToday ? 'relative rounded-3xl bg-gradient-to-br from-sun/30 via-amber/10 to-canvas pb-4' : ''}`}>
+        {happeningToday && (
+          <div className="mb-3 flex items-center gap-2 rounded-2xl border border-amber/40 bg-amber/15 px-3 py-2 shadow-[0_8px_22px_rgba(247,162,51,0.25)]">
+            <span className="flex h-3 w-3 shrink-0 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full bg-amber" aria-hidden />
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-amber">Happening today</span>
+            <span className="ml-auto text-[11px] font-bold text-ink/80">{formatDateTime(task.date_time)}</span>
+          </div>
+        )}
         <h1 className="font-display text-[23px] font-bold leading-tight">{task.title}</h1>
-        <p className="mt-1.5 text-[13px] text-muted">
+        <p className="mt-1.5 text-[13px] font-bold text-ink">
           {task.area} · {formatDateTime(task.date_time)}
         </p>
 
@@ -353,7 +368,7 @@ export default function TaskDetail() {
             </div>
             <div className="mt-1 flex items-center gap-2">
               <TrustPill level={trustLevel(hostProfile?.tasks_completed ?? 0)} />
-              <span className="text-[12px] text-muted">{hostProfile?.tasks_completed ?? 0} completed</span>
+              <span className="text-[12px] font-semibold text-ink/80">{hostProfile?.tasks_completed ?? 0} completed</span>
             </div>
           </div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden className="text-muted">
@@ -373,8 +388,8 @@ export default function TaskDetail() {
         {/* spots */}
         <div className="card mt-3 p-4">
           <div className="flex items-center justify-between">
-            <p className="text-[13px] font-semibold">{isFull ? 'This one is full' : `${spotsLeft} spot${spotsLeft === 1 ? '' : 's'} left`}</p>
-            <p className="text-[12px] text-muted">{task.spots_filled} of {task.spots_needed}</p>
+            <p className="text-[13px] font-bold text-ink">{isFull ? 'This one is full' : `${spotsLeft} spot${spotsLeft === 1 ? '' : 's'} left`}</p>
+            <p className="text-[12px] font-bold text-ink/80">{task.spots_filled} of {task.spots_needed}</p>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-line">
             <div className="h-full rounded-full transition-all bg-amber" style={{ width: `${Math.min(100, (task.spots_filled / task.spots_needed) * 100)}%` }} />
@@ -545,7 +560,7 @@ export default function TaskDetail() {
                 <Avatar src={task.host_avatar_url} name={hostDisplayName} size={34} />
                 <div className="min-w-0">
                   <h2 className="truncate font-display text-base font-bold text-ink">{task.title}</h2>
-                  <p className="text-[11px] text-muted">{task.spots_filled} of {task.spots_needed} members</p>
+                  <p className="text-[11px] font-semibold text-ink/75">{task.spots_filled} of {task.spots_needed} members</p>
                 </div>
               </div>
               <button
