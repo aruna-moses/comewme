@@ -208,8 +208,8 @@ export default function TaskCard({
               className="join-task-pill"
             >
               Open chat
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
           ) : status.label === 'Full' ? (
@@ -225,7 +225,7 @@ export default function TaskCard({
               className="join-task-pill"
             >
               Join task
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
