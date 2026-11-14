@@ -710,18 +710,15 @@ export async function fetchSystemEvents(taskId: string): Promise<ChatSystemEvent
   return (data ?? []) as ChatSystemEvent[]
 }
 
-export async function checkInToActivity(taskId: string, _profile: { id: string; display_name: string }) {
-  const { data: u } = await supabase.auth.getUser()
-  if (!u.user) throw new Error('Sign in first.')
-
+export async function checkInToActivity(taskId: string, profile: { id: string; display_name: string }) {
   const { error: checkInError } = await supabase
     .from('activity_checkins')
-    .upsert({ task_id: taskId, user_id: u.user.id }, { onConflict: 'task_id,user_id' })
+    .upsert({ task_id: taskId, user_id: profile.id }, { onConflict: 'task_id,user_id' })
   if (checkInError) throw checkInError
 
   const { error: eventError } = await supabase
     .from('activity_system_events')
-    .insert({ task_id: taskId, event_type: 'arrived', actor_id: u.user.id, actor_name: u.user.user_metadata?.display_name ?? (u.user.email ?? 'Someone') })
+    .insert({ task_id: taskId, event_type: 'arrived', actor_id: profile.id, actor_name: (profile.display_name ?? '').trim() || 'Someone' })
   if (eventError) throw eventError
 }
 

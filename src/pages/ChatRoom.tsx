@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Pause, Play, Reply, Send, Trash2, X, Clock3, MapPin, Volume2, VolumeX, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Camera, Copy, Mic, MoreVertical, Paperclip, Pause, Play, Reply, Send, Trash2, X, Clock3, MapPin, Volume2, VolumeX } from 'lucide-react'
 import { playSend } from '../lib/sounds'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
@@ -29,6 +29,7 @@ import {
   writeRecap,
 } from '../lib/api'
 import { formatTime, isSameDay, formatDateTime } from '../lib/format'
+import { senderColorHex, senderColorTint } from '../lib/senderColor'
 import { usePersistedState } from '../lib/drafts'
 import type { JoinRequest, Message, Task, ChatSystemEvent } from '../types'
 import Avatar from '../components/Avatar'
@@ -776,6 +777,24 @@ export default function ChatRoom() {
 
   if (loading) return <Spinner full />
 
+  // Merge messages and system events into one chronological, glanceable timeline.
+  const timelineItems: Array<{ kind: 'message'; message: Message } | { kind: 'event'; event: ChatSystemEvent }> = []
+  {
+    let eventIndex = 0
+    for (const message of messages) {
+      const messageAt = new Date(message.created_at).getTime()
+      while (eventIndex < systemEvents.length && new Date(systemEvents[eventIndex].created_at).getTime() <= messageAt) {
+        timelineItems.push({ kind: 'event', event: systemEvents[eventIndex] })
+        eventIndex += 1
+      }
+      timelineItems.push({ kind: 'message', message })
+    }
+    while (eventIndex < systemEvents.length) {
+      timelineItems.push({ kind: 'event', event: systemEvents[eventIndex] })
+      eventIndex += 1
+    }
+  }
+
   if (!authorized || !task) {
     return (
       <main className="flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center">
@@ -864,23 +883,7 @@ export default function ChatRoom() {
             <MapPin size={11} aria-hidden />
             <span className="max-w-[140px] truncate">{task.meeting_point}</span>
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[10px] font-semibold text-muted">
-            <MessageSquare size={11} aria-hidden />
-            {systemEvents.length} updates
-          </span>
         </div>
-
-        {/* Timeline of what happened historically */}
-        {systemEvents.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Activity timeline">
-            {systemEvents.slice(-6).map((event) => (
-              <span key={event.id} className="inline-flex max-w-[160px] items-center gap-1.5 rounded-full bg-line px-2.5 py-1 text-[10px] font-semibold text-muted">
-                <span aria-hidden>{event.event_type === 'joined' ? '🤝' : event.event_type === 'arrived' ? '📍' : event.event_type === 'completed' ? '✅' : event.event_type === 'recap' ? '📝' : 'ℹ️'}</span>
-                <span className="truncate">{event.actor_name}{event.event_type === 'joined' ? ' joined' : event.event_type === 'arrived' ? ' arrived' : event.event_type === 'completed' ? ' — done' : event.event_type === 'recap' ? ' wrote a recap' : ''}</span>
-              </span>
-            ))}
-          </div>
-        )}
 
         <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Quick messages">
           {[
@@ -924,16 +927,66 @@ export default function ChatRoom() {
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto py-4">
-          {messages.length === 0 && (
+          {timelineItems.length === 0 && (
             <p className="py-10 text-center text-[13px] text-muted">No messages yet. Say hello to your group.</p>
           )}
-          {messages.map((message, index) => {
+          {timelineItems.map((item, index) => {
+            const previousItem = index > 0 ? timelineItems[index - 1] : null
+            const previousAt = previousItem
+              ? previousItem.kind === 'message'
+                ? previousItem.message.created_at
+                : previousItem.event.created_at
+              : null
+            const createdAt = item.kind === 'message' ? item.message.created_at : item.event.created_at
+            const showDateSeparator = !previousAt || !isSameDay(createdAt, previousAt)
+
+            if (item.kind === 'event') {
+              const event = item.event
+              const color = senderColorHex(event.actor_id)
+              const actorName = !event.actor_id || event.actor_id === profile?.id ? 'You' : event.actor_name
+              return (
+                <div key={`event-${event.id}`} className="flex flex-col items-center gap-1">
+                  {showDateSeparator && (
+                    <p className="my-2 text-center text-[10px] font-semibold uppercase tracking-wide text-muted">
+                      {new Date(event.created_at).toLocaleDateString()}
+                    </p>
+                  )}
+                  {event.event_type === 'recap' && event.body ? (
+                    <div className="max-w-[85%] rounded-2xl border border-line bg-white px-3.5 py-2.5 text-left shadow-sm">
+                      <p className="text-[9px] font-extrabold uppercase tracking-[0.16em]" style={{ color }}>Recap from {actorName}</p>
+                      <p className="mt-1 whitespace-pre-wrap text-[12px] leading-snug text-ink/85">{event.body}</p>
+                    </div>
+                  ) : (
+                    <p className="text-center text-[11px] leading-snug text-muted">
+                      <span className="font-semibold" style={{ color }}>{actorName}</span>{' '}
+                      {event.event_type === 'joined' && 'joined the group'}
+                      {event.event_type === 'left' && 'left the group'}
+                      {event.event_type === 'on_my_way' && 'is on the way'}
+                      {event.event_type === 'arrived' && 'checked in'}
+                      {event.event_type === 'completed' && '— activity completed'}
+                      {event.event_type === 'recap' && 'wrote a recap'}
+                    </p>
+                  )}
+                </div>
+              )
+            }
+
+            const message = item.message
             const mine = message.sender_id === profile?.id
-            const previous = messages[index - 1]
-            const showName = !mine && (!previous || previous.sender_id !== message.sender_id)
+            let previousMessage: Message | null = null
+            for (let i = index - 1; i >= 0; i -= 1) {
+              const candidate = timelineItems[i]
+              if (candidate.kind === 'message') {
+                previousMessage = candidate.message
+                break
+              }
+            }
+            const showName = !mine && (!previousMessage || previousMessage.sender_id !== message.sender_id)
+            const selectedForReply = replyTarget?.id === message.id
+            const senderColor = senderColorHex(message.sender_id)
             return (
               <div key={message.id}>
-                {(!previous || !isSameDay(message.created_at, previous.created_at)) && (
+                {showDateSeparator && (
                   <p className="my-3 text-center text-[10px] font-semibold uppercase tracking-wide text-muted">
                     {new Date(message.created_at).toLocaleDateString()}
                   </p>
@@ -946,7 +999,7 @@ export default function ChatRoom() {
                   )}
                   <div className={`max-w-[82%] ${mine ? 'text-right' : 'text-left'}`}>
                     {showName && (
-                      <Link to={`/profile/${message.sender_id}`} className="mb-1 inline-block text-[10px] font-semibold text-muted hover:text-amber">
+                      <Link to={`/profile/${message.sender_id}`} className="mb-1 inline-block text-[10px] font-bold hover:opacity-80" style={{ color: senderColor }}>
                         {message.sender_name}
                       </Link>
                     )}
@@ -955,7 +1008,8 @@ export default function ChatRoom() {
                         <div
                           className={`chat-message-bubble inline-block max-w-full rounded-2xl p-2 text-left transition ${
                             mine ? 'bg-sun/40' : 'bg-white'
-                          } ${replyTarget?.id === message.id ? 'ring-2 ring-amber' : ''} ${message.deleted_at ? 'italic text-muted' : ''}`}
+                          } ${message.deleted_at ? 'italic text-muted' : ''}`}
+                          style={selectedForReply ? { boxShadow: `0 0 0 2px ${senderColor}` } : undefined}
                           onPointerDown={(event) => handleMessagePointerDown(message, event)}
                           onPointerMove={handleMessagePointerMove}
                           onPointerUp={(event) => handleMessagePointerUp(message, event)}
@@ -968,8 +1022,11 @@ export default function ChatRoom() {
                           onClick={(event) => selectMessageForReply(message, event)}
                         >
                           {message.reply_to_message_id && message.reply_to_preview && (
-                            <div className="mb-1.5 min-w-0 border-l-2 border-amber px-2 py-1 text-left">
-                              <p className="truncate text-[10px] font-bold text-amber">
+                            <div
+                              className="mb-1.5 min-w-0 rounded-r-lg border-l-2 px-2 py-1 text-left"
+                              style={{ borderLeftColor: senderColorHex(message.reply_to_sender_id), backgroundColor: senderColorTint(message.reply_to_sender_id) }}
+                            >
+                              <p className="truncate text-[10px] font-bold" style={{ color: senderColorHex(message.reply_to_sender_id) }}>
                                 {message.reply_to_sender_id && profile?.id && message.reply_to_sender_id === profile.id ? 'You' : message.reply_to_sender_name ?? 'Message'}
                               </p>
                               <p className="truncate text-[11px] text-muted">{message.reply_to_preview}</p>
@@ -1031,38 +1088,56 @@ export default function ChatRoom() {
                             </p>
                           )}
                         </div>
-                        {!message.deleted_at && message.type === 'text' && (
-                          <div className={`mt-1.5 flex flex-wrap items-center gap-1 ${mine ? 'justify-end' : ''}`} aria-label="Reactions">
-                            {REACTIONS.map((emoji) => {
-                              const info = reactions[message.id]?.[emoji]
-                              const count = info?.count ?? 0
-                              const reacted = count > 0
-                              const iReacted = info?.mine ?? false
-                              return (
+                        {!message.deleted_at && (() => {
+                          const active = REACTIONS.filter((emoji) => (reactions[message.id]?.[emoji]?.count ?? 0) > 0)
+                          if (active.length === 0) return null
+                          return (
+                            <div className={`mt-1.5 flex flex-wrap items-center gap-1 ${mine ? 'justify-end' : ''}`} aria-label="Reactions">
+                              {active.map((emoji) => {
+                                const info = reactions[message.id][emoji]
+                                const count = info.count
+                                const iReacted = info.mine
+                                return (
+                                  <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={() => void onToggleReaction(message.id, emoji)}
+                                    className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] transition ${
+                                      iReacted
+                                        ? 'border-amber bg-sun/35 text-ink'
+                                        : 'border-line bg-white text-ink hover:border-amber/40'
+                                    }`}
+                                    aria-pressed={iReacted}
+                                    aria-label={`${count} ${count === 1 ? 'reaction' : 'reactions'} ${iReacted ? '- remove your' : '- add'} ${emoji}`}
+                                    title={iReacted ? 'You reacted' : `${count} reacted`}
+                                  >
+                                    <span aria-hidden="true">{emoji}</span>
+                                    <span className="font-bold tabular-nums">{count}</span>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )
+                        })()}
+                        {actionMessageId === message.id && !message.deleted_at && (
+                          <div className={`absolute top-full z-20 mt-1 flex min-w-[176px] flex-col overflow-hidden rounded-xl border border-line bg-white py-1 text-left shadow-lift ${mine ? 'right-0' : 'left-0'}`} role="menu" aria-label="Message actions">
+                            <div className="flex items-center gap-0.5 border-b border-line px-1.5 pb-1.5 pt-0.5" aria-label="Quick reactions">
+                              {REACTIONS.map((emoji) => (
                                 <button
                                   key={emoji}
                                   type="button"
-                                  onClick={() => void onToggleReaction(message.id, emoji)}
-                                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] transition ${
-                                    iReacted
-                                      ? 'border-amber bg-sun/35 text-ink'
-                                      : reacted
-                                        ? 'border-amber/40 bg-sun/15 text-ink'
-                                        : 'border-transparent bg-canvas/60 text-muted opacity-70 hover:opacity-100'
-                                  }`}
-                                  aria-pressed={iReacted}
-                                  aria-label={`${reacted ? `${count} ${count === 1 ? 'reaction' : 'reactions'}, ` : ''}react ${emoji}`}
-                                  title={iReacted ? 'You reacted' : reacted ? `${count} reacted` : 'Add reaction'}
+                                  role="menuitem"
+                                  onClick={() => {
+                                    void onToggleReaction(message.id, emoji)
+                                    setActionMessageId(null)
+                                  }}
+                                  className="flex h-9 w-9 items-center justify-center rounded-full text-[18px] leading-none transition hover:bg-canvas active:scale-90"
+                                  aria-label={`React with ${emoji}`}
                                 >
-                                  <span aria-hidden="true">{emoji}</span>
-                                  {reacted && <span className="font-bold tabular-nums">{count}</span>}
+                                  <span aria-hidden>{emoji}</span>
                                 </button>
-                              )
-                            })}
-                          </div>
-                        )}
-                        {actionMessageId === message.id && !message.deleted_at && (
-                          <div className={`absolute top-full z-20 mt-1 flex min-w-[150px] flex-col overflow-hidden rounded-xl border border-line bg-white py-1 text-left shadow-lift ${mine ? 'right-0' : 'left-0'}`} role="menu" aria-label="Message actions">
+                              ))}
+                            </div>
                             <button
                               type="button"
                               role="menuitem"
