@@ -6,8 +6,12 @@ import { AuthProvider } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
 import { ThemeProvider } from './context/ThemeContext'
 import SetupNotice from './components/SetupNotice'
+import SentryErrorBoundary from './components/SentryErrorBoundary'
+import { initSentry } from './lib/sentry'
 import { isSupabaseConfigured } from './lib/supabase'
 import './index.css'
+
+initSentry()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -16,7 +20,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         {isSupabaseConfigured ? (
           <AuthProvider>
             <NotificationProvider>
-              <App />
+              <SentryErrorBoundary>
+                <App />
+              </SentryErrorBoundary>
             </NotificationProvider>
           </AuthProvider>
         ) : (
