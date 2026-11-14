@@ -1,7 +1,6 @@
 const DEFAULT_SITE_URL = 'https://comewme.vercel.app'
 
-// Emoji-safe category registry. Uses unicode escapes so the share page renders
-// the glyph regardless of transport or filesystem encoding.
+// Emoji references built via escape sequences — tooling-safe and always ASCII.
 const CATEGORY_LABELS = {
   market_run: '\u{1F6D2} Market run',
   ride: '\u{1F697} Rides',
