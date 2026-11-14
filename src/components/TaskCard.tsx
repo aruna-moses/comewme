@@ -202,7 +202,17 @@ export default function TaskCard({
       <div className="mt-2 flex items-center justify-between border-t border-line pt-2">
         <ShareTaskButton task={task} />
         <div className="flex items-center gap-2">
-          {status.label === 'Full' ? (
+          {isOwnTask || applicationStatus === 'accepted' ? (
+            <Link
+              to={`/task/${task.id}/chat`}
+              className="join-task-pill"
+            >
+              Open chat
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          ) : status.label === 'Full' ? (
             <Link
               to={`/task/${task.id}`}
               className="inline-flex items-center gap-1 rounded-full border border-line bg-canvas px-3 py-1.5 text-[11px] font-semibold text-muted"
