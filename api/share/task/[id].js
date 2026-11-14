@@ -1,14 +1,32 @@
 const DEFAULT_SITE_URL = 'https://comewme.vercel.app'
 
 const CATEGORY_LABELS = {
-  market_run: 'Errands',
-  ride: 'Rides',
-  food: 'Food',
-  study: 'Study',
-  dev: 'Skill meetups',
-  event: 'Events',
-  errands: 'Errands',
-  other: 'Other',
+  market_run: '🛒 Market run',
+  ride: '🚗 Rides',
+  food: '🍽️ Food',
+  study: '📚 Study',
+  dev: '💻 Skill meetups',
+  event: '🎉 Events',
+  errands: '📦 Errands',
+  movies: '🎬 Movies',
+  sports: '⚽ Sports',
+  gym: '💪 Gym & Fitness',
+  outdoors: '🏕️ Outdoors',
+  music: '🎵 Music',
+  arts: '🎨 Art & Culture',
+  fashion: '👗 Fashion',
+  faith: '🙏 Faith & Community',
+  volunteer: '🤝 Charity',
+  pets: '🐾 Pets',
+  wellness: '🧘 Wellness',
+  gaming: '🎮 Gaming',
+  travel: '✈️ Travel & Trips',
+  nightlife: '🌃 Nightlife',
+  shopping: '🛍️ Shopping',
+  social: '🍻 Social',
+  health: '🩺 Health',
+  repair: '🔧 Repairs',
+  other: '➕ Other',
 }
 
 function getSiteUrl() {
@@ -64,13 +82,15 @@ function htmlPage({ title, description, taskUrl, shareUrl, siteUrl, statusCode =
     <meta property="og:url" content="${safeShareUrl}">
     <meta property="og:image" content="${imageUrl}">
     <meta property="og:image:type" content="image/png">
-    <meta property="og:image:alt" content="Friends holding hands, Come w’ me">
+    <meta property="og:image:width" content="688">
+    <meta property="og:image:height" content="384">
+    <meta property="og:image:alt" content="Friends holding hands — Come w' me, social meetups in Lagos">
     <meta property="og:locale" content="en_NG">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${safeTitle}">
     <meta name="twitter:description" content="${safeDescription}">
     <meta name="twitter:image" content="${imageUrl}">
-    <meta name="twitter:image:alt" content="Friends holding hands, Come w’ me">
+    <meta name="twitter:image:alt" content="Friends holding hands — Come w' me">
     <meta http-equiv="refresh" content="1;url=${safeTaskUrl}">
     <style>
       body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; background: #fafaf7; color: #0b0b0f; font: 16px system-ui, sans-serif; }
@@ -152,22 +172,17 @@ export default async function handler(request, response) {
     }
 
     const date = new Intl.DateTimeFormat('en-NG', {
-      dateStyle: 'full',
+      dateStyle: 'medium',
       timeStyle: 'short',
       timeZone: 'Africa/Lagos',
     }).format(new Date(task.date_time))
     const taskUrl = `${siteUrl}/task/${taskId}`
     const shareUrl = `${siteUrl}/share/task/${taskId}`
     const spotsLeft = Math.max(0, Number(task.spots_needed) - Number(task.spots_filled))
-    const description = [
-      task.description?.trim(),
-      [CATEGORY_LABELS[task.category] ?? 'Activity', task.area, date, `${spotsLeft} spot${spotsLeft === 1 ? '' : 's'} left`]
-        .filter(Boolean)
-        .join(' · '),
-      'Sign up to request to join on Come w’ me.',
-    ].filter(Boolean).join(' — ')
+    const category = CATEGORY_LABELS[task.category] ?? '➕ Activity'
+    const description = `${category} • ${task.area} • ${date} • ${spotsLeft}/${task.spots_needed} left — Come w' me`
     const page = htmlPage({
-      title: task.title,
+      title: `${category.split(' ')[0]} ${task.title}`.trim(),
       description: shorten(description, 300),
       taskUrl,
       shareUrl,

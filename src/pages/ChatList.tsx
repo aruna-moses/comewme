@@ -4,8 +4,7 @@ import { MessageCircle, Clock, MapPin, Pin, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { usePersistedState } from '../lib/drafts'
-import { formatTime, taskEmoji } from '../lib/format'
-import Avatar from '../components/Avatar'
+import { formatTime, taskEmoji, categoryTileBg } from '../lib/format'
 import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
 import { loadChatsForUser } from '../lib/chatsData'
 
@@ -114,15 +113,16 @@ export default function ChatList() {
           className="card flex items-start gap-3 rounded-[18px] p-3.5 pr-10 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
         >
         <div className="relative shrink-0">
-          <div className="-space-x-2 flex">
-            {c.members.slice(0, 3).map((m, idx) => (
-              <Avatar key={`${c.task.id}-${m.id}-${idx}`} src={m.avatar} name={m.name} size={30} />
-            ))}
+          <div
+            className={`flex h-14 w-14 items-center justify-center rounded-full text-[26px] shadow-sm ring-1 ring-black/5 ${categoryTileBg(c.task.category)}`}
+            aria-hidden="true"
+          >
+            {taskEmoji(c.task.category)}
           </div>
           {unread > 0 && (
             <span
               aria-label={`${unread} unread ${unread === 1 ? 'message' : 'messages'}`}
-              className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#e53935] px-1.5 text-[9px] font-bold leading-none text-white ring-2 ring-canvas"
+              className="absolute -right-1.5 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#e53935] px-1.5 text-[9px] font-bold leading-none text-white ring-2 ring-canvas"
             >
               {unread > 99 ? '99+' : unread}
             </span>

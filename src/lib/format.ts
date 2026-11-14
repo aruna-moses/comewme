@@ -1,3 +1,4 @@
+import { CATEGORIES } from '../types'
 const WAT_OFFSET_MINUTES = 60 // West Africa Time is UTC+1, no daylight saving
 
 /** Format an ISO timestamp in Lagos local time. */
@@ -42,27 +43,44 @@ export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-/** Compact task-type emoji for chat-list chips / previews. */
+/** Compact task-type emoji for chat-list avatar chips / previews. */
 export function taskEmoji(category: string): string {
-  const map: Record<string, string> = {
-    ride: '🚗',
-    food: '🍽️',
-    market_run: '🛒',
-    dev: '💻',
-    study: '📚',
-    event: '🎉',
-    lesson: '🎓',
-    exercise: '🏋️',
-    game: '🎮',
-    comedy: '🎤',
-    music: '🎵',
-    shop: '🛍️',
-    errands: '📦',
-    church: '⛪',
-    vendor: '🧺',
-    open: '🎪',
-  }
-  return map[category] ?? '📍'
+  // Read directly from the shared registry so the emoji always matches the chip
+  return CATEGORIES.find((c) => c.value === category)?.emoji ?? '📍'
+}
+
+const TILE_BG: Record<string, string> = {
+  market_run: 'bg-[#e4f4ef]',
+  ride: 'bg-[#e8eef7]',
+  food: 'bg-[#ffebdc]',
+  study: 'bg-[#f1ecfa]',
+  dev: 'bg-[#e8eef7]',
+  event: 'bg-[#fdeef3]',
+  errands: 'bg-[#e4f4ef]',
+  other: 'bg-[#f1f1ef]',
+  movies: 'bg-[#fdeef3]',
+  sports: 'bg-[#eaf6ee]',
+  gym: 'bg-[#eef4fb]',
+  outdoors: 'bg-[#f5f0f8]',
+  music: 'bg-[#fcf0f5]',
+  arts: 'bg-[#fff3e8]',
+  fashion: 'bg-[#fcf0f5]',
+  faith: 'bg-[#eef7f5]',
+  volunteer: 'bg-[#eaf6ee]',
+  pets: 'bg-[#fff3e8]',
+  wellness: 'bg-[#f1ecfa]',
+  gaming: 'bg-[#eef4fb]',
+  travel: 'bg-[#eaf6ee]',
+  nightlife: 'bg-[#fdeef3]',
+  shopping: 'bg-[#f5f0f8]',
+  social: 'bg-[#fff3e8]',
+  health: 'bg-[#eef7f5]',
+  repair: 'bg-[#f1f1ef]',
+}
+
+/** Deterministic pastel background for the circular chat-list thumbnail. */
+export function categoryTileBg(category: string): string {
+  return TILE_BG[category] ?? 'bg-[#f1f1ef]'
 }
 
 /** Same-day check for chat date separators. */

@@ -10,7 +10,6 @@ export interface ChatEntry {
     sender_id: string
     created_at: string
   } | null
-  members: Array<{ id: string; name: string; avatar: string | null }>
 }
 
 /** Tasks where the user is the host or an accepted participant, newest activity first. */
@@ -51,31 +50,13 @@ export async function loadChatsForUser(profileId: string): Promise<ChatEntry[]> 
 
   const enriched = await Promise.all(
     unique.map(async (t) => {
-      const [msgsRes, membersRes] = await Promise.all([
-        supabase
-          .from('messages')
-          .select('body, type, sender_name, sender_id, created_at')
-          .eq('task_id', t.id)
-          .order('created_at', { ascending: false })
-          .limit(1),
-        supabase
-          .from('join_requests')
-          .select('requester_id, requester_name, requester_avatar_url')
-          .eq('task_id', t.id)
-          .eq('status', 'accepted')
-          .order('created_at', { ascending: true })
-          .limit(4),
-      ])
-      const last = (msgsRes.data ?? [])[0]
-      const members = [
-        { id: t.host_id, name: t.host_name, avatar: t.host_avatar_url },
-        ...((membersRes.data ?? []) as Array<{ requester_id: string; requester_name: string; requester_avatar_url: string | null }>).map((m) => ({
-          id: m.requester_id,
-          name: m.requester_name,
-          avatar: m.requester_avatar_url,
-        })),
-      ].slice(0, 4)
-      return { task: t, lastMessage: last ?? null, members }
+      const { data: msgsRes } = await supabase
+        .from('messages')
+        .select('body, type, sender_name, sender_id, created_at')
+        .eq('task_id', t.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+      return { task: t, lastMessage: (msgsRes ?? [])[0] ?? null }
     }),
   )
 
