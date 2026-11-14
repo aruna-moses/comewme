@@ -347,6 +347,7 @@ export default function TaskDetail() {
           <Avatar src={task.host_avatar_url} name={hostDisplayName} size={48} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Posted by</p>
               <p className="truncate font-semibold">{hostDisplayName}</p>
               <VerifiedBadge status={hostProfile?.verification_status} />
             </div>
@@ -588,6 +589,7 @@ export default function TaskDetail() {
             <div className="flex items-center gap-3 p-4 rounded-xl bg-canvas border border-line">
               <Avatar src={task.host_avatar_url} name={hostDisplayName} size={40} />
               <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Posted by</p>
                 <p className="text-[13px] font-semibold text-ink">{hostDisplayName}</p>
                 <p className="text-[11px] text-muted">{categoryLabel(task.category)} · {task.area}</p>
               </div>
