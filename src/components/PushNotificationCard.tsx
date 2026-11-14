@@ -35,11 +35,6 @@ export default function PushNotificationCard() {
             {meta?.blurb ?? ''}
           </p>
 
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-muted" aria-hidden="true">
-            <span>Permission: {typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'n/a'}</span>
-            <span>Standalone: {typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches ? 'yes' : 'no'}</span>
-          </div>
-
           {needsInstall ? (
             <div className="mt-2 rounded-2xl border border-line bg-canvas p-3 text-[11px] leading-relaxed text-muted">
               <p className="flex items-center gap-1.5 font-bold text-ink">
