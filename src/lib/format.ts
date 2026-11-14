@@ -84,6 +84,13 @@ export function categoryTileBg(category: string): string {
 }
 
 /** Same-day check for chat date separators. */
+export function isToday(iso: string): boolean {
+  const d = new Date(iso)
+  const t = new Date()
+  d.setHours(0, 0, 0, 0)
+  t.setHours(0, 0, 0, 0)
+  return d.getTime() === t.getTime()
+}
 export function isSameDay(a: string, b: string): boolean {
   const x = new Date(a)
   const y = new Date(b)

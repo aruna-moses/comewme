@@ -4,7 +4,7 @@ import { VerifiedBadge } from './Badges'
 import { Link } from 'react-router-dom'
 import type { Category, JoinStatus, Task } from '../types'
 import { categoryLabel, CATEGORIES } from '../types'
-import { formatDateTime } from '../lib/format'
+import { formatDateTime, isToday } from '../lib/format'
 import { useAuth } from '../context/AuthContext'
 import Avatar from './Avatar'
 import ShareTaskButton from './ShareTaskButton'
@@ -104,10 +104,11 @@ export default function TaskCard({
   const pct = Math.min(100, Math.round((task.spots_filled / task.spots_needed) * 100))
   const status = statusLabel(task)
   const countdown = countdownLabel(task.date_time)
+  const happeningToday = isToday(task.date_time)
   const emoji = categoryEmoji(task.category)
 
   return (
-    <article className="card relative rounded-[22px] p-3 transition hover:shadow-lift">
+    <article className={`card relative rounded-[22px] p-3 transition hover:shadow-lift ${happeningToday ? 'ring-2 ring-amber/70 shadow-[0_12px_36px_rgba(247,162,51,0.25)]' : ''}`}>
       {typeof reviewBadge === 'number' && reviewBadge > 0 && (
         <span
           aria-label={`${reviewBadge} pending join ${reviewBadge === 1 ? 'request' : 'requests'} waiting for review`}
@@ -128,6 +129,12 @@ export default function TaskCard({
               </h3>
               <div className="flex shrink-0 flex-col items-end gap-1">
                 <span className={`text-[11px] font-semibold ${status.tone}`}>{status.label}</span>
+                {happeningToday && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-amber">
+                    <span className="flex h-1.5 w-1.5 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full bg-amber" aria-hidden />
+                    Happening today
+                  </span>
+                )}
                 {sponsored && (
                   <span className="rounded-full bg-[#fff4d1] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#7a622f]">
                     Sponsored
@@ -170,15 +177,13 @@ export default function TaskCard({
         )}
 
         <div className="mt-2 flex items-center gap-3 text-[12px] text-muted">
-          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="flex min-w-0 items-center gap-1.5">
             <Clock3 size={14} className="shrink-0" aria-hidden />
-            <span className={countdown ? 'truncate font-bold text-ink' : 'truncate'}>
-              {formatDateTime(task.date_time)}{countdown ? ` · ${countdown}` : ''}
-            </span>
+            <span className="truncate font-bold text-ink">{formatDateTime(task.date_time)}{countdown ? ` · ${countdown}` : ''}</span>
           </span>
           <span className="flex items-center gap-1.5 truncate">
             <MapPin size={14} className="shrink-0" aria-hidden />
-            <span className="truncate">{task.area}</span>
+            <span className="truncate font-semibold text-ink/85">{task.area}</span>
           </span>
         </div>
 
