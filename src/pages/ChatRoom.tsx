@@ -1453,9 +1453,12 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           )}
           {error && <p role="alert" className="px-2 pb-2 text-[12px] font-medium text-alert">{error}</p>}
           {replyTarget && (
-            <div className="mb-2 flex items-center gap-2 rounded-xl border-l-2 border-amber bg-canvas px-3 py-2">
+            <div
+              className="mb-2 flex items-center gap-2 rounded-xl border-l-2 px-3 py-2"
+              style={{ borderLeftColor: senderColorHex(replyTarget.sender_id), backgroundColor: senderColorTint(replyTarget.sender_id) }}
+            >
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold text-amber">Replying to {replyTarget.sender_id === profile?.id ? 'You' : replyTarget.sender_name}</p>
+                <p className="text-[11px] font-bold" style={{ color: senderColorHex(replyTarget.sender_id) }}>Replying to {replyTarget.sender_id === profile?.id ? 'You' : replyTarget.sender_name}</p>
                 <p className="truncate text-[11px] text-muted">
                   {replyTarget.type === 'image' ? (replyTarget.body || 'Photo') : replyTarget.type === 'audio' ? 'Voice note' : replyTarget.body}
                 </p>
