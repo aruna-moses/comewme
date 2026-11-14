@@ -1028,34 +1028,8 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       )}
 
       <section className="flex min-h-0 flex-1 flex-col px-3 pb-3">
-        <div className="-mx-1 border-b border-line px-1">
-          <section className="no-scrollbar flex gap-2 overflow-x-auto py-3" aria-label="Group members">
-            <Link
-              to={`/profile/${task.host_id}`}
-              className="flex min-w-[92px] flex-col items-center gap-1 rounded-xl px-2 py-1 text-center transition hover:bg-canvas"
-            >
-              <Avatar src={task.host_avatar_url} name={task.host_name} size={38} />
-              <span className="max-w-[96px] truncate text-[10px] font-semibold">
-                {task.host_id === profile?.id ? 'You · Host' : `${task.host_name} · Host`}
-              </span>
-            </Link>
-            {participants.map((participant) => (
-            <Link
-              key={participant.id}
-              to={`/profile/${participant.requester_id}`}
-              className="flex min-w-[76px] flex-col items-center gap-1 rounded-xl px-2 py-1 text-center transition hover:bg-canvas"
-            >
-              <Avatar src={participant.requester_avatar_url} name={participant.requester_name} size={38} />
-              <span className="max-w-[96px] truncate text-[10px] font-semibold">
-                {participant.requester_id === profile?.id ? 'You' : participant.requester_name}
-              </span>
-            </Link>
-            ))}
-          </section>
-        </div>
-
-        {/* Quick facts + one-tap replies + check-in */}
-        <div className="mt-2 flex flex-wrap gap-2" aria-label="Meeting quick facts">
+        {/* Quick facts + check-in */}
+        <div className="mt-2 flex flex-wrap items-center gap-2" aria-label="Meeting quick facts">
           <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${happeningToday ? 'border-amber/50 bg-sun/25 font-bold text-amber' : 'border-line bg-white text-muted'}`}>
             <Clock3 size={11} aria-hidden />
             {formatDateTime(task.date_time)}
@@ -1064,23 +1038,6 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             <MapPin size={11} aria-hidden />
             <span className="max-w-[140px] truncate">{task.meeting_point}</span>
           </span>
-        </div>
-
-        <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Quick messages">
-          {[
-            'On my way',
-            'Running 5 mins late',
-            'Traffic is bad',
-          ].map((text) => (
-            <button
-              key={text}
-              type="button"
-              onClick={() => void handleSend(text, 'text')}
-              className="rounded-full border border-amber/40 bg-sun/15 px-3 py-1.5 text-[11px] font-semibold text-amber transition hover:bg-sun/25"
-            >
-              {text}
-            </button>
-          ))}
           <button
             type="button"
             disabled={checkinPending}
@@ -1097,7 +1054,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                 setCheckinPending(false)
               }
             }}
-            className={`rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
+            className={`ml-auto rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
               checkins[profile?.id ?? '']
                 ? 'border border-verified/40 bg-verified/15 text-verified'
                 : 'border border-amber/40 bg-sun/15 text-amber hover:bg-sun/25'
