@@ -30,14 +30,6 @@ export function relativeDay(iso: string): string {
   return formatDateTime(iso).split(' · ')[0]
 }
 
-export function timeOfDay(iso: string): string {
-  return formatDateTime(iso).split(' · ')[1] ?? ''
-}
-
-export function isPast(iso: string): boolean {
-  return new Date(iso).getTime() < Date.now()
-}
-
 /** Short clock time for chat bubbles, e.g. "8:42 PM". */
 export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })

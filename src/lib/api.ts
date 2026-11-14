@@ -751,17 +751,6 @@ export async function writeRecap(taskId: string, hostId: string, hostName: strin
   if (eventError) throw eventError
 }
 
-export async function fetchRecap(taskId: string): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('activity_recaps')
-    .select('body')
-    .eq('task_id', taskId)
-    .maybeSingle()
-  if (error) return null
-  const row = data as { body: string } | null
-  return row?.body ?? null
-}
-
 /* Message reactions                                                     */
 
 export interface MessageReaction {
