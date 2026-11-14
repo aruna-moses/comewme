@@ -8,10 +8,8 @@ import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import {
-  checkInToActivity,
   deleteMessage,
   deleteChatMedia,
-  fetchCheckins,
   fetchMessages,
   fetchMessageReactions,
   fetchMessageViews,
@@ -59,8 +57,6 @@ export default function ChatRoom() {
   const [loading, setLoading] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
   const [systemEvents, setSystemEvents] = useState<ChatSystemEvent[]>([])
-  const [checkins, setCheckins] = useState<Record<string, string>>({})
-  const [checkinPending, setCheckinPending] = useState(false)
   const [recapText, setRecapText] = useState('')
   const [recapPosted, setRecapPosted] = useState(false)
   const [muteThisChat, setMuteThisChat] = usePersistedState<boolean>(`chat:${id}:mute`, false)
@@ -148,25 +144,19 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
     if (!task?.id) return
     let active = true
     const refreshEvents = async () => {
-      const [eventsRes, checkinsRes] = await Promise.all([
-        fetchSystemEvents(task.id).catch(() => [] as ChatSystemEvent[]),
-        fetchCheckins(task.id).catch(() => [] as Array<{ user_id: string; checked_in_at: string }>),
-      ])
+      const eventsRes = await fetchSystemEvents(task.id).catch(() => [] as ChatSystemEvent[])
       if (!active) return
       const gate = joinGateRef.current
       const visibleEvents = gate ? eventsRes.filter((event) => Date.parse(event.created_at) >= gate) : eventsRes
       setSystemEvents(visibleEvents)
-      setCheckins(Object.fromEntries(checkinsRes.map((c) => [c.user_id, c.checked_in_at])))
     }
     void refreshEvents()
 
-    // Realtime check-ins + system events (welcome, left, recap, etc.)
+    // Realtime system events (joined, completed, recap, etc.)
     const eventsChannel = supabase.channel(`activity-events:${task.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_system_events', filter: `task_id=eq.${task.id}` }, () => { void refreshEvents() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_checkins', filter: `task_id=eq.${task.id}` }, () => { void refreshEvents() })
       .subscribe()
 
-    // Host cares about arrival pinging the host when someone taps "I'm here".
     return () => {
       active = false
       void supabase.removeChannel(eventsChannel)
@@ -969,8 +959,6 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                 <span className="inline-flex shrink-0 items-center rounded-full bg-amber/25 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.16em] text-amber">Today</span>
               )}
               Group chat · {participants.length + 1} {participants.length === 0 ? 'member' : 'members'}
-              <span aria-hidden>·</span>
-              {Object.keys(checkins).length > 0 ? `${Object.keys(checkins).length} checked in` : 'nobody here yet'}
             </span>
           </span>
           <button
@@ -1028,7 +1016,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       )}
 
       <section className="flex min-h-0 flex-1 flex-col px-3 pb-3">
-        {/* Quick facts + check-in */}
+        {/* Meeting quick facts */}
         <div className="mt-2 flex flex-wrap items-center gap-2" aria-label="Meeting quick facts">
           <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${happeningToday ? 'border-amber/50 bg-sun/25 font-bold text-amber' : 'border-line bg-white text-muted'}`}>
             <Clock3 size={11} aria-hidden />
@@ -1038,30 +1026,6 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             <MapPin size={11} aria-hidden />
             <span className="max-w-[140px] truncate">{task.meeting_point}</span>
           </span>
-          <button
-            type="button"
-            disabled={checkinPending}
-            aria-pressed={Boolean(checkins[profile?.id ?? ''])}
-            onClick={async () => {
-              if (!profile) return
-              setCheckinPending(true)
-              setError(null)
-              try {
-                await checkInToActivity(task.id, profile)
-              } catch (err) {
-                setError(err instanceof Error ? err.message : 'Could not check in.')
-              } finally {
-                setCheckinPending(false)
-              }
-            }}
-            className={`ml-auto rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
-              checkins[profile?.id ?? '']
-                ? 'border border-verified/40 bg-verified/15 text-verified'
-                : 'border border-amber/40 bg-sun/15 text-amber hover:bg-sun/25'
-            } disabled:opacity-60`}
-          >
-            {checkinPending ? 'Checking…' : checkins[profile?.id ?? ''] ? '✓ I’m here' : 'Check in'}
-          </button>
         </div>
 
         <div ref={containerRef} onScroll={handleMessagesScroll} className="relative min-h-0 flex-1 space-y-4 overflow-y-auto py-4">
