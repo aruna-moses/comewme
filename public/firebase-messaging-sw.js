@@ -34,18 +34,17 @@ if (FIREBASE_CONFIG.apiKey.startsWith('REPLACE_WITH')) {
   const messaging = firebase.messaging()
 
   messaging.onBackgroundMessage((payload) => {
-    const notif = (payload && payload.notification) || {}
-    const title = notif.title || "Come w' me"
-    const body = notif.body || ''
-    const icon = notif.icon || '/logo.png'
-    const url = (payload && payload.fcmOptions && payload.fcmOptions.link) || (payload && payload.data && payload.data.url) || '/'
+    const data = (payload && payload.data) || {}
+    const title = data.title || "Come w' me"
+    const body = data.body || ''
+    const url = data.url || '/'
 
     self.registration.showNotification(title, {
       body,
-      icon,
+      icon: '/logo.png',
       badge: '/logo.png',
       data: { url },
-      tag: notif.tag || 'comewme-push',
+      tag: 'comewme-push',
       requireInteraction: true,
     })
   })

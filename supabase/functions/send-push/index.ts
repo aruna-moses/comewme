@@ -105,12 +105,12 @@ async function sendToToken(
       body: JSON.stringify({
         message: {
           token,
-          notification: { title, body },
-          data: { url },
+          // Data-only message: the service worker renders it, so the browser
+          // doesn't also auto-display a duplicate.
+          data: { title, body, url: url ?? '/' },
           webpush: {
-            notification: { icon: '/logo.png', badge: '/logo.png' },
-            fcmOptions: { link: url },
             headers: { Urgency: 'high' },
+            fcmOptions: { link: url ?? '/' },
           },
         },
       }),
