@@ -47,6 +47,11 @@ function AudioUnlock() {
   return null
 }
 
+function RedirectToActivities() {
+  const location = useLocation()
+  return <Navigate to={`/activities${location.search}`} replace />
+}
+
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth()
   const location = useLocation()
@@ -136,7 +141,8 @@ export default function App() {
         <Route path="/" element={<Discover />} />
         <Route path="/task/:id/chat" element={<RequireAuth><ChatRoom /></RequireAuth>} />
         <Route path="/task/:id" element={<TaskDetail />} />
-        <Route path="/mytasks" element={<RequireAuth><MyTasks /></RequireAuth>} />
+        <Route path="/activities" element={<RequireAuth><MyTasks /></RequireAuth>} />
+        <Route path="/mytasks" element={<RedirectToActivities />} />
         <Route path="/chats" element={<RequireAuth><ChatList /></RequireAuth>} />
         <Route path="/profile/:id" element={<ProfilePage />} />
         <Route path="/login" element={<Login />} />

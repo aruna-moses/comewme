@@ -408,7 +408,7 @@ export default function Discover() {
             {upcoming.map((task) => (
               <Link
                 key={task.id}
-                to={`/mytasks?task=${encodeURIComponent(task.id)}`}
+                to={`/activities?task=${encodeURIComponent(task.id)}`}
                 className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline"
                 aria-label={`View upcoming activity ${task.title} in Activities`}
               >
