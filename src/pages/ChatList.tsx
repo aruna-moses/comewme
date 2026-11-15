@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Pin, BellOff, Sparkles, ChevronDown, MoreVertical } from 'lucide-react'
+import { MapPin, Pin, BellOff, ChevronDown, MoreVertical } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { usePersistedState, readDraft, writeDraft, clearDraft } from '../lib/drafts'
@@ -161,7 +161,7 @@ export default function ChatList() {
                 {c.task.title}
               </h2>
             </div>
-            <p className={`mt-0.5 line-clamp-1 text-[14.5px] leading-snug ${unread > 0 ? 'font-medium text-ink' : 'text-muted'}`}>
+            <p className={`-mt-0.5 line-clamp-1 text-[15px] leading-snug ${unread > 0 ? 'font-medium text-ink' : 'text-muted'}`}>
               {c.lastMessage
                 ? `${c.lastMessage.sender_id === profile?.id ? 'You' : c.lastMessage.sender_name}: ${
                     c.lastMessage.type === 'image'
@@ -172,7 +172,7 @@ export default function ChatList() {
                   }`
                 : 'No messages yet — say hello.'}
             </p>
-            <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-muted">
+            <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted">
               {doneChat ? (
                 <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-extrabold uppercase tracking-[0.14em] text-muted">
                   {c.task.status === 'completed' ? 'Completed' : 'Passed'}
@@ -184,7 +184,7 @@ export default function ChatList() {
                 </span>
               ) : (
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${countdownTone}`}>
-                  <span aria-hidden="true">{taskEmoji(c.task.category)}</span> {countdownLabel}
+                  {countdownLabel}
                 </span>
               )}
               <span aria-hidden="true">·</span>
@@ -324,8 +324,8 @@ export default function ChatList() {
             )}
             {buckets.newChats.length > 0 && (
               <section aria-labelledby="new-chats-heading">
-                <p id="new-chats-heading" className="flex items-center gap-1.5 px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-muted">
-                  <Sparkles size={12} aria-hidden /> Just created — say hi
+                <p id="new-chats-heading" className="px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-muted">
+                  Just accepted — say hi
                 </p>
                 <div className="mt-2 space-y-2">
                   {buckets.newChats.map((c) => renderRow(c))}
