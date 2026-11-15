@@ -108,7 +108,7 @@ export default function BottomNav() {
       <nav aria-label="Main navigation" className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 rounded-t-[26px] border-t border-line bg-white/95 shadow-[0_-8px_24px_rgba(59,47,24,0.06)] backdrop-blur">
         <div className="flex items-stretch px-2 pb-[env(safe-area-inset-bottom)] pt-1.5">
           {item('/', 'Discover', (a) => <IconDiscover active={a} />, 0, 'unread', () => { void prefetchDiscoverFeed() })}
-          {item('/mytasks', 'My Tasks', (a) => <IconMyTasks active={a} />, pendingApplications, 'pending applications', () => { if (myId) void prefetchMyTasks(myId) })}
+          {item('/mytasks', 'Activities', (a) => <IconMyTasks active={a} />, pendingApplications, 'pending applications', () => { if (myId) void prefetchMyTasks(myId) })}
           <div className="flex flex-1 justify-center">
             <button
               onClick={() => (session ? navigate('/post') : navigate('/login'))}

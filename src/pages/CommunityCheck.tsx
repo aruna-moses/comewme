@@ -118,7 +118,7 @@ export default function CommunityCheck() {
           </span>
           <h1 className="mt-7 font-display text-[24px] font-bold">You&apos;re one of us 🎉</h1>
           <p className="mt-3 text-[14px] leading-relaxed text-muted">
-            3 out of 3. Thanks for looking out for the community. You can now post tasks and join people nearby.
+            3 out of 3. Thanks for looking out for the community. You can now post activities and join people nearby.
           </p>
           <p role="status" className="mt-6 flex w-full items-center gap-2 rounded-[12px] border border-[#cce4d4] bg-[#eaf6ee] p-3 text-left text-[12px] text-[#26815d]">
             <CheckCircle2 size={20} className="shrink-0" aria-hidden />

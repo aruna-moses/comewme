@@ -57,7 +57,7 @@ export default function MyTasks() {
         setLoadError(null)
       })
       .catch((error: unknown) => {
-        if (alive) setLoadError(error instanceof Error ? error.message : 'Could not load your tasks.')
+        if (alive) setLoadError(error instanceof Error ? error.message : 'Could not load your activities.')
       })
       .finally(() => {
         if (alive) setLoading(false)
@@ -116,7 +116,7 @@ export default function MyTasks() {
   return (
     <div className="pb-8">
       <header className="px-5 pb-2 pt-8">
-        <h1 className="font-display text-[24px] font-bold leading-tight">My tasks</h1>
+        <h1 className="font-display text-[24px] font-bold leading-tight">Activities</h1>
         <p className="mt-1 text-[14px] text-muted">Everything you&apos;ve posted and applied to.</p>
       </header>
 
@@ -151,7 +151,7 @@ export default function MyTasks() {
 
         {loadError && (
           <div className="card mt-4 p-4 text-center">
-            <p className="text-[13px] font-semibold text-alert">Could not load your tasks</p>
+            <p className="text-[13px] font-semibold text-alert">Could not load your activities</p>
             <p className="mt-1 text-[12px] text-muted">{loadError}</p>
             <button type="button" className="btn-ghost btn-sm mt-3" onClick={() => setRefreshKey((key) => key + 1)}>
               Try again

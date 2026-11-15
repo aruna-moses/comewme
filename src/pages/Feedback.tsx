@@ -118,7 +118,7 @@ export default function Feedback() {
               <input
                 id="feedback-subject"
                 className="field"
-                placeholder="Finding tasks near me"
+                placeholder="Finding activities near me"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 maxLength={120}

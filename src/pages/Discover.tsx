@@ -253,11 +253,11 @@ export default function Discover() {
           <div className="relative min-w-0 flex-1">
             <input
               type="text"
-              placeholder="Search tasks, areas..."
+              placeholder="Search activities, areas..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="min-h-[48px] w-full border-0 bg-transparent text-[14px] text-ink outline-none placeholder:text-[#98a0ae]"
-              aria-label="Search tasks and areas"
+              aria-label="Search activities and areas"
             />
           </div>
           <button
@@ -410,7 +410,7 @@ export default function Discover() {
                 key={task.id}
                 to={`/mytasks?task=${encodeURIComponent(task.id)}`}
                 className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline"
-                aria-label={`View upcoming activity ${task.title} in My Tasks`}
+                aria-label={`View upcoming activity ${task.title} in Activities`}
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-semibold text-ink">{task.title}</p>

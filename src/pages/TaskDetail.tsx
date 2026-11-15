@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { CheckCircle2, Ban, RotateCcw } from 'lucide-react'
+import { CheckCircle2, Ban, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import {
@@ -69,6 +69,7 @@ export default function TaskDetail() {
   const [reportDetails, setReportDetails] = useState('')
   const [reportDone, setReportDone] = useState(false)
   const [groupInfoOpen, setGroupInfoOpen] = useState(false)
+  const [membersOpen, setMembersOpen] = useState(false)
 
   const [rateOpen, setRateOpen] = useState(false)
   const [rating, setRating] = useState<Record<string, number>>({})
@@ -396,23 +397,64 @@ export default function TaskDetail() {
           </div>
 
           {participants.length > 0 && (
-            <div className="mt-4 flex items-center gap-2">
-              <div className="flex -space-x-2">
-                {participants.slice(0, 5).map((p) => (
-                  <Link
-                    key={p.id}
-                    to={`/profile/${p.requester_id}`}
-                    aria-label={`View ${p.requester_name}'s profile`}
-                    title={`View ${p.requester_name}'s profile`}
-                    className="rounded-full focus-visible:z-10"
-                  >
-                    <Avatar src={p.requester_avatar_url} name={p.requester_name} size={30} className="ring-2 ring-white" />
-                  </Link>
-                ))}
-              </div>
-              <span className="text-[12px] text-muted">
-                {participants.length} going · tap a photo to view profile
-              </span>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => setMembersOpen((open) => !open)}
+                aria-expanded={membersOpen}
+                aria-controls="group-members-dropdown"
+                className="flex w-full items-center gap-2 rounded-2xl border border-line bg-canvas/60 px-2 py-1.5 text-left transition hover:border-amber/50 active:bg-canvas"
+              >
+                <div className="flex -space-x-2" aria-hidden="true">
+                  {participants.slice(0, 5).map((p) => (
+                    <Avatar key={p.id} src={p.requester_avatar_url} name={p.requester_name} size={30} className="ring-2 ring-white" />
+                  ))}
+                  {participants.length > 5 && (
+                    <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-line text-[10px] font-bold text-ink ring-2 ring-white">
+                      +{participants.length - 5}
+                    </span>
+                  )}
+                </div>
+                <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-ink/80">
+                  {participants.length} going{' '}
+                  <span aria-hidden>·</span>{' '}
+                  <span className="text-amber">{membersOpen ? 'Hide member profiles' : 'View all member profiles'}</span>
+                </span>
+                <ChevronDown size={16} className={`shrink-0 text-muted transition-transform duration-200 ${membersOpen ? 'rotate-180' : ''}`} aria-hidden />
+              </button>
+              {membersOpen && (
+                <ul id="group-members-dropdown" className="mt-2 max-h-72 space-y-0.5 overflow-y-auto rounded-2xl border border-line bg-white p-1.5 shadow-sm" aria-label="Group members">
+                  <li>
+                    <Link to={`/profile/${task.host_id}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition hover:bg-canvas">
+                      <Avatar src={task.host_avatar_url} name={hostDisplayName} size={34} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[12px] font-semibold text-ink">
+                          {hostDisplayName}{task.host_id === profile?.id ? ' (You)' : ''}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-amber">
+                          Host
+                          {hostProfile?.verification_status === 'verified' && <VerifiedBadge status="verified" size={11} />}
+                        </span>
+                      </span>
+                      <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden />
+                    </Link>
+                  </li>
+                  {participants.map((p) => (
+                    <li key={p.id}>
+                      <Link to={`/profile/${p.requester_id}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition hover:bg-canvas">
+                        <Avatar src={p.requester_avatar_url} name={p.requester_name} size={34} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[12px] font-semibold text-ink">
+                            {p.requester_id === profile?.id ? 'You' : p.requester_name}
+                          </span>
+                          <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">Going</span>
+                        </span>
+                        <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
         </div>
@@ -672,26 +714,17 @@ export default function TaskDetail() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => navigate(`/task/${task.id}/chat`)}
-                className="btn-primary w-full py-3 text-sm font-semibold"
-              >
-                Open chat
-              </button>
-              <button
-                type="button"
-                aria-label="Send emergency SOS"
-                onClick={() => {
-                  setGroupInfoOpen(false)
-                  setSosOpen(true)
-                }}
-                className="btn-alert w-full border border-alert py-3 text-sm font-semibold text-alert"
-              >
-                SOS
-              </button>
-            </div>
+            <button
+              type="button"
+              aria-label="Send emergency SOS"
+              onClick={() => {
+                setGroupInfoOpen(false)
+                setSosOpen(true)
+              }}
+              className="btn-alert w-full border border-alert py-3 text-sm font-semibold text-alert"
+            >
+              SOS
+            </button>
 
             {/* Report this activity */}
             <div className="pt-2 border-t border-line pt-3">
