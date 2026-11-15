@@ -172,23 +172,23 @@ export default function ChatList() {
                   }`
                 : 'No messages yet — say hello.'}
             </p>
-            <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted">
+            <div className="mt-0 flex min-w-0 items-center gap-1.5 leading-none text-[12px] text-muted">
               {doneChat ? (
-                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-extrabold uppercase tracking-[0.14em] text-muted">
+                <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] font-extrabold uppercase leading-none tracking-[0.14em] text-muted">
                   {c.task.status === 'completed' ? 'Completed' : 'Passed'}
                 </span>
               ) : happeningToday ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-amber">
-                  <span className="h-1.5 w-1.5 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full bg-amber" aria-hidden />
+                <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 px-2 py-0.5 text-[11px] font-extrabold uppercase leading-none tracking-[0.14em] text-amber">
+                  <span className="h-1.5 w-1.5 shrink-0 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full bg-amber" aria-hidden />
                   Happening today
                 </span>
               ) : (
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${countdownTone}`}>
+                <span className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 font-semibold leading-none ${countdownTone}`}>
                   {countdownLabel}
                 </span>
               )}
-              <span aria-hidden="true">·</span>
-              <span className="inline-flex items-center gap-1 font-semibold text-ink/80"><MapPin size={9} aria-hidden />{c.task.area}</span>
+              <span aria-hidden="true" className="shrink-0">·</span>
+              <span className="inline-flex min-w-0 items-center gap-1 font-semibold text-ink/80"><MapPin size={9} className="shrink-0" aria-hidden /><span className="truncate">{c.task.area}</span></span>
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
