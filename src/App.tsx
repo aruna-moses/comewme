@@ -1,34 +1,35 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from './context/AuthContext'
 import BottomNav from './components/BottomNav'
 import Discover from './pages/Discover'
-import TaskDetail from './pages/TaskDetail'
-import ChatRoom from './pages/ChatRoom'
-import MyTasks from './pages/MyTasks'
-import ChatList from './pages/ChatList'
-import ProfilePage from './pages/ProfilePage'
-import Login from './pages/Login'
-import Onboarding from './pages/Onboarding'
-import PostTask from './pages/PostTask'
-import Settings from './pages/Settings'
-import Feedback from './pages/Feedback'
-import CommunityCheck from './pages/CommunityCheck'
-import Violations from './pages/Violations'
-import AdminModeration from './pages/AdminModeration'
-import AdminAds from './pages/AdminAds'
-import Advertise from './pages/Advertise'
 import Spinner from './components/Spinner'
-import ResetPassword from './pages/ResetPassword'
-import NotificationsPage from './pages/NotificationsPage'
-import CommunityGuidelines from './pages/CommunityGuidelines'
-import PrivacyPolicy from './pages/PrivacyPolicy'
 import GuidelinesModal from './components/GuidelinesModal'
 import WarningModal, { activeRestriction, unacknowledgedWarning } from './components/WarningModal'
 import ModerationAlert from './components/ModerationAlert'
 import InAppToast from './components/InAppToast'
 import { unlockAudio } from './lib/sounds'
+
+const TaskDetail = lazy(() => import('./pages/TaskDetail'))
+const ChatRoom = lazy(() => import('./pages/ChatRoom'))
+const MyTasks = lazy(() => import('./pages/MyTasks'))
+const ChatList = lazy(() => import('./pages/ChatList'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const Login = lazy(() => import('./pages/Login'))
+const Onboarding = lazy(() => import('./pages/Onboarding'))
+const PostTask = lazy(() => import('./pages/PostTask'))
+const Settings = lazy(() => import('./pages/Settings'))
+const Feedback = lazy(() => import('./pages/Feedback'))
+const CommunityCheck = lazy(() => import('./pages/CommunityCheck'))
+const Violations = lazy(() => import('./pages/Violations'))
+const AdminModeration = lazy(() => import('./pages/AdminModeration'))
+const AdminAds = lazy(() => import('./pages/AdminAds'))
+const Advertise = lazy(() => import('./pages/Advertise'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
+const CommunityGuidelines = lazy(() => import('./pages/CommunityGuidelines'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 
 /** Creates/resumes the shared AudioContext on the user's first tap or keystroke. */
 function AudioUnlock() {
@@ -137,7 +138,8 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Routes>
+      <Suspense fallback={<Spinner full />}>
+        <Routes>
         <Route path="/" element={<Discover />} />
         <Route path="/task/:id/chat" element={<RequireAuth><ChatRoom /></RequireAuth>} />
         <Route path="/task/:id" element={<TaskDetail />} />
@@ -202,6 +204,7 @@ export default function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
       <ModerationAlert />
       <InAppToast />
       <AudioUnlock />
