@@ -431,7 +431,7 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
       type="button"
       aria-pressed={tool === value}
       onClick={() => setTool((current) => (current === value ? 'none' : value))}
-      className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-semibold transition ${
+      className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[13px] font-semibold transition ${
         tool === value ? 'bg-[#FF9F1C] text-[#0B0B0F]' : 'bg-white/10 text-white'
       }`}
     >
@@ -493,12 +493,12 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
       >
         <canvas ref={canvasRef} className="h-full w-full" />
         {tool === 'crop' && (
-          <p className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/60 px-3 py-1 text-[11px] font-medium text-white/80">
+          <p className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/60 px-3 py-1 text-[12px] font-medium text-white/80">
             Drag corners to resize · drag inside to move
           </p>
         )}
         {!ready && (
-          <p className="absolute inset-0 flex items-center justify-center text-[13px] text-white/60">Loading photo…</p>
+          <p className="absolute inset-0 flex items-center justify-center text-[14px] text-white/60">Loading photo…</p>
         )}
       </div>
 
@@ -511,7 +511,7 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
                 key={value}
                 type="button"
                 onClick={() => applyAspect(value)}
-                className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition ${
+                className={`flex-1 rounded-lg py-1.5 text-[13px] font-semibold transition ${
                   aspect === value ? 'bg-white text-[#0B0B0F]' : 'bg-white/10 text-white'
                 }`}
               >
@@ -553,7 +553,7 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
           onChange={(event) => setCaption(event.target.value)}
           placeholder="Add a caption…"
           maxLength={500}
-          className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-[13px] text-white outline-none placeholder-white/50"
+          className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-[14px] text-white outline-none placeholder-white/50"
         />
 
         <button
@@ -567,8 +567,8 @@ export default function ChatPhotoEditor({ file, onCancel, onSend }: Props) {
           <span className="flex items-center gap-2.5">
             <Eye size={17} className="shrink-0 text-[#FF9F1C]" />
             <span>
-              <span className="block text-[13px] font-semibold text-white">View once</span>
-              <span className="block text-[11px] text-white/55">Opens once, then it&apos;s gone</span>
+              <span className="block text-[14px] font-semibold text-white">View once</span>
+              <span className="block text-[12px] text-white/55">Opens once, then it&apos;s gone</span>
             </span>
           </span>
           <span className={`h-6 w-11 shrink-0 rounded-full p-0.5 transition ${viewOnce ? 'bg-[#FF9F1C]' : 'bg-white/25'}`}>

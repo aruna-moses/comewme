@@ -122,7 +122,7 @@ function CollapsibleSection({
         className="flex w-full items-center gap-3 px-4 py-3 text-left transition active:bg-canvas"
       >
         <span
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold leading-none tabular-nums ${
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[14px] font-extrabold leading-none tabular-nums ${
             urgent && count > 0 ? 'bg-alert text-white' : 'bg-line text-muted'
           }`}
         >
@@ -131,12 +131,12 @@ function CollapsibleSection({
         <span className="min-w-0 flex-1">
           <span className="font-display text-[15px] font-bold leading-tight text-ink">{title}</span>
           {!open && count > 0 && preview ? (
-            <span className="mt-1 block truncate text-[11px] leading-tight text-muted">
+            <span className="mt-1 block truncate text-[12px] leading-tight text-muted">
               <span aria-hidden="true" className="mr-1 text-amber">▸</span>
               {preview}
             </span>
           ) : sub && (
-            <span className="mt-0.5 block truncate text-[11px] text-muted">{sub}</span>
+            <span className="mt-0.5 block truncate text-[12px] text-muted">{sub}</span>
           )}
         </span>
         <ChevronDown
@@ -382,7 +382,7 @@ export default function AdminModeration() {
   return (
     <div className="min-h-[100dvh] pb-24">
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
-        <Link to="/" className="text-[13px] font-semibold text-amber">Back</Link>
+        <Link to="/" className="text-[14px] font-semibold text-amber">Back</Link>
         <h1 className="font-display text-[18px] font-bold">Moderation inbox</h1>
       </header>
 
@@ -390,7 +390,7 @@ export default function AdminModeration() {
         {moderator === false ? (
           <div className="card rounded-2xl p-5">
             <h2 className="font-semibold">This page is for moderators</h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-muted">
+            <p className="mt-2 text-[14px] leading-relaxed text-muted">
               Only accounts listed in <code>public.moderators</code> can open the inbox. A project
               owner can add your user ID there in Supabase.
             </p>
@@ -408,7 +408,7 @@ export default function AdminModeration() {
               preview={unackSystemAlerts > 0 ? systemAlerts.find((a) => !a.acknowledged)?.title : undefined}
             >
               {systemAlerts.length === 0 && (
-                <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
+                <p className="rounded-xl border border-line bg-canvas p-4 text-[14px] text-muted">
                   No crash alerts yet. When Sentry reports a new issue in production, it lands here with a one-tap link to the exact stack trace.
                 </p>
               )}
@@ -418,21 +418,21 @@ export default function AdminModeration() {
                     const level = ALERT_LEVEL[alert.level] ?? ALERT_LEVEL.error
                     return (
                       <li key={alert.id} className="flex items-start gap-3 py-2.5">
-                        <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] ${level.pill}`}>
+                        <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] ${level.pill}`}>
                           {level.label}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[12px] font-semibold leading-snug text-ink">{alert.title}</p>
+                          <p className="text-[13px] font-semibold leading-snug text-ink">{alert.title}</p>
                           {alert.culprit && (
-                            <p className="mt-0.5 truncate text-[10px] text-muted">{alert.culprit}</p>
+                            <p className="mt-0.5 truncate text-[11px] text-muted">{alert.culprit}</p>
                           )}
-                          <p className="mt-0.5 text-[10px] text-muted">{timeAgo(alert.created_at)}</p>
+                          <p className="mt-0.5 text-[11px] text-muted">{timeAgo(alert.created_at)}</p>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => void toggleAck(alert)}
-                            className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold transition ${
+                            className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
                               alert.acknowledged
                                 ? 'border-verified/40 bg-verified/15 text-verified'
                                 : 'border-line bg-white text-muted hover:border-amber/40 hover:text-amber'
@@ -446,7 +446,7 @@ export default function AdminModeration() {
                               href={alert.url}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber hover:underline"
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber hover:underline"
                               aria-label="Open this issue in Sentry"
                             >
                               Open issue <ExternalLink size={11} aria-hidden />
@@ -471,7 +471,7 @@ export default function AdminModeration() {
               preview={pendingSOS.length > 0 ? `${pendingSOS[0].display_name || 'Member'} · ${timeAgo(pendingSOS[0].created_at)}` : undefined}
             >
               {pendingSOS.length === 0 && (
-                <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
+                <p className="rounded-xl border border-line bg-canvas p-4 text-[14px] text-muted">
                   No open SOS alerts right now. When someone presses SOS during an activity, it lands here and a
                   red banner appears on every moderator screen — and it clears itself here the moment it’s triaged.
                 </p>
@@ -491,19 +491,19 @@ export default function AdminModeration() {
                             <AlertTriangle size={15} className="shrink-0 text-alert" />
                             {alert.display_name || 'Member'}
                             {alert.username && (
-                              <span className="text-[11px] font-normal text-muted">@{alert.username}</span>
+                              <span className="text-[12px] font-normal text-muted">@{alert.username}</span>
                             )}
                           </p>
-                          <p className="mt-0.5 text-[12px] text-muted">
+                          <p className="mt-0.5 text-[13px] text-muted">
                             {alert.task_title || 'Activity'} · {timeAgo(alert.created_at)}
                           </p>
                         </div>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${SOS_STATUS_STYLE[alert.status]}`}>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${SOS_STATUS_STYLE[alert.status]}`}>
                           {alert.status.replace('_', ' ')}
                         </span>
                       </div>
 
-                      <div className="mt-2 flex items-center gap-2 text-[12px]">
+                      <div className="mt-2 flex items-center gap-2 text-[13px]">
                         <MapPin size={13} className="shrink-0 text-muted" />
                         <span className="min-w-0 flex-1 truncate text-ink">
                           {alert.location_address || 'No street address captured'}
@@ -521,14 +521,14 @@ export default function AdminModeration() {
                       </div>
 
                       {alert.media_url && (
-                        <a href={alert.media_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 rounded-lg bg-canvas px-2 py-1 text-[11px] font-semibold text-ink">
+                        <a href={alert.media_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 rounded-lg bg-canvas px-2 py-1 text-[12px] font-semibold text-ink">
                           {alert.media_type === 'video' ? 'Open video' : 'Open photo'}
                           <ExternalLink size={11} />
                         </a>
                       )}
 
                       {alert.admin_note && (
-                        <p className="mt-2 rounded-lg bg-canvas p-2 text-[11px] text-muted">
+                        <p className="mt-2 rounded-lg bg-canvas p-2 text-[12px] text-muted">
                           Note: {alert.admin_note}
                         </p>
                       )}
@@ -536,7 +536,7 @@ export default function AdminModeration() {
                       {alert.status === 'pending' && (
                         <>
                           <input
-                            className="field mt-3 py-2 text-[12px]"
+                            className="field mt-3 py-2 text-[13px]"
                             placeholder="Note for the record (optional)"
                             value={sosNotes[alert.id] ?? ''}
                             onChange={(e) => setSosNotes({ ...sosNotes, [alert.id]: e.target.value })}
@@ -591,7 +591,7 @@ export default function AdminModeration() {
               })()}
             >
               {openFeedback.length === 0 && (
-                <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
+                <p className="rounded-xl border border-line bg-canvas p-4 text-[14px] text-muted">
                   Nothing yet. Bug reports, complaints and suggestions arrive here — you read them, decide what to do, and optionally send a short note back.
                 </p>
               )}
@@ -609,28 +609,28 @@ export default function AdminModeration() {
                     <article key={item.id} className="card rounded-2xl p-4">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-[13px] font-semibold">{name}</p>
-                          <p className="text-[11px] text-muted">
+                          <p className="text-[14px] font-semibold">{name}</p>
+                          <p className="text-[12px] text-muted">
                             {handle ? `${handle} · ` : ''}{new Date(item.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
                             {item.task_title && ` · on "${item.task_title}"`}
                           </p>
                         </div>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_TONE[item.status] ?? 'bg-line text-muted'}`}>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${STATUS_TONE[item.status] ?? 'bg-line text-muted'}`}>
                           {item.status === 'open' ? 'New' : item.status}
                         </span>
                       </div>
 
-                      <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed">{item.details}</p>
+                      <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed">{item.details}</p>
                       {item.reported_name && (
-                        <p className="mt-1 text-[11px] text-muted">About: <span className="font-semibold text-ink">{item.reported_name}</span></p>
+                        <p className="mt-1 text-[12px] text-muted">About: <span className="font-semibold text-ink">{item.reported_name}</span></p>
                       )}
 
                       {item.admin_note && (
-                        <p className="mt-2 rounded-lg bg-canvas p-2 text-[11px] text-muted">Your reply: {item.admin_note}</p>
+                        <p className="mt-2 rounded-lg bg-canvas p-2 text-[12px] text-muted">Your reply: {item.admin_note}</p>
                       )}
 
                       <textarea
-                        className="field mt-3 min-h-[60px] py-2 text-[12px]"
+                        className="field mt-3 min-h-[60px] py-2 text-[13px]"
                         placeholder="Reply to this member (optional)"
                         value={feedbackNotes[item.id] ?? ''}
                         onChange={(e) => setFeedbackNotes({ ...feedbackNotes, [item.id]: e.target.value })}
@@ -669,7 +669,7 @@ export default function AdminModeration() {
               preview={verifications.length > 0 ? `${verifications[0].display_name || 'Member'} · ${timeAgo(verifications[0].created_at)}` : undefined}
             >
               {verifications.length === 0 && (
-                <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
+                <p className="rounded-xl border border-line bg-canvas p-4 text-[14px] text-muted">
                   Nothing waiting. When a member sends a selfie, match it against their profile photo and approve — the green check flips on instantly.
                 </p>
               )}
@@ -681,30 +681,30 @@ export default function AdminModeration() {
                     <article key={sub.id} className="card rounded-2xl p-4">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-[13px] font-semibold">{name}</p>
-                          <p className="text-[11px] text-muted">
+                          <p className="text-[14px] font-semibold">{name}</p>
+                          <p className="text-[12px] text-muted">
                             {sub.username ? `@${sub.username} · ` : ''}
                             Sent {timeAgo(sub.created_at)}
                           </p>
                         </div>
-                        <span className="rounded-full bg-sun/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber">
+                        <span className="rounded-full bg-sun/25 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-amber">
                           Pending
                         </span>
                       </div>
 
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         <figure className="overflow-hidden rounded-xl border border-line bg-canvas">
-                          <p className="border-b border-line bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                          <p className="border-b border-line bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
                             Profile photo
                           </p>
                           {sub.avatar_url ? (
                             <img src={sub.avatar_url} alt="" className="h-40 w-full object-cover" loading="lazy" />
                           ) : (
-                            <div className="flex h-40 items-center justify-center text-[11px] text-muted">No profile photo</div>
+                            <div className="flex h-40 items-center justify-center text-[12px] text-muted">No profile photo</div>
                           )}
                         </figure>
                         <figure className="overflow-hidden rounded-xl border border-line bg-canvas">
-                          <p className="border-b border-line bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                          <p className="border-b border-line bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
                             Selfie
                           </p>
                           {sub.selfie_url ? (
@@ -712,13 +712,13 @@ export default function AdminModeration() {
                               <img src={sub.selfie_url} alt="" className="h-40 w-full object-cover" loading="lazy" />
                             </a>
                           ) : (
-                            <div className="flex h-40 items-center justify-center text-[11px] text-muted">Could not load</div>
+                            <div className="flex h-40 items-center justify-center text-[12px] text-muted">Could not load</div>
                           )}
                         </figure>
                       </div>
 
                       <input
-                        className="field mt-3 py-2 text-[12px]"
+                        className="field mt-3 py-2 text-[13px]"
                         placeholder="Note to the member (optional)"
                         value={verificationNotes[sub.id] ?? ''}
                         onChange={(e) => setVerificationNotes({ ...verificationNotes, [sub.id]: e.target.value })}
@@ -763,7 +763,7 @@ export default function AdminModeration() {
               <Link to="/admin/ads" className="flex items-center justify-between rounded-xl border border-line bg-canvas p-4 transition active:bg-line">
                 <span>
                   <span className="block text-[14px] font-semibold">Open the ad review queue</span>
-                  <span className="mt-0.5 block text-[12px] text-muted">
+                  <span className="mt-0.5 block text-[13px] text-muted">
                     {moderation.ads > 0
                       ? `${moderation.ads} ad${moderation.ads === 1 ? '' : 's'} waiting for approval — approve to run on Discover`
                       : 'No ads waiting for approval'}
@@ -784,7 +784,7 @@ export default function AdminModeration() {
               preview={reports.length > 0 ? `${VIOLATION_CATEGORIES.find((c) => c.value === reports[0].category)?.label ?? reports[0].category} — ${(reports[0].description || '').trim().replace(/\s+/g, ' ').slice(0, 70)}${reports[0].description.length > 70 ? '…' : ''}` : undefined}
             >
               <div className="mb-3 flex items-center justify-between gap-2">
-                <span className="text-[12px] font-semibold text-muted">{reports.length > 0 ? 'Select all to bulk-dismiss' : ''}</span>
+                <span className="text-[13px] font-semibold text-muted">{reports.length > 0 ? 'Select all to bulk-dismiss' : ''}</span>
                 {reports.length > 0 && (
                   <button type="button" className="btn-ghost btn-sm" onClick={toggleAllReports}>
                     {allReportsSelected ? 'Clear selection' : 'Select all'}
@@ -792,10 +792,10 @@ export default function AdminModeration() {
                 )}
               </div>
               <div className="space-y-3">
-                {reports.length === 0 && <p className="text-[13px] text-muted">No reports waiting for review.</p>}
+                {reports.length === 0 && <p className="text-[14px] text-muted">No reports waiting for review.</p>}
                 {reports.map((report) => (
                   <article key={report.id} className="card rounded-2xl p-4">
-                    <label className="mb-2 flex cursor-pointer items-center gap-2 text-[11px] font-semibold text-muted">
+                    <label className="mb-2 flex cursor-pointer items-center gap-2 text-[12px] font-semibold text-muted">
                       <input
                         type="checkbox"
                         className="h-4 w-4 accent-[#ff9f1c]"
@@ -805,15 +805,15 @@ export default function AdminModeration() {
                       />
                       Select this report
                     </label>
-                    <p className="text-[12px] text-muted">
+                    <p className="text-[13px] text-muted">
                       {VIOLATION_CATEGORIES.find((item) => item.value === report.category)?.label} ·{' '}
                       {new Date(report.created_at).toLocaleString()}
                     </p>
-                    <p className="mt-1 break-all text-[11px] text-muted">Reported account: {report.user_id}</p>
+                    <p className="mt-1 break-all text-[12px] text-muted">Reported account: {report.user_id}</p>
                     {report.reported_task_id && (
-                      <p className="mt-1 break-all text-[11px] text-muted">Related activity: {report.reported_task_id}</p>
+                      <p className="mt-1 break-all text-[12px] text-muted">Related activity: {report.reported_task_id}</p>
                     )}
-                    <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed">{report.description}</p>
+                    <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed">{report.description}</p>
                     <label className="label mt-3" htmlFor={`severity-${report.id}`}>Action</label>
                     <select
                       id={`severity-${report.id}`}
@@ -848,7 +848,7 @@ export default function AdminModeration() {
               </div>
               {selectedCount > 0 && (
                 <div className="sticky bottom-[76px] z-20 mt-3 flex items-center justify-between gap-2 rounded-xl border border-alert/30 bg-white p-2 shadow-sm">
-                  <p className="pl-1 text-[12px] font-semibold text-ink">{selectedCount} selected</p>
+                  <p className="pl-1 text-[13px] font-semibold text-ink">{selectedCount} selected</p>
                   <button
                     className="btn-ghost btn-sm text-alert"
                     disabled={bulkBusy}
@@ -871,15 +871,15 @@ export default function AdminModeration() {
               preview={appeals.length > 0 ? `${VIOLATION_CATEGORIES.find((c) => c.value === appeals[0].violation_category)?.label ?? appeals[0].violation_category} — "${(appeals[0].appeal_reason || '').replace(/\s+/g, ' ').slice(0, 70)}${(appeals[0].appeal_reason || '').length > 70 ? '…' : ''}"` : undefined}
             >
               <div className="space-y-3">
-                {appeals.length === 0 && <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">No appeals waiting for review.</p>}
+                {appeals.length === 0 && <p className="rounded-xl border border-line bg-canvas p-4 text-[14px] text-muted">No appeals waiting for review.</p>}
                 {appeals.map((appeal) => (
                   <article key={appeal.id} className="card rounded-2xl p-4">
-                    <p className="text-[12px] text-muted">
+                    <p className="text-[13px] text-muted">
                       {VIOLATION_CATEGORIES.find((item) => item.value === appeal.violation_category)?.label} ·{' '}
                       {new Date(appeal.created_at).toLocaleString()}
                     </p>
-                    <p className="mt-2 text-[12px] text-muted">Original report: {appeal.violation_description}</p>
-                    <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed">
+                    <p className="mt-2 text-[13px] text-muted">Original report: {appeal.violation_description}</p>
+                    <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed">
                       <strong>Appeal:</strong> {appeal.appeal_reason}
                     </p>
                     <label className="label mt-3" htmlFor={`response-${appeal.id}`}>Response to user (optional)</label>
@@ -898,7 +898,7 @@ export default function AdminModeration() {
                         Deny appeal
                       </button>
                     </div>
-                    <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                    <p className="mt-2 text-[12px] leading-relaxed text-muted">
                       Granting immediately restores their posting and joining rights.
                     </p>
                   </article>
@@ -915,7 +915,7 @@ export default function AdminModeration() {
                 aria-expanded={recentOpen}
                 aria-controls="reviewed-panel"
               >
-                <span className="flex items-center gap-2 text-[13px] font-semibold">
+                <span className="flex items-center gap-2 text-[14px] font-semibold">
                   <History size={16} className="text-amber" aria-hidden />
                   Recently reviewed{filteredRecent.length > 0 ? ` (${filteredRecent.length}${recentQuery ? ` of ${recent.length}` : ''})` : ''}
                 </span>
@@ -943,7 +943,7 @@ export default function AdminModeration() {
                           role="radio"
                           aria-checked={active}
                           onClick={() => setRecentFilter(id)}
-                          className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+                          className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
                             active ? 'border-amber/40 bg-sun/20 text-ink' : 'border-line bg-white text-muted'
                           }`}
                         >
@@ -953,7 +953,7 @@ export default function AdminModeration() {
                     })}
                     <button
                       type="button"
-                      className="ml-auto flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1.5 text-[11px] font-semibold text-muted transition hover:text-ink"
+                      className="ml-auto flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1.5 text-[12px] font-semibold text-muted transition hover:text-ink"
                       onClick={() => downloadCsv(exportable)}
                       aria-label="Export filtered reviews as CSV"
                       title="Download the currently filtered list as CSV"
@@ -965,20 +965,20 @@ export default function AdminModeration() {
                   <div className="flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2">
                     <Search size={14} className="shrink-0 text-muted" aria-hidden />
                     <input
-                      className="min-w-0 flex-1 bg-transparent py-1 text-[12px] outline-none placeholder:text-muted"
+                      className="min-w-0 flex-1 bg-transparent py-1 text-[13px] outline-none placeholder:text-muted"
                       placeholder="Search name, @handle, keyword, note…"
                       aria-label="Search reviewed history"
                       value={recentQuery}
                       onChange={(event) => setRecentQuery(event.target.value)}
                     />
                     {recentQuery && (
-                      <button type="button" className="text-[11px] font-semibold text-muted underline underline-offset-2" onClick={() => setRecentQuery('')}>
+                      <button type="button" className="text-[12px] font-semibold text-muted underline underline-offset-2" onClick={() => setRecentQuery('')}>
                         Clear
                       </button>
                     )}
                   </div>
                   {filteredRecent.length === 0 && (
-                    <p className="rounded-xl border border-line bg-white p-4 text-[12px] leading-relaxed text-muted">
+                    <p className="rounded-xl border border-line bg-white p-4 text-[13px] leading-relaxed text-muted">
                       {recentQuery || recentFilter !== 'all'
                         ? 'No reviewed items match that filter.'
                         : 'Nothing here yet. Everything you approve, reject, dismiss or resolve gathers here for later — nothing is ever thrown away.'}
@@ -1032,7 +1032,7 @@ export default function AdminModeration() {
 
       <ReviewDetailSheet item={detailItem} onClose={() => setDetailItem(null)} />
 
-        {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] text-alert">{error}</p>}
+        {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[14px] text-alert">{error}</p>}
       </main>
     </div>
   )
@@ -1086,16 +1086,16 @@ function RecentItem({ item, onSelect }: { item: RecentReview; onSelect: () => vo
         <Icon size={16} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-semibold">{prettyTitle(item)}</p>
-        <p className="mt-0.5 text-[11px] text-muted">
+        <p className="truncate text-[14px] font-semibold">{prettyTitle(item)}</p>
+        <p className="mt-0.5 text-[12px] text-muted">
           {name}
           {item.username ? ` @${item.username}` : ''} · {timeAgo(item.reviewed_at)}
         </p>
         {item.note && (
-          <p className="mt-1.5 rounded-lg bg-canvas p-2 text-[11px] leading-relaxed text-ink/80">{item.note}</p>
+          <p className="mt-1.5 rounded-lg bg-canvas p-2 text-[12px] leading-relaxed text-ink/80">{item.note}</p>
         )}
       </div>
-      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${tone}`}>
+      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${tone}`}>
         {status}
       </span>
     </button>

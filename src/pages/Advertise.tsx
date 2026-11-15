@@ -212,20 +212,20 @@ export default function AdvertisePage() {
               <CheckCircle2 size={28} className="text-verified" />
             </div>
             <h1 className="mt-4 font-display text-[22px] font-bold text-ink">Ad submitted</h1>
-            <p className="mt-2 text-[13px] leading-relaxed text-muted">
+            <p className="mt-2 text-[14px] leading-relaxed text-muted">
               Your ad is waiting for review. We usually check within 24 hours and message you on
               WhatsApp if anything is missing.
             </p>
             <div className="mt-5 rounded-xl border border-line bg-canvas p-3 text-left">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                 Your ad
               </p>
-              <p className="mt-1 text-[13px] font-semibold text-ink">{form.brandName}</p>
-              <p className="text-[12px] text-muted">{form.headline}</p>
-              <p className="mt-1 text-[11px] text-muted">
+              <p className="mt-1 text-[14px] font-semibold text-ink">{form.brandName}</p>
+              <p className="text-[13px] text-muted">{form.headline}</p>
+              <p className="mt-1 text-[12px] text-muted">
                 {form.startDate} → {form.endDate}
               </p>
-              <span className="mt-2 inline-block rounded-full bg-sun/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber">
+              <span className="mt-2 inline-block rounded-full bg-sun/20 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-amber">
                 Pending review
               </span>
             </div>
@@ -252,17 +252,17 @@ export default function AdvertisePage() {
         <h1 className="font-display text-[24px] font-bold leading-tight text-ink">
           Advertise with Come w&apos; me
         </h1>
-        <p className="mt-1 text-[13px] leading-relaxed text-muted">
+        <p className="mt-1 text-[14px] leading-relaxed text-muted">
           Reach Lagosians looking for something to do this week. Four short steps, about 3 minutes.
         </p>
 
         {/* Progress */}
         <div className="mt-5">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-muted">
               Step {step} of {STEPS.length}
             </p>
-            <p className="text-[11px] font-semibold text-ink">{STEPS[step - 1].hint}</p>
+            <p className="text-[12px] font-semibold text-ink">{STEPS[step - 1].hint}</p>
           </div>
           <div className="mt-2 flex gap-1.5">
             {STEPS.map((s) => (
@@ -276,7 +276,7 @@ export default function AdvertisePage() {
             {STEPS.map((s) => (
               <span
                 key={s.id}
-                className={`text-[10px] ${step === s.id ? 'font-bold text-ink' : 'text-muted'}`}
+                className={`text-[11px] ${step === s.id ? 'font-bold text-ink' : 'text-muted'}`}
               >
                 {s.label}
               </span>
@@ -301,19 +301,19 @@ export default function AdvertisePage() {
                 onChange={(e) => set('brandName', e.target.value)}
                 maxLength={40}
               />
-              <p className="mt-1 text-[11px] text-muted">
+              <p className="mt-1 text-[12px] text-muted">
                 Shown in small letters above your headline. Keep it short.
               </p>
             </div>
 
             <div className="card p-4">
               <div className="flex items-center justify-between">
-                <p className="text-[13px] font-semibold text-ink">Ad picture</p>
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                <p className="text-[14px] font-semibold text-ink">Ad picture</p>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                   Optional
                 </span>
               </div>
-              <p className="mt-1 text-[11px] leading-relaxed text-muted">
+              <p className="mt-1 text-[12px] leading-relaxed text-muted">
                 Pick any picture — then drag to choose the exact strip that shows in the feed.
                 Wider pictures work best.
               </p>
@@ -337,7 +337,7 @@ export default function AdvertisePage() {
                 ) : (
                   <div className="flex h-full items-center justify-center gap-2 text-muted">
                     <ImagePlus size={16} />
-                    <span className="text-[11px]">Nothing selected yet</span>
+                    <span className="text-[12px]">Nothing selected yet</span>
                   </div>
                 )}
               </div>
@@ -370,15 +370,15 @@ export default function AdvertisePage() {
               </div>
 
               {imageError && (
-                <p role="alert" className="mt-2 text-[11px] font-medium text-alert">
+                <p role="alert" className="mt-2 text-[12px] font-medium text-alert">
                   {imageError}
                 </p>
               )}
             </div>
 
             <div className="card p-4">
-              <p className="text-[13px] font-semibold text-ink">Brand colour</p>
-              <p className="mt-1 text-[11px] text-muted">
+              <p className="text-[14px] font-semibold text-ink">Brand colour</p>
+              <p className="mt-1 text-[12px] text-muted">
                 Used on your call-to-action button and accent bar.
               </p>
 
@@ -404,9 +404,9 @@ export default function AdvertisePage() {
               </div>
 
               <label className="mt-3 flex items-center justify-between rounded-xl border border-line px-3 py-2">
-                <span className="text-[12px] font-medium text-ink">Use my own colour</span>
+                <span className="text-[13px] font-medium text-ink">Use my own colour</span>
                 <span className="flex items-center gap-2">
-                  <span className="text-[11px] font-mono text-muted">{form.brandColor.toUpperCase()}</span>
+                  <span className="text-[12px] font-mono text-muted">{form.brandColor.toUpperCase()}</span>
                   <input
                     type="color"
                     value={form.brandColor}
@@ -435,8 +435,8 @@ export default function AdvertisePage() {
                 maxLength={48}
               />
               <div className="mt-1 flex items-center justify-between">
-                <p className="text-[11px] text-muted">One clear offer. This is the biggest text.</p>
-                <p className="text-[10px] text-muted">{form.headline.length}/48</p>
+                <p className="text-[12px] text-muted">One clear offer. This is the biggest text.</p>
+                <p className="text-[11px] text-muted">{form.headline.length}/48</p>
               </div>
             </div>
 
@@ -457,7 +457,7 @@ export default function AdvertisePage() {
                 <option value="Call Now">Call Now</option>
                 <option value="Shop Now">Shop Now</option>
               </select>
-              <p className="mt-1 text-[11px] text-muted">
+              <p className="mt-1 text-[12px] text-muted">
                 The small label on the button that people tap.
               </p>
             </div>
@@ -475,10 +475,10 @@ export default function AdvertisePage() {
                 value={form.destinationUrl}
                 onChange={(e) => set('destinationUrl', e.target.value)}
               />
-              <p className="mt-1 text-[11px] leading-relaxed text-muted">
+              <p className="mt-1 text-[12px] leading-relaxed text-muted">
                 This is where a tap on your ad takes people. It can be your website, Instagram,
                 booking page, or a WhatsApp chat link
-                (<span className="font-mono text-[10px]">https://wa.me/234…</span>). Without it the
+                (<span className="font-mono text-[11px]">https://wa.me/234…</span>). Without it the
                 ad would lead nowhere, so it is required.
               </p>
             </div>
@@ -488,7 +488,7 @@ export default function AdvertisePage() {
         {step === 3 && (
           <div className="space-y-4">
             <div className="card p-4">
-              <p className="flex items-center gap-2 text-[13px] font-semibold text-ink">
+              <p className="flex items-center gap-2 text-[14px] font-semibold text-ink">
                 <CalendarDays size={15} className="text-amber" />
                 When should it run?
               </p>
@@ -523,21 +523,21 @@ export default function AdvertisePage() {
               </div>
 
               {form.startDate && form.endDate && form.endDate >= form.startDate && (
-                <p className="mt-2 text-[11px] font-medium text-verified">
+                <p className="mt-2 text-[12px] font-medium text-verified">
                   Runs for {daysBetween(form.startDate, form.endDate)} day
                   {daysBetween(form.startDate, form.endDate) === 1 ? '' : 's'}, then stops by
                   itself.
                 </p>
               )}
               {form.endDate && form.endDate < form.startDate && (
-                <p role="alert" className="mt-2 text-[11px] font-medium text-alert">
+                <p role="alert" className="mt-2 text-[12px] font-medium text-alert">
                   The end date must be on or after the start date.
                 </p>
               )}
             </div>
 
             <div className="rounded-xl border border-[#edd996] bg-[#fff4d1] p-3">
-              <p className="text-[11px] leading-relaxed text-[#7a622f]">
+              <p className="text-[12px] leading-relaxed text-[#7a622f]">
                 Nothing is charged automatically. After we approve your ad we send a payment
                 request on WhatsApp, and it goes live the moment payment lands.
               </p>
@@ -549,8 +549,8 @@ export default function AdvertisePage() {
           <div className="space-y-4">
             <div className="card overflow-hidden p-0">
               <div className="border-b border-line px-4 py-3">
-                <p className="text-[13px] font-semibold text-ink">How it looks in the app</p>
-                <p className="text-[11px] text-muted">
+                <p className="text-[14px] font-semibold text-ink">How it looks in the app</p>
+                <p className="text-[12px] text-muted">
                   Real size, on the Discover feed, pinned above the activity list.
                 </p>
               </div>
@@ -559,10 +559,10 @@ export default function AdvertisePage() {
               <div className="bg-canvas p-3">
                 <div className="overflow-hidden rounded-2xl border border-line bg-white">
                   <div className="px-3 pt-3">
-                    <p className="font-display text-[13px] font-bold text-ink">COME W&apos; ME</p>
+                    <p className="font-display text-[14px] font-bold text-ink">COME W&apos; ME</p>
                   </div>
                   <div className="mt-2 rounded-xl border border-line bg-white p-2.5 mx-2">
-                    <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
                       Advertisement
                     </p>
                     <div className="w-full overflow-hidden rounded-[10px]" style={{ aspectRatio: String(AD_SLOT_ASPECT) }}>
@@ -578,10 +578,10 @@ export default function AdvertisePage() {
             </div>
 
             <div className="card p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                 Summary
               </p>
-              <dl className="mt-2 space-y-2 text-[12px]">
+              <dl className="mt-2 space-y-2 text-[13px]">
                 <Row label="Brand" value={form.brandName} />
                 <Row label="Headline" value={form.headline} />
                 <Row label="Button" value={form.ctaText} />
@@ -593,7 +593,7 @@ export default function AdvertisePage() {
             </div>
 
             {submitError && (
-              <p role="alert" className="rounded-xl border border-alert/30 bg-alert/5 p-3 text-[12px] text-alert">
+              <p role="alert" className="rounded-xl border border-alert/30 bg-alert/5 p-3 text-[13px] text-alert">
                 {submitError}
               </p>
             )}
@@ -637,7 +637,7 @@ export default function AdvertisePage() {
           )}
         </div>
 
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted">
+        <p className="mt-4 flex items-center justify-center gap-1.5 text-[12px] text-muted">
           <SettingsIcon size={12} />
           You can track status in Settings any time.
         </p>

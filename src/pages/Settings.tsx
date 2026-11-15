@@ -110,7 +110,7 @@ export default function Settings() {
         />
         <div className="flex-1">
           <p className="text-[14px] font-semibold">Profile photo</p>
-          <p className="mt-0.5 text-[12px] text-muted">A clear face photo gets you accepted faster.</p>
+          <p className="mt-0.5 text-[13px] text-muted">A clear face photo gets you accepted faster.</p>
           <label className="btn-ghost btn-sm mt-2 cursor-pointer">
             {avatarBusy ? 'Uploading…' : 'Change photo'}
             <input
@@ -135,8 +135,8 @@ export default function Settings() {
             <Pencil size={17} aria-hidden />
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold">Profile details</p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+            <p className="text-[14px] font-semibold">Profile details</p>
+            <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
               Name, bio, area and interests — edit on your profile
             </p>
           </div>
@@ -158,13 +158,13 @@ export default function Settings() {
           </span>
           <div className="min-w-0 flex-1">
             <h2 id="theme-heading" className="text-[14px] font-semibold">Appearance</h2>
-            <p className="mt-0.5 text-[12px] text-muted">Choose the look that feels right. Saved on this device.</p>
+            <p className="mt-0.5 text-[13px] text-muted">Choose the look that feels right. Saved on this device.</p>
             <div className="mt-3 grid grid-cols-2 gap-2 rounded-[14px] bg-canvas p-1" role="group" aria-label="App theme">
               <button
                 type="button"
                 onClick={() => setTheme('light')}
                 aria-pressed={theme === 'light'}
-                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[13px] font-semibold transition ${
+                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[14px] font-semibold transition ${
                   theme === 'light' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
                 }`}
               >
@@ -175,7 +175,7 @@ export default function Settings() {
                 type="button"
                 onClick={() => setTheme('dark')}
                 aria-pressed={theme === 'dark'}
-                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[13px] font-semibold transition ${
+                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[14px] font-semibold transition ${
                   theme === 'dark' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
                 }`}
               >
@@ -196,7 +196,7 @@ export default function Settings() {
           </div>
           <div>
             <p className="text-[14px] font-semibold">Advertise Your Business</p>
-            <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
+            <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
               Run a sponsored ad at the top of Discover. Reach Lagosians looking for things to do.
             </p>
           </div>
@@ -216,12 +216,12 @@ export default function Settings() {
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="text-[14px] font-semibold">Moderation</p>
-              <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
+              <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
                 SOS alerts, member reports and advertiser ads all land in one inbox.
               </p>
             </div>
             {moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications + moderation.feedback > 0 && (
-              <span className="shrink-0 rounded-full bg-[#e53935] px-2 py-0.5 text-[10px] font-bold text-white">
+              <span className="shrink-0 rounded-full bg-[#e53935] px-2 py-0.5 text-[11px] font-bold text-white">
                 {moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications + moderation.feedback}
               </span>
             )}
@@ -242,7 +242,7 @@ export default function Settings() {
       <div className="mt-2 space-y-2">
         <div className="card p-4">
           <p className="text-[14px] font-semibold">Help &amp; support</p>
-          <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
+          <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
             A bug, a complaint, or a suggestion? A human reads every message. Tell us here, or email{' '}
             <a className="font-semibold text-ink underline underline-offset-2" href="mailto:comewme.app@gmail.com">comewme.app@gmail.com</a>.
           </p>
@@ -263,8 +263,8 @@ export default function Settings() {
                 <Icon size={16} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[13px] font-semibold text-ink">{title}</span>
-                <span className="mt-0.5 block text-[11px] leading-relaxed text-muted">{note}</span>
+                <span className="block text-[14px] font-semibold text-ink">{title}</span>
+                <span className="mt-0.5 block text-[12px] leading-relaxed text-muted">{note}</span>
               </span>
               <ChevronRight size={18} className="mt-1 shrink-0 text-muted" aria-hidden />
             </Link>
@@ -274,7 +274,7 @@ export default function Settings() {
         <SectionLabel className="mt-8">Danger zone</SectionLabel>
         <div className="card mt-2 border-alert/20 p-4">
           <p className="text-[14px] font-semibold text-alert">Delete your account</p>
-          <p className="mt-1 text-[12px] leading-relaxed text-muted">
+          <p className="mt-1 text-[13px] leading-relaxed text-muted">
             Erase your profile, photos, activities, messages, trust score and verification — forever. There is no recovery.
           </p>
           <button
@@ -298,7 +298,7 @@ export default function Settings() {
           Sign out
         </button>
 
-        <p className="pt-2 text-center text-[11px] text-muted">
+        <p className="pt-2 text-center text-[12px] text-muted">
           Come w' me · Lagos · v0.1
         </p>
       </div>
@@ -317,18 +317,18 @@ export default function Settings() {
         <Sheet open={deleteOpen} onClose={() => { if (!deleting) setDeleteOpen(false) }} title="Delete account">
           <div className="space-y-4 pb-2">
             <div className="rounded-2xl border border-alert/30 bg-alert/10 p-4">
-              <p className="flex items-start gap-2 text-[13px] font-semibold text-alert">
+              <p className="flex items-start gap-2 text-[14px] font-semibold text-alert">
                 <AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden />
                 Deleting your account erases everything:
               </p>
-              <ul className="mt-2 list-disc space-y-1 pl-6 text-[12px] leading-relaxed text-alert">
+              <ul className="mt-2 list-disc space-y-1 pl-6 text-[13px] leading-relaxed text-alert">
                 <li>Your profile, username, avatar and selfie</li>
                 <li>Every activity you hosted — the group chat disappears for everyone in it</li>
                 <li>Every message, photo and voice note you ever sent</li>
                 <li>Your trust score, reputation, verification and reviews</li>
                 <li>Your notifications and activity history</li>
               </ul>
-              <p className="mt-2 text-[12px] font-bold text-alert">This cannot be undone.</p>
+              <p className="mt-2 text-[13px] font-bold text-alert">This cannot be undone.</p>
             </div>
             <div>
               <label htmlFor="delete-confirm" className="label">
@@ -347,7 +347,7 @@ export default function Settings() {
               />
             </div>
             {deleteError && (
-              <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[12px] font-medium text-alert">{deleteError}</p>
+              <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{deleteError}</p>
             )}
             <button
               type="button"
@@ -366,7 +366,7 @@ export default function Settings() {
 
 function SectionLabel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <p className={`px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted ${className}`}>
+    <p className={`px-1 text-[11px] font-bold uppercase tracking-[0.18em] text-muted ${className}`}>
       {children}
     </p>
   )

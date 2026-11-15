@@ -54,8 +54,8 @@ export default function TrustScoreDetail({
           />
         </div>
 
-        <p className="text-[13px] font-semibold text-ink">{result.level}</p>
-        <p className="text-[12px] text-muted mb-4">
+        <p className="text-[14px] font-semibold text-ink">{result.level}</p>
+        <p className="text-[13px] text-muted mb-4">
           {name
             ? 'Based on their activity, verification, and history on Come w\u2019 me.'
             : 'Based on your activity, verification, and history on Come w\u2019 me.'}
@@ -65,11 +65,11 @@ export default function TrustScoreDetail({
           {result.breakdown.map((item, i) => (
             <div key={i} className="flex items-start justify-between gap-2">
               <div className="flex-1">
-                <p className="text-[13px] font-semibold text-ink">{item.label}</p>
-                <p className="text-[11px] text-muted">{item.description}</p>
+                <p className="text-[14px] font-semibold text-ink">{item.label}</p>
+                <p className="text-[12px] text-muted">{item.description}</p>
               </div>
               <div className="flex items-center gap-2 text-right">
-                <span className="text-[13px] font-bold">
+                <span className="text-[14px] font-bold">
                   {item.points} / {item.max}
                 </span>
                 {item.earned ? (
@@ -86,7 +86,7 @@ export default function TrustScoreDetail({
           ))}
         </div>
 
-        <div className="pt-4 border-t border-line text-[12px] text-muted">
+        <div className="pt-4 border-t border-line text-[13px] text-muted">
           {name
             ? 'A high score means they show up, follow the rules and keep a clean record — the same three things we check every time.'
             : 'Your score can go up by completing more activities and keeping a clean record. It can go down if you are reported or break the community guidelines.'}

@@ -16,7 +16,7 @@ export default function NotificationBell() {
       {badge && (
         <span
           aria-hidden="true"
-          className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-canvas bg-[#e53935] px-1 text-[9px] font-bold leading-none text-white shadow-sm"
+          className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-canvas bg-[#e53935] px-1 text-[10px] font-bold leading-none text-white shadow-sm"
         >
           {unreadNotifications > 99 ? '99+' : unreadNotifications}
         </span>

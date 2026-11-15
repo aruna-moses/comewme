@@ -73,7 +73,7 @@ export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen pb-24">
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
-        <Link to="/settings" className="text-[13px] font-semibold text-amber" aria-label="Back">
+        <Link to="/settings" className="text-[14px] font-semibold text-amber" aria-label="Back">
           <ArrowLeft size={20} aria-hidden />
         </Link>
         <h1 className="font-display text-[18px] font-bold">Privacy Policy</h1>
@@ -81,10 +81,10 @@ export default function PrivacyPolicy() {
 
       <main className="mx-auto max-w-[640px] space-y-4 px-4 py-5">
         <div className="rounded-2xl bg-white p-5 shadow-lift">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted">Come w&apos; me</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Come w&apos; me</p>
           <h2 className="font-display text-[22px] font-bold leading-tight">Privacy Policy</h2>
-          <p className="mt-1 text-[10px] text-muted">Last updated {new Date().toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-          <p className="mt-3 text-[13px] leading-relaxed text-ink/80">
+          <p className="mt-1 text-[11px] text-muted">Last updated {new Date().toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p className="mt-3 text-[14px] leading-relaxed text-ink/80">
             This page explains what we collect, why we have it, who else sees it (hardly anyone), and what you can do about it. Come w&apos; me is a social app for meeting people — that trust starts with being honest about how we treat your data.
           </p>
         </div>
@@ -97,7 +97,7 @@ export default function PrivacyPolicy() {
                 <Icon size={16} className="shrink-0 text-amber" aria-hidden />
                 {section.title}
               </h3>
-              <ul className="mt-2 list-disc space-y-1.5 pl-6 text-[13px] leading-relaxed text-ink/80">
+              <ul className="mt-2 list-disc space-y-1.5 pl-6 text-[14px] leading-relaxed text-ink/80">
                 {section.items.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -106,7 +106,7 @@ export default function PrivacyPolicy() {
           )
         })}
 
-        <div className="rounded-2xl border border-line bg-canvas p-4 text-[12px] leading-relaxed text-ink/80">
+        <div className="rounded-2xl border border-line bg-canvas p-4 text-[13px] leading-relaxed text-ink/80">
           <p className="font-bold text-ink">The honest stuff</p>
           <p className="mt-1">
             This is a starting point written by people who built the app, not reviewed by lawyers. If you are writing a larger policy later, get a real lawyer in Nigeria to check it — especially anything about retention periods or children.

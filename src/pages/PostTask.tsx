@@ -159,7 +159,7 @@ export default function PostTask() {
       {step === 'form' && (
         <>
           <h1 className="font-display text-[24px] font-bold">Post an activity</h1>
-          <p className="mt-1 text-[13px] text-muted">
+          <p className="mt-1 text-[14px] text-muted">
             Say what you're doing and how many people you need. Keep it real.
           </p>
 
@@ -191,7 +191,7 @@ export default function PostTask() {
                       type="button"
                       onClick={() => setSelectedCategory(c.value)}
                       aria-pressed={active}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-semibold transition ${
                         active ? 'border-ink bg-ink text-canvas shadow-sm' : 'border-line bg-white text-muted hover:text-ink'
                       }`}
                     >
@@ -201,7 +201,7 @@ export default function PostTask() {
                   )
                 })}
               </div>
-              <p className="mt-1 text-[11px] text-muted">
+              <p className="mt-1 text-[12px] text-muted">
                 {selectedCategory === detectedCategory
                   ? `Auto-detected — ${categoryEmoji} ${categoryLabel}. Tap a chip to change it.`
                   : `You changed it to ${CATEGORIES.find((c) => c.value === selectedCategory)?.label ?? selectedCategory}.`}
@@ -278,7 +278,7 @@ export default function PostTask() {
                 maxLength={160}
                 required
               />
-              <p className="mt-1.5 text-[11px] leading-relaxed text-muted">
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
                 A public landmark only. Never a home address.
               </p>
             </div>
@@ -314,12 +314,12 @@ export default function PostTask() {
           </div>
 
           {postingSuspended && (
-            <p role="status" className="mt-4 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">
+            <p role="status" className="mt-4 rounded-xl bg-alert/10 p-3 text-[14px] font-medium text-alert">
               This account is currently unable to post activities. Contact support if you think this is a mistake.
             </p>
           )}
           {error && (
-            <p className="mt-4 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>
+            <p className="mt-4 rounded-xl bg-alert/10 p-3 text-[14px] font-medium text-alert">{error}</p>
           )}
 
           <button
@@ -335,19 +335,19 @@ export default function PostTask() {
       {step === 'confirm' && (
         <>
           <h1 className="font-display text-[24px] font-bold">Review before posting</h1>
-          <p className="mt-1 text-[13px] text-muted">
+          <p className="mt-1 text-[14px] text-muted">
             Check everything looks right. Once posted, it appears in Discover for others to join.
           </p>
 
           <div className="mt-5 space-y-4">
             <div className="card p-4">
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-muted">Activity</p>
+              <p className="text-[13px] font-semibold uppercase tracking-wide text-muted">Activity</p>
               <p className="mt-0.5 text-[15px] font-bold">{title.trim()}</p>
-              <p className="mt-2 text-[13px] text-ink/80 whitespace-pre-wrap">{description.trim()}</p>
+              <p className="mt-2 text-[14px] text-ink/80 whitespace-pre-wrap">{description.trim()}</p>
             </div>
 
             <div className="card p-4">
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-muted">Category</p>
+              <p className="text-[13px] font-semibold uppercase tracking-wide text-muted">Category</p>
               <div className="mt-1">
                 <select
                   id="category"
@@ -361,7 +361,7 @@ export default function PostTask() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-[11px] text-muted">
+                <p className="mt-1 text-[12px] text-muted">
                   {selectedCategory === detectedCategory
                     ? 'Auto-detected category'
                     : 'You changed the category'}
@@ -370,21 +370,21 @@ export default function PostTask() {
             </div>
 
             <div className="card p-4">
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-muted">Details</p>
+              <p className="text-[13px] font-semibold uppercase tracking-wide text-muted">Details</p>
               <div className="mt-1 space-y-1">
-                <p className="text-[13px] text-ink">
+                <p className="text-[14px] text-ink">
                   <span className="font-semibold">Area:</span> {area}
                 </p>
-                <p className="text-[13px] text-ink">
+                <p className="text-[14px] text-ink">
                   <span className="font-semibold">Meeting point:</span> {meetingPoint.trim()}
                 </p>
-                <p className="text-[13px] text-ink">
+                <p className="text-[14px] text-ink">
                   <span className="font-semibold">When:</span> {whenStr || date || '—'}
                 </p>
-                <p className="text-[13px] text-ink">
+                <p className="text-[14px] text-ink">
                   <span className="font-semibold">People needed:</span> {Math.max(1, parseInt(spots, 10) || 1)}
                 </p>
-                <p className="text-[13px] text-ink">
+                <p className="text-[14px] text-ink">
                   <span className="font-semibold">Fill mode:</span> Review applicants
                 </p>
               </div>
@@ -392,7 +392,7 @@ export default function PostTask() {
           </div>
 
           {error && (
-            <p className="mt-4 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>
+            <p className="mt-4 rounded-xl bg-alert/10 p-3 text-[14px] font-medium text-alert">{error}</p>
           )}
 
           <div className="mt-6 flex gap-3">

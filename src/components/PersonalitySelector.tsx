@@ -159,14 +159,14 @@ export default function PersonalitySelector({
   return (
     <section className="card mt-4 overflow-hidden" aria-labelledby="personality-title">
       <div className="p-4">
-        <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.15em] text-amber">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[.15em] text-amber">
           <Sparkles size={13} aria-hidden />
           Your community vibe
         </p>
         <h2 id="personality-title" className="mt-1 font-display text-[19px] font-bold leading-tight">
           {isOwner ? 'Choose the personality you resonate with' : 'Their community personality'}
         </h2>
-        <p className="mt-1 text-[12px] leading-relaxed text-muted">
+        <p className="mt-1 text-[13px] leading-relaxed text-muted">
           {isOwner
             ? savedPersona
               ? 'Your chosen personality is part of your profile.'
@@ -184,7 +184,7 @@ export default function PersonalitySelector({
               setSaveError('')
               setChooserOpen((open) => !open)
             }}
-            className="mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-[11px] font-semibold text-ink transition hover:border-amber"
+            className="mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-[12px] font-semibold text-ink transition hover:border-amber"
           >
             {chooserOpen ? 'Close chooser' : 'Change personality'}
             {chooserOpen ? <ChevronUp size={14} aria-hidden /> : <ChevronDown size={14} aria-hidden />}
@@ -205,7 +205,7 @@ export default function PersonalitySelector({
                 <h3 className="font-display text-[16px] font-bold">{shownPersona.name}</h3>
                 {!isOwner && <span className="pill bg-sun/20 text-amber">Personality</span>}
               </div>
-              <p className="mt-1 text-[11px] leading-relaxed text-muted">{shownPersona.personality}</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-muted">{shownPersona.personality}</p>
             </div>
           </div>
         )}
@@ -213,7 +213,7 @@ export default function PersonalitySelector({
         {isOwner && chooserOpen && (
           <>
             <fieldset className="mt-4">
-              <legend className="mb-2 text-[12px] font-semibold">Choose a character</legend>
+              <legend className="mb-2 text-[13px] font-semibold">Choose a character</legend>
               <div className="grid grid-cols-2 gap-2" role="group" aria-label="Character gender">
                 {(['female', 'male'] as const).map((option) => (
                   <button
@@ -221,7 +221,7 @@ export default function PersonalitySelector({
                     type="button"
                     aria-pressed={gender === option}
                     onClick={() => setGender(option)}
-                    className={`min-h-10 rounded-xl border text-[12px] font-semibold capitalize transition ${
+                    className={`min-h-10 rounded-xl border text-[13px] font-semibold capitalize transition ${
                       gender === option
                         ? 'border-amber bg-sun/15 text-ink'
                         : 'border-line bg-white text-muted'
@@ -264,16 +264,16 @@ export default function PersonalitySelector({
                       )}
                     </span>
                     <span className="block p-2.5">
-                      <span className="block text-[13px] font-bold text-ink">{persona.name}</span>
-                      <span className="mt-0.5 block text-[10px] leading-relaxed text-muted">{persona.personality}</span>
+                      <span className="block text-[14px] font-bold text-ink">{persona.name}</span>
+                      <span className="mt-0.5 block text-[11px] leading-relaxed text-muted">{persona.personality}</span>
                     </span>
                   </button>
                 )
               })}
             </div>
 
-            {saveError && <p role="alert" className="mt-3 text-[12px] text-alert">{saveError}</p>}
-            {saved && <p role="status" className="mt-3 text-[12px] font-medium text-verified">Personality saved to your profile.</p>}
+            {saveError && <p role="alert" className="mt-3 text-[13px] text-alert">{saveError}</p>}
+            {saved && <p role="status" className="mt-3 text-[13px] font-medium text-verified">Personality saved to your profile.</p>}
             <button
               type="button"
               className="btn-primary btn-sm mt-4 w-full"

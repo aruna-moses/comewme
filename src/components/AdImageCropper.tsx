@@ -73,7 +73,7 @@ export default function AdImageCropper({ src, onCancel, onDone }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-display text-[17px] font-bold text-ink">Choose the part to show</p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+            <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
               The bright band is exactly what appears in the feed. Drag the picture up or down,
               and zoom in to fill it.
             </p>
@@ -104,7 +104,7 @@ export default function AdImageCropper({ src, onCancel, onDone }: Props) {
         </div>
 
         <div className="mt-3 flex items-center gap-3">
-          <span className="text-[11px] font-semibold text-muted">Zoom</span>
+          <span className="text-[12px] font-semibold text-muted">Zoom</span>
           <input
             type="range"
             min={1}
@@ -121,7 +121,7 @@ export default function AdImageCropper({ src, onCancel, onDone }: Props) {
               setZoom(1)
               setCrop({ x: 0, y: 0 })
             }}
-            className="flex items-center gap-1 text-[11px] font-semibold text-muted"
+            className="flex items-center gap-1 text-[12px] font-semibold text-muted"
           >
             <RotateCcw size={12} />
             Reset
@@ -129,7 +129,7 @@ export default function AdImageCropper({ src, onCancel, onDone }: Props) {
         </div>
 
         {error && (
-          <p role="alert" className="mt-2 text-[11px] font-medium text-alert">
+          <p role="alert" className="mt-2 text-[12px] font-medium text-alert">
             {error}
           </p>
         )}

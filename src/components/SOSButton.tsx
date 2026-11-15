@@ -13,7 +13,7 @@ export default function SOSButton({ taskId }: Props) {
     <div className="relative inline-block">
       <button
         type="button"
-        className="flex items-center gap-1.5 rounded-full bg-alert text-white px-3 py-1.5 text-[11px] font-bold shadow-card hover:bg-alert/90 transition active:scale-[0.95]"
+        className="flex items-center gap-1.5 rounded-full bg-alert text-white px-3 py-1.5 text-[12px] font-bold shadow-card hover:bg-alert/90 transition active:scale-[0.95]"
         onClick={() => setOpen(true)}
         aria-label="Send emergency SOS"
       >
@@ -44,9 +44,9 @@ export default function SOSButton({ taskId }: Props) {
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </span>
-            <span className="text-[12px] font-semibold text-verified">SOS alert sent</span>
+            <span className="text-[13px] font-semibold text-verified">SOS alert sent</span>
           </div>
-          <p className="mt-1 text-[11px] text-verified/80">
+          <p className="mt-1 text-[12px] text-verified/80">
             Our safety team has been notified. Please also call emergency services (112 or 199) if you are in danger.
           </p>
         </div>

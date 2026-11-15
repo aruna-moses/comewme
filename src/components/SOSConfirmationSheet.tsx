@@ -73,14 +73,14 @@ export default function SOSConfirmationSheet({
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-lg font-bold text-ink">Emergency SOS</h2>
-          <p className="mt-1 text-[13px] leading-relaxed text-muted">
+          <p className="mt-1 text-[14px] leading-relaxed text-muted">
             This will send your location and any photo/video to our safety team. A human will review it.
           </p>
         </div>
       </div>
 
       <div className="rounded-xl border border-line bg-white p-4">
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-muted">Step 1: Location</p>
+        <p className="text-[13px] font-semibold uppercase tracking-wide text-muted">Step 1: Location</p>
         <button
           onClick={captureLocation}
           disabled={submitting}
@@ -89,20 +89,20 @@ export default function SOSConfirmationSheet({
           <span>
             {locationCaptured ? 'Location captured' : 'Send my location'}
           </span>
-          <span className="text-[10px]">{locationError ? '⚠' : locationCaptured ? '✓' : ''}</span>
+          <span className="text-[11px]">{locationError ? '⚠' : locationCaptured ? '✓' : ''}</span>
         </button>
         {locationError && (
-          <p className="mt-1 text-[11px] text-alert">{locationError}</p>
+          <p className="mt-1 text-[12px] text-alert">{locationError}</p>
         )}
         {location && (
-          <p className="mt-1 text-[11px] text-muted">
+          <p className="mt-1 text-[12px] text-muted">
             {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
           </p>
         )}
       </div>
 
       <div className="rounded-xl border border-line bg-white p-4">
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-muted">Step 2: Attach media (optional)</p>
+        <p className="text-[13px] font-semibold uppercase tracking-wide text-muted">Step 2: Attach media (optional)</p>
         <label className="flex items-center gap-3 cursor-pointer border border-line rounded-xl bg-canvas p-3">
           <input
             type="file"
@@ -113,18 +113,18 @@ export default function SOSConfirmationSheet({
               if (f) setMediaFile(f)
             }}
           />
-          <span className="text-[13px] text-ink">{mediaFile ? mediaFile.name : 'Attach photo or video'}</span>
+          <span className="text-[14px] text-ink">{mediaFile ? mediaFile.name : 'Attach photo or video'}</span>
         </label>
         {mediaFile && (
-          <p className="mt-1 text-[11px] text-muted">
+          <p className="mt-1 text-[12px] text-muted">
             This will be sent to our safety team along with your location.
           </p>
         )}
       </div>
 
       <div className="rounded-xl border border-alert/20 bg-alert/5 p-4">
-        <p className="text-[12px] font-semibold text-alert">Important</p>
-        <p className="mt-1 text-[12px] text-ink/80 leading-relaxed">
+        <p className="text-[13px] font-semibold text-alert">Important</p>
+        <p className="mt-1 text-[13px] text-ink/80 leading-relaxed">
           Come w' me is not a replacement for emergency services.{' '}
           <span className="font-semibold">Call 112 or 199 immediately</span> if you are in danger.
         </p>

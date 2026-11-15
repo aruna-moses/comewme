@@ -233,7 +233,7 @@ export default function Onboarding() {
                     aria-describedby="handle-status"
                   />
                 </div>
-                <div id="handle-status" className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px]" aria-live="polite">
+                <div id="handle-status" className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px]" aria-live="polite">
                   {usernameStatus === 'idle' && !username.trim() && (
                     <>
                       <span className="text-muted">3–24 letters, numbers and underscores.</span>
@@ -383,14 +383,14 @@ export default function Onboarding() {
               ].map((r) => (
                 <div key={r.n} className="card flex gap-3 p-4">
                   <span
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[13px] font-bold"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[14px] font-bold"
                     style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)' }}
                   >
                     {r.n}
                   </span>
                   <div>
                     <p className="text-[14px] font-bold">{r.t}</p>
-                    <p className="mt-0.5 text-[13px] leading-relaxed text-muted">{r.d}</p>
+                    <p className="mt-0.5 text-[14px] leading-relaxed text-muted">{r.d}</p>
                   </div>
                 </div>
               ))}
@@ -399,7 +399,7 @@ export default function Onboarding() {
         )}
 
         {error && (
-          <p className="mt-4 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>
+          <p className="mt-4 rounded-xl bg-alert/10 p-3 text-[14px] font-medium text-alert">{error}</p>
         )}
 
         <div className="mt-7 flex gap-3">

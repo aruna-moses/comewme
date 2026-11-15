@@ -33,13 +33,13 @@ export function AdFace({ ad }: { ad: Ad }) {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
         <div className="absolute inset-0 flex flex-col justify-center px-3">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-white/70">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/70">
             {ad.brand_name}
           </p>
-          <p className="mt-0.5 line-clamp-1 text-[13px] font-bold leading-tight text-white">
+          <p className="mt-0.5 line-clamp-1 text-[14px] font-bold leading-tight text-white">
             {ad.headline}
           </p>
-          <p className="mt-0.5 text-[10px] font-semibold" style={{ color: ad.brand_color }}>
+          <p className="mt-0.5 text-[11px] font-semibold" style={{ color: ad.brand_color }}>
             {ad.cta_text} →
           </p>
         </div>
@@ -53,21 +53,21 @@ export function AdFace({ ad }: { ad: Ad }) {
       style={{ backgroundColor: `${ad.brand_color}14` }}
     >
       <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[13px] font-bold text-white"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[14px] font-bold text-white"
         style={{ backgroundColor: ad.brand_color }}
         aria-hidden
       >
         {ad.brand_name.trim().charAt(0).toUpperCase() || 'A'}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[12px] font-bold leading-tight text-ink">{ad.brand_name}</p>
-        <p className="truncate text-[10px] leading-tight text-muted">
+        <p className="truncate text-[13px] font-bold leading-tight text-ink">{ad.brand_name}</p>
+        <p className="truncate text-[11px] leading-tight text-muted">
           {ad.headline}
           {ad.cta_text ? ` · ${ad.cta_text}` : ''}
         </p>
       </div>
       <span
-        className="shrink-0 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white"
+        className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
         style={{ backgroundColor: ad.brand_color }}
       >
         {ad.cta_text || 'View'}
@@ -123,7 +123,7 @@ export default function AdCarousel() {
   return (
     <div className="sticky top-0 z-40 mx-5 mt-4 rounded-xl border border-line bg-white p-2.5 shadow-sm">
       <div className="mb-1.5 flex items-center justify-between px-0.5">
-        <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
           Advertisement
         </span>
         {ads.length > 1 && (

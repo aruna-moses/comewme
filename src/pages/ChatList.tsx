@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Pin, Sparkles, ChevronDown } from 'lucide-react'
+import { MapPin, Pin, BellOff, Sparkles, ChevronDown, MoreVertical } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
-import { usePersistedState } from '../lib/drafts'
+import { usePersistedState, readDraft, writeDraft, clearDraft } from '../lib/drafts'
 import { formatTime, taskEmoji, categoryTileBg } from '../lib/format'
 import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
 import { loadChatsForUser } from '../lib/chatsData'
@@ -36,6 +36,25 @@ export default function ChatList() {
 
   const [pinnedIds, setPinnedIds] = usePersistedState<string[]>('chats:pinned', [])
   const [doneExpanded, setDoneExpanded] = useState(false)
+  const [menuFor, setMenuFor] = useState<string | null>(null)
+  const [muteTick, setMuteTick] = useState(0)
+  const readMute = (id: string) => {
+    try {
+      return readDraft<boolean>(`chat:${id}:mute`)?.value ?? false
+    } catch {
+      return false
+    }
+  }
+  const setMute = (id: string, mute: boolean) => {
+    try {
+      if (mute) writeDraft(`chat:${id}:mute`, true)
+      else clearDraft(`chat:${id}:mute`)
+    } catch {
+      // ignore — best effort
+    }
+    setMuteTick((t) => t + 1)
+  }
+  void muteTick
   const isPinned = (id: string) => pinnedIds.includes(id)
   const togglePin = (id: string) => {
     setPinnedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
@@ -99,6 +118,7 @@ export default function ChatList() {
   const renderRow = (c: typeof chats[number]) => {
     const unread = unreadByTask[c.task.id] ?? 0
     const pinned = isPinned(c.task.id)
+    const muted = readMute(c.task.id)
     const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
     const start = new Date(c.task.date_time)
     const days = Math.round((startOfDay(start) - startOfDay(new Date(now))) / 86_400_000)
@@ -121,77 +141,116 @@ export default function ChatList() {
           : 'bg-line/50 text-muted'
     const doneChat = isDoneChat(c)
     const happeningToday = !doneChat && days === 0
+    const menuOpen = menuFor === c.task.id
     return (
       <div key={c.task.id} className="relative">
         <Link
           to={`/task/${c.task.id}/chat`}
-          className={`card flex items-start gap-3 rounded-[18px] p-3.5 pr-10 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber ${happeningToday ? 'bg-gradient-to-br from-sun/25 via-amber/10 to-canvas ring-2 ring-amber/70 shadow-[0_12px_36px_rgba(247,162,51,0.25)]' : ''} ${doneChat ? 'opacity-70' : ''}`}
+          className={`card grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[18px] px-3.5 py-3 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber ${happeningToday ? 'bg-gradient-to-br from-sun/25 via-amber/10 to-canvas ring-2 ring-amber/70 shadow-[0_12px_36px_rgba(247,162,51,0.25)]' : ''} ${doneChat ? 'opacity-70' : ''}`}
         >
-        <div className="relative shrink-0">
           <div
             className={`flex h-14 w-14 items-center justify-center rounded-full text-[26px] shadow-sm ring-1 ring-black/5 ${categoryTileBg(c.task.category)}`}
             aria-hidden="true"
           >
             {taskEmoji(c.task.category)}
           </div>
-          {unread > 0 && (
-            <span
-              aria-label={`${unread} unread ${unread === 1 ? 'message' : 'messages'}`}
-              className="absolute -right-1.5 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#e53935] px-1.5 text-[9px] font-bold leading-none text-white ring-2 ring-canvas"
-            >
-              {unread > 99 ? '99+' : unread}
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              {pinned && <Pin size={12} className="shrink-0 text-muted" fill="currentColor" aria-hidden />}
+              <h2 className="line-clamp-2 font-display text-[16px] font-semibold leading-snug -tracking-[0.01em] text-ink">
+                {c.task.title}
+              </h2>
+            </div>
+            <p className={`mt-0.5 line-clamp-1 text-[14.5px] leading-snug ${unread > 0 ? 'font-medium text-ink' : 'text-muted'}`}>
+              {c.lastMessage
+                ? `${c.lastMessage.sender_id === profile?.id ? 'You' : c.lastMessage.sender_name}: ${
+                    c.lastMessage.type === 'image'
+                      ? c.lastMessage.body || 'Sent a photo'
+                      : c.lastMessage.type === 'audio'
+                        ? 'Sent a voice note'
+                        : c.lastMessage.body
+                  }`
+                : 'No messages yet — say hello.'}
+            </p>
+            <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-muted">
+              {doneChat ? (
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-extrabold uppercase tracking-[0.14em] text-muted">
+                  {c.task.status === 'completed' ? 'Completed' : 'Passed'}
+                </span>
+              ) : happeningToday ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-amber">
+                  <span className="h-1.5 w-1.5 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full bg-amber" aria-hidden />
+                  Happening today
+                </span>
+              ) : (
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${countdownTone}`}>
+                  <span aria-hidden="true">{taskEmoji(c.task.category)}</span> {countdownLabel}
+                </span>
+              )}
+              <span aria-hidden="true">·</span>
+              <span className="inline-flex items-center gap-1 font-semibold text-ink/80"><MapPin size={9} aria-hidden />{c.task.area}</span>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <span className={`text-[13px] leading-none tabular-nums ${unread > 0 ? 'font-semibold text-[#F58220]' : 'text-muted'}`}>
+              {c.lastMessage ? formatTime(c.lastMessage.created_at) : formatTime(c.task.date_time)}
             </span>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <h2 className="line-clamp-2 font-display text-[14px] font-bold leading-snug text-ink">
-              {c.task.title}
-            </h2>
-            {c.lastMessage && (
-              <span className="mt-0.5 shrink-0 text-[9px] text-muted">{formatTime(c.lastMessage.created_at)}</span>
-            )}
-          </div>
-          <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted">
-            {doneChat ? (
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-muted">
-                {c.task.status === 'completed' ? 'Completed' : 'Passed'}
-              </span>
-            ) : happeningToday ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-amber">
-                <span className="h-1.5 w-1.5 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full bg-amber" aria-hidden />
-                Happening today
-              </span>
-            ) : (
-              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${countdownTone}`}>
-                <span aria-hidden="true">{taskEmoji(c.task.category)}</span> {countdownLabel}
+            {unread > 0 && (
+              <span
+                aria-label={`${unread} unread ${unread === 1 ? 'message' : 'messages'}`}
+                className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold leading-none text-white"
+                style={{ backgroundColor: '#F58220' }}
+              >
+                {unread > 99 ? '99+' : unread}
               </span>
             )}
-            <span aria-hidden="true">·</span>
-            <span className="inline-flex items-center gap-1 font-semibold text-ink/80"><MapPin size={9} aria-hidden />{c.task.area}</span>
+            {muted && <BellOff size={12} className="text-muted" aria-label="Muted" />}
           </div>
-          <p className="mt-1.5 line-clamp-1 text-[12px] text-muted">
-            {c.lastMessage
-              ? `${c.lastMessage.sender_id === profile?.id ? 'You' : c.lastMessage.sender_name}: ${
-                  c.lastMessage.type === 'image'
-                    ? c.lastMessage.body || 'Sent a photo'
-                    : c.lastMessage.type === 'audio'
-                      ? 'Sent a voice note'
-                      : c.lastMessage.body
-                }`
-              : 'No messages yet — say hello.'}
-          </p>
-        </div>
-      </Link>
+        </Link>
         <button
           type="button"
-          onClick={() => togglePin(c.task.id)}
-          aria-pressed={pinned}
-          aria-label={pinned ? `Unpin ${c.task.title}` : `Pin ${c.task.title}`}
-          className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full transition ${pinned ? 'bg-sun/25 text-amber' : 'text-muted hover:bg-canvas hover:text-ink'}`}
+          onClick={() => setMenuFor(menuOpen ? null : c.task.id)}
+          aria-label="Chat options"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          className="absolute bottom-1.5 right-1 flex h-7 w-7 items-center justify-center rounded-full text-muted transition hover:bg-canvas hover:text-ink"
         >
-          <Pin size={16} aria-hidden />
+          <MoreVertical size={14} aria-hidden />
         </button>
+        {menuOpen && (
+          <>
+            <button type="button" aria-hidden tabIndex={-1} className="fixed inset-0 z-10 cursor-default" onClick={() => setMenuFor(null)} />
+            <div
+              role="menu"
+              className="absolute bottom-8 right-2 z-20 min-w-[164px] overflow-hidden rounded-xl border border-line bg-white py-1 text-left shadow-lift"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  togglePin(c.task.id)
+                  setMenuFor(null)
+                }}
+                className="flex min-h-10 w-full items-center gap-2 px-3 text-[14px] font-medium text-ink hover:bg-canvas"
+              >
+                <Pin size={15} aria-hidden fill={pinned ? 'currentColor' : 'none'} />
+                {pinned ? 'Unpin chat' : 'Pin chat'}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMute(c.task.id, !muted)
+                  setMenuFor(null)
+                }}
+                className="flex min-h-10 w-full items-center gap-2 px-3 text-[14px] font-medium text-ink hover:bg-canvas"
+              >
+                <BellOff size={15} aria-hidden />
+                {muted ? 'Unmute notifications' : 'Mute notifications'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     )
   }
@@ -205,7 +264,7 @@ export default function ChatList() {
 
       <div className="px-5 pt-4">
         {notificationError && (
-          <p role="status" className="mb-3 rounded-xl bg-[#fff4d1] p-3 text-[12px] leading-relaxed text-[#7a622f]">
+          <p role="status" className="mb-3 rounded-xl bg-[#fff4d1] p-3 text-[13px] leading-relaxed text-[#7a622f]">
             {notificationError}
           </p>
         )}
@@ -227,7 +286,7 @@ export default function ChatList() {
               </svg>
             </div>
             <h3 className="font-display text-lg font-bold text-ink">No chats yet</h3>
-            <p className="mt-1 text-[13px] text-muted">
+            <p className="mt-1 text-[14px] text-muted">
               Start a conversation in a group you're hosting or joined.
             </p>
           </div>
@@ -235,7 +294,7 @@ export default function ChatList() {
           <div className="space-y-5">
             {buckets.pinned.length > 0 && (
               <section aria-labelledby="pinned-heading">
-                <p id="pinned-heading" className="flex items-center gap-1.5 px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-amber">
+                <p id="pinned-heading" className="flex items-center gap-1.5 px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-amber">
                   <Pin size={12} aria-hidden /> Pinned
                 </p>
                 <div className="mt-2 space-y-2">
@@ -245,7 +304,7 @@ export default function ChatList() {
             )}
             {buckets.attention.length > 0 && (
               <section aria-labelledby="attention-heading">
-                <p id="attention-heading" className="px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+                <p id="attention-heading" className="px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-muted">
                   Needs your attention
                 </p>
                 <div className="mt-2 space-y-2">
@@ -255,7 +314,7 @@ export default function ChatList() {
             )}
             {buckets.quiet.length > 0 && (
               <section aria-labelledby="quiet-heading">
-                <p id="quiet-heading" className="px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+                <p id="quiet-heading" className="px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-muted">
                   All caught up
                 </p>
                 <div className="mt-2 space-y-2">
@@ -265,7 +324,7 @@ export default function ChatList() {
             )}
             {buckets.newChats.length > 0 && (
               <section aria-labelledby="new-chats-heading">
-                <p id="new-chats-heading" className="flex items-center gap-1.5 px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+                <p id="new-chats-heading" className="flex items-center gap-1.5 px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-muted">
                   <Sparkles size={12} aria-hidden /> Just created — say hi
                 </p>
                 <div className="mt-2 space-y-2">
@@ -280,11 +339,11 @@ export default function ChatList() {
                   onClick={() => setDoneExpanded((v) => !v)}
                   aria-expanded={doneExpanded}
                   aria-controls="completed-chats-list"
-                  className="flex w-full items-center justify-between gap-2 px-1 py-1 text-left text-[11px] font-bold uppercase tracking-[0.16em] text-muted transition"
+                  className="flex w-full items-center justify-between gap-2 px-1 py-1 text-left text-[12px] font-bold uppercase tracking-[0.16em] text-muted transition"
                 >
                   <span className="flex items-center gap-1.5">
                     Completed chats
-                    <span className="rounded-full bg-line px-2 py-0.5 text-[9px] font-extrabold tabular-nums text-ink/60">
+                    <span className="rounded-full bg-line px-2 py-0.5 text-[10px] font-extrabold tabular-nums text-ink/60">
                       {buckets.done.length}
                     </span>
                   </span>
@@ -300,7 +359,7 @@ export default function ChatList() {
           </div>
         )}
         {chats.length > 0 && (
-          <p className="px-2 pt-5 text-center text-[12px] leading-relaxed text-muted">
+          <p className="px-2 pt-5 text-center text-[13px] leading-relaxed text-muted">
             Your activity groups appear here once you've joined. Say hello before you meet.
           </p>
         )}

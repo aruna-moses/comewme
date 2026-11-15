@@ -162,12 +162,12 @@ export default function Login() {
                   />
                 </div>
                 {error && (
-                  <p role="alert" className="flex items-start gap-2 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">
+                  <p role="alert" className="flex items-start gap-2 rounded-xl bg-alert/10 p-3 text-[14px] font-medium text-alert">
                     <AlertTriangle size={17} className="mt-0.5 shrink-0" aria-hidden />
                     <span>{error}</span>
                   </p>
                 )}
-                {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[13px] font-medium text-verified">{notice}</p>}
+                {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[14px] font-medium text-verified">{notice}</p>}
                 <button type="submit" className="btn-primary w-full rounded-[16px]" disabled={busy || !email.trim()}>
                   {busy ? 'Sending…' : 'Send reset link'}
                 </button>
@@ -175,7 +175,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => { setMode('in'); setError(null); setNotice(null) }}
-                className="mt-4 w-full py-2 text-[13px] font-semibold text-amber"
+                className="mt-4 w-full py-2 text-[14px] font-semibold text-amber"
               >
                 Back to sign in
               </button>
@@ -205,7 +205,7 @@ export default function Login() {
               </button>
               <div className="my-4 flex items-center gap-3" aria-hidden="true">
                 <div className="h-px flex-1 bg-line" />
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">or continue with email</span>
+                <span className="text-[12px] font-semibold uppercase tracking-wide text-muted">or continue with email</span>
                 <div className="h-px flex-1 bg-line" />
               </div>
               <form onSubmit={handleEmailSubmit} className="mt-6 space-y-3">
@@ -250,7 +250,7 @@ export default function Login() {
                 </div>
                 <label
                   ref={guidelinesRef}
-                  className={`flex cursor-pointer items-start gap-2 pt-1 text-[12px] leading-relaxed transition ${
+                  className={`flex cursor-pointer items-start gap-2 pt-1 text-[13px] leading-relaxed transition ${
                     guidelinesFlash
                       ? 'rounded-xl border-2 border-alert bg-alert/10 p-2 text-alert ring-4 ring-alert/20'
                       : 'text-muted'
@@ -273,23 +273,23 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => { setMode('forgot'); setError(null); setNotice(null) }}
-                    className="block w-full text-right text-[12px] font-semibold text-amber"
+                    className="block w-full text-right text-[13px] font-semibold text-amber"
                   >
                     Forgot password?
                   </button>
                 )}
                 {error && (
-                  <p role="alert" className="flex items-start gap-2 rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">
+                  <p role="alert" className="flex items-start gap-2 rounded-xl bg-alert/10 p-3 text-[14px] font-medium text-alert">
                     <AlertTriangle size={17} className="mt-0.5 shrink-0" aria-hidden />
                     <span>{error}</span>
                   </p>
                 )}
-                {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[13px] font-medium text-verified">{notice}</p>}
+                {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[14px] font-medium text-verified">{notice}</p>}
                 <button type="submit" className="btn-primary w-full" disabled={busy || !guidelinesChecked}>
                   {busy ? 'One moment…' : mode === 'in' ? 'Sign in' : 'Create account'}
                 </button>
               </form>
-              <p className="mt-5 text-center text-[13px] text-muted">
+              <p className="mt-5 text-center text-[14px] text-muted">
                 {mode === 'in' ? "Don't have an account?" : 'Already have one?'}{' '}
                 <button
                   type="button"
@@ -309,10 +309,10 @@ export default function Login() {
       </div>
 
       <div className="px-8 pb-6 text-center">
-        <p className="text-[11px] leading-relaxed text-muted">
+        <p className="text-[12px] leading-relaxed text-muted">
           Meet in public places. Never send money to someone you have not met.
         </p>
-        <div className="mt-2 flex justify-center gap-x-4 text-[12px] font-semibold text-amber">
+        <div className="mt-2 flex justify-center gap-x-4 text-[13px] font-semibold text-amber">
           <Link to="/community-guidelines" className="underline underline-offset-2">Community Guidelines</Link>
           <Link to="/privacy" className="underline underline-offset-2">Privacy Policy</Link>
         </div>

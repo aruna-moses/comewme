@@ -70,24 +70,24 @@ export default function AdminAds() {
         </Link>
 
         <h1 className="font-display text-[24px] font-bold text-ink">Ad review</h1>
-        <p className="mt-1 text-[13px] text-muted">
+        <p className="mt-1 text-[14px] text-muted">
           Approve an ad and it appears in the Discover carousel during its run dates.
         </p>
 
         {error && (
-          <p role="alert" className="mt-4 rounded-xl border border-alert/30 bg-alert/5 p-3 text-[12px] text-alert">
+          <p role="alert" className="mt-4 rounded-xl border border-alert/30 bg-alert/5 p-3 text-[13px] text-alert">
             {error}
           </p>
         )}
 
         {allowed === false && (
-          <p className="mt-6 rounded-xl border border-line bg-canvas p-4 text-[12px] text-muted">
+          <p className="mt-6 rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
             This page is for moderators only.
           </p>
         )}
 
         {allowed && ads.length === 0 && (
-          <p className="mt-6 rounded-xl border border-line bg-canvas p-4 text-[12px] text-muted">
+          <p className="mt-6 rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
             No ad submissions yet.
           </p>
         )}
@@ -98,11 +98,11 @@ export default function AdminAds() {
               <div key={ad.id} className="card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold text-ink">{ad.brand_name}</p>
-                    <p className="truncate text-[12px] text-muted">{ad.headline}</p>
+                    <p className="truncate text-[14px] font-semibold text-ink">{ad.brand_name}</p>
+                    <p className="truncate text-[13px] text-muted">{ad.headline}</p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_STYLE[ad.status]}`}
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${STATUS_STYLE[ad.status]}`}
                   >
                     {ad.status}
                   </span>
@@ -112,7 +112,7 @@ export default function AdminAds() {
                   <AdFace ad={ad} />
                 </div>
 
-                <dl className="mt-3 space-y-1 text-[11px]">
+                <dl className="mt-3 space-y-1 text-[12px]">
                   <div className="flex justify-between gap-3">
                     <dt className="text-muted">Button</dt>
                     <dd className="font-medium text-ink">{ad.cta_text}</dd>
@@ -139,13 +139,13 @@ export default function AdminAds() {
                 </dl>
 
                 {ad.admin_note && (
-                  <p className="mt-2 rounded-lg bg-canvas p-2 text-[11px] text-muted">
+                  <p className="mt-2 rounded-lg bg-canvas p-2 text-[12px] text-muted">
                     Note: {ad.admin_note}
                   </p>
                 )}
 
                 <input
-                  className="field mt-3 py-2 text-[12px]"
+                  className="field mt-3 py-2 text-[13px]"
                   placeholder="Optional note to the advertiser"
                   value={notes[ad.id] ?? ''}
                   onChange={(e) => setNotes((prev) => ({ ...prev, [ad.id]: e.target.value }))}
@@ -192,7 +192,7 @@ export default function AdminAds() {
                     href={ad.image_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 block text-center text-[11px] font-semibold text-amber"
+                    className="mt-2 block text-center text-[12px] font-semibold text-amber"
                   >
                     Open full picture
                   </a>

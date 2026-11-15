@@ -63,7 +63,7 @@ export default function ConfirmDialog({
             <Sparkles size={25} aria-hidden />
           </span>
           <h2 id="confirm-dialog-title" className="mt-3 font-display text-[20px] font-bold">{title}</h2>
-          <p id="confirm-dialog-message" className="mt-1.5 text-[13px] leading-relaxed text-muted">{message}</p>
+          <p id="confirm-dialog-message" className="mt-1.5 text-[14px] leading-relaxed text-muted">{message}</p>
         </div>
         {children && <div className="px-5 pt-4">{children}</div>}
         <div className="grid grid-cols-2 gap-2 p-5 pt-4">

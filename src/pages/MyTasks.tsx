@@ -144,7 +144,7 @@ export default function MyTasks() {
         <div className="flex rounded-[16px] bg-[#ece9e2] p-1">
           <button
             onClick={() => setTab('hosting')}
-            className={`flex-1 rounded-[12px] py-3 text-[12px] font-semibold transition ${
+            className={`flex-1 rounded-[12px] py-3 text-[13px] font-semibold transition ${
               tab === 'hosting'
                 ? 'bg-white text-amber shadow-sm'
                 : 'text-muted'
@@ -152,14 +152,14 @@ export default function MyTasks() {
           >
             Posted ({hosted.length})
             {pendingApplications > 0 && (
-              <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#e53935] px-1.5 align-middle text-[10px] font-bold leading-none text-white">
+              <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#e53935] px-1.5 align-middle text-[11px] font-bold leading-none text-white">
                 {pendingApplications > 99 ? '99+' : pendingApplications}
               </span>
             )}
           </button>
           <button
             onClick={() => setTab('going')}
-            className={`flex-1 rounded-[12px] py-3 text-[12px] font-semibold transition ${
+            className={`flex-1 rounded-[12px] py-3 text-[13px] font-semibold transition ${
               tab === 'going'
                 ? 'bg-white text-amber shadow-sm'
                 : 'text-muted'
@@ -169,7 +169,7 @@ export default function MyTasks() {
           </button>
           <button
             onClick={() => setTab('done')}
-            className={`flex-1 rounded-[12px] py-3 text-[12px] font-semibold transition ${
+            className={`flex-1 rounded-[12px] py-3 text-[13px] font-semibold transition ${
               tab === 'done'
                 ? 'bg-white text-amber shadow-sm'
                 : 'text-muted'
@@ -181,8 +181,8 @@ export default function MyTasks() {
 
         {loadError && (
           <div className="card mt-4 p-4 text-center">
-            <p className="text-[13px] font-semibold text-alert">Could not load your activities</p>
-            <p className="mt-1 text-[12px] text-muted">{loadError}</p>
+            <p className="text-[14px] font-semibold text-alert">Could not load your activities</p>
+            <p className="mt-1 text-[13px] text-muted">{loadError}</p>
             <button type="button" className="btn-ghost btn-sm mt-3" onClick={() => setRefreshKey((key) => key + 1)}>
               Try again
             </button>
@@ -201,7 +201,7 @@ export default function MyTasks() {
             >
               <TaskCard task={t} verified={verifiedMap[t.host_id] === 'verified'} applicationStatus={tab === 'going' ? applicationStatus : undefined} reviewBadge={tab === 'hosting' ? pendingApplicants[t.id] ?? 0 : 0} />
               <div className="mt-2 px-1">
-                <span className="text-[12px] font-semibold text-muted">
+                <span className="text-[13px] font-semibold text-muted">
                   {tab === 'hosting'
                     ? (pendingApplicants[t.id] ?? 0) > 0
                       ? `${pendingApplicants[t.id]} waiting for your review`
@@ -237,7 +237,7 @@ export default function MyTasks() {
                 </svg>
               </div>
               <h3 className="font-display text-lg font-bold text-ink">{empty.split('.')[0]}</h3>
-              <p className="mt-1 text-[13px] text-muted">{empty.split('.').slice(1).join('.')}</p>
+              <p className="mt-1 text-[14px] text-muted">{empty.split('.').slice(1).join('.')}</p>
             </div>
           )}
         </div>

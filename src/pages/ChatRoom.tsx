@@ -959,7 +959,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate font-display text-[16px] font-bold">{task.title}</span>
-            <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted">
+            <span className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted">
               {happeningToday && (
                 <span className="inline-flex shrink-0 items-center rounded-full bg-amber/25 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.16em] text-amber">Today</span>
               )}
@@ -993,10 +993,10 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           >
             <Pin size={13} className="shrink-0 text-amber" aria-hidden />
             <span className="min-w-0 flex-1">
-              <span className="block text-[9px] font-extrabold uppercase leading-tight tracking-[0.16em] text-amber">
+              <span className="block text-[10px] font-extrabold uppercase leading-tight tracking-[0.16em] text-amber">
                 Pinned{pinnedMessage.sender_id === profile?.id ? ' · You' : ''}
               </span>
-              <span className="block truncate text-[12px] font-medium leading-snug text-ink/85">
+              <span className="block truncate text-[13px] font-medium leading-snug text-ink/85">
                 {pinnedMessage.type === 'image' ? (pinnedMessage.body || 'Photo') : pinnedMessage.type === 'audio' ? 'Voice note' : pinnedMessage.body}
               </span>
             </span>
@@ -1023,11 +1023,11 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       <section className="flex min-h-0 flex-1 flex-col px-3 pb-3">
         {/* Meeting quick facts */}
         <div className="mt-2 flex flex-wrap items-center gap-2" aria-label="Meeting quick facts">
-          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${happeningToday ? 'border-amber/50 bg-sun/25 font-bold text-amber' : 'border-line bg-white text-muted'}`}>
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${happeningToday ? 'border-amber/50 bg-sun/25 font-bold text-amber' : 'border-line bg-white text-muted'}`}>
             <Clock3 size={11} aria-hidden />
             {formatDateTime(task.date_time)}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[10px] font-semibold text-muted">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[11px] font-semibold text-muted">
             <MapPin size={11} aria-hidden />
             <span className="max-w-[140px] truncate">{task.meeting_point}</span>
           </span>
@@ -1035,7 +1035,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
 
         <div ref={containerRef} onScroll={handleMessagesScroll} className="relative min-h-0 flex-1 space-y-4 overflow-y-auto py-4">
           {timelineItems.length === 0 && (
-            <p className="py-10 text-center text-[13px] text-muted">No messages yet. Say hello to your group.</p>
+            <p className="py-10 text-center text-[14px] text-muted">No messages yet. Say hello to your group.</p>
           )}
           {timelineItems.map((item, index) => {
             const previousItem = index > 0 ? timelineItems[index - 1] : null
@@ -1054,17 +1054,17 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
               return (
                 <div key={`event-${event.id}`} className="flex flex-col items-center gap-1">
                   {showDateSeparator && (
-                    <p className="my-2 text-center text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    <p className="my-2 text-center text-[11px] font-semibold uppercase tracking-wide text-muted">
                       {new Date(event.created_at).toLocaleDateString()}
                     </p>
                   )}
                   {event.event_type === 'recap' && event.body ? (
                     <div className="max-w-[85%] rounded-2xl border border-line bg-white px-3.5 py-2.5 text-left shadow-sm">
-                      <p className="text-[9px] font-extrabold uppercase tracking-[0.16em]" style={{ color }}>Recap from {actorName}</p>
-                      <p className="mt-1 whitespace-pre-wrap text-[12px] leading-snug text-ink/85">{event.body}</p>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.16em]" style={{ color }}>Recap from {actorName}</p>
+                      <p className="mt-1 whitespace-pre-wrap text-[13px] leading-snug text-ink/85">{event.body}</p>
                     </div>
                   ) : (
-                    <p className="text-center text-[11px] leading-snug text-muted">
+                    <p className="text-center text-[12px] leading-snug text-muted">
                       <span className="font-semibold" style={{ color }}>{actorName}</span>{' '}
                       {event.event_type === 'joined' && 'joined the group'}
                       {event.event_type === 'left' && 'left the group'}
@@ -1094,7 +1094,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             return (
               <div key={message.id} data-message-id={message.id}>
                 {showDateSeparator && (
-                  <p className="my-3 text-center text-[10px] font-semibold uppercase tracking-wide text-muted">
+                  <p className="my-3 text-center text-[11px] font-semibold uppercase tracking-wide text-muted">
                     {new Date(message.created_at).toLocaleDateString()}
                   </p>
                 )}
@@ -1106,7 +1106,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                   )}
                   <div className={`max-w-[82%] ${mine ? 'text-right' : 'text-left'}`}>
                     {showName && (
-                      <Link to={`/profile/${message.sender_id}`} className="mb-1 inline-block text-[10px] font-bold hover:opacity-80" style={{ color: senderColor }}>
+                      <Link to={`/profile/${message.sender_id}`} className="mb-1 inline-block text-[11px] font-bold hover:opacity-80" style={{ color: senderColor }}>
                         {message.sender_name}
                       </Link>
                     )}
@@ -1135,10 +1135,10 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                               className="mb-1.5 min-w-0 rounded-r-lg border-l-2 px-2 py-1 text-left"
                               style={{ borderLeftColor: senderColorHex(message.reply_to_sender_id), backgroundColor: senderColorTint(message.reply_to_sender_id) }}
                             >
-                              <p className="truncate text-[10px] font-bold" style={{ color: senderColorHex(message.reply_to_sender_id) }}>
+                              <p className="truncate text-[11px] font-bold" style={{ color: senderColorHex(message.reply_to_sender_id) }}>
                                 {message.reply_to_sender_id && profile?.id && message.reply_to_sender_id === profile.id ? 'You' : message.reply_to_sender_name ?? 'Message'}
                               </p>
-                              <p className="truncate text-[11px] text-muted">{message.reply_to_preview}</p>
+                              <p className="truncate text-[12px] text-muted">{message.reply_to_preview}</p>
                             </div>
                           )}
                           {!message.deleted_at && message.type === 'image' && message.view_once && (
@@ -1168,7 +1168,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                             <p className="whitespace-pre-wrap px-1 pt-1 text-[14px] leading-snug">{message.body}</p>
                           )}
                           {!message.deleted_at && message.type === 'image' && message.view_once && message.body && (
-                            <p className="whitespace-pre-wrap px-1 pt-1 text-[13px] leading-snug text-muted">{message.body}</p>
+                            <p className="whitespace-pre-wrap px-1 pt-1 text-[14px] leading-snug text-muted">{message.body}</p>
                           )}
                           {!message.deleted_at && message.type === 'audio' && message.url && (
                             <VoiceNotePlayer
@@ -1191,7 +1191,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                             </p>
                           )}
                           {message.pending && (
-                            <p className="mt-1 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                            <p className="mt-1 flex items-center gap-1.5 px-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
                               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber" aria-hidden />
                               Sending…
                             </p>
@@ -1211,7 +1211,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                                     key={emoji}
                                     type="button"
                                     onClick={() => void onToggleReaction(message.id, emoji)}
-                                    className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] transition ${
+                                    className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[13px] transition ${
                                       iReacted
                                         ? 'border-amber bg-sun/35 text-ink'
                                         : 'border-line bg-white text-ink hover:border-amber/40'
@@ -1257,7 +1257,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                                 setReplyTarget(message)
                                 setActionMessageId(null)
                               }}
-                              className="flex min-h-10 items-center gap-2 px-3 text-[12px] font-medium hover:bg-canvas"
+                              className="flex min-h-10 items-center gap-2 px-3 text-[13px] font-medium hover:bg-canvas"
                             >
                               <Reply size={15} aria-hidden /> Reply
                             </button>
@@ -1267,7 +1267,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                                 type="button"
                                 role="menuitem"
                                 onClick={() => void copyMessage(message)}
-                                className="flex min-h-10 items-center gap-2 px-3 text-[12px] font-medium hover:bg-canvas"
+                                className="flex min-h-10 items-center gap-2 px-3 text-[13px] font-medium hover:bg-canvas"
                               >
                                 <Copy size={15} aria-hidden /> Copy
                               </button>
@@ -1280,7 +1280,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                                   void togglePin(message)
                                   setActionMessageId(null)
                                 }}
-                                className="flex min-h-10 items-center gap-2 px-3 text-[12px] font-medium hover:bg-canvas"
+                                className="flex min-h-10 items-center gap-2 px-3 text-[13px] font-medium hover:bg-canvas"
                               >
                                 <Pin size={15} aria-hidden /> {pinnedMessage?.id === message.id ? 'Unpin message' : 'Pin to chat'}
                               </button>
@@ -1293,7 +1293,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                                   setDeleteTarget(message)
                                   setActionMessageId(null)
                                 }}
-                                className="flex min-h-10 items-center gap-2 px-3 text-[12px] font-medium text-alert hover:bg-canvas"
+                                className="flex min-h-10 items-center gap-2 px-3 text-[13px] font-medium text-alert hover:bg-canvas"
                               >
                                 <Trash2 size={15} aria-hidden /> Delete
                               </button>
@@ -1315,7 +1315,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                         </button>
                       )}
                     </div>
-                    <p className="mt-1 text-[10px] text-muted">{formatTime(message.created_at)}</p>
+                    <p className="mt-1 text-[11px] text-muted">{formatTime(message.created_at)}</p>
                   </div>
                   {mine && (
                     <Link to={`/profile/${message.sender_id}`} aria-label="View your profile">
@@ -1335,7 +1335,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             >
               <ChevronDown size={22} aria-hidden />
               {newSinceScroll > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber px-1 text-[9px] font-extrabold tabular-nums text-ink">
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber px-1 text-[10px] font-extrabold tabular-nums text-ink">
                   {newSinceScroll > 99 ? '99+' : newSinceScroll}
                 </span>
               )}
@@ -1346,10 +1346,10 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
 
         {isHost && task.status === 'completed' && !recapPosted && (
           <div className="mb-2 rounded-xl border border-amber/30 bg-sun/15 p-3">
-            <p className="text-[11px] font-bold text-amber">Share a recap</p>
-            <p className="mt-0.5 text-[11px] text-ink/80">Tell everyone what went down — what you loved, what you&apos;d skip next time.</p>
+            <p className="text-[12px] font-bold text-amber">Share a recap</p>
+            <p className="mt-0.5 text-[12px] text-ink/80">Tell everyone what went down — what you loved, what you&apos;d skip next time.</p>
             <textarea
-              className="field mt-2 min-h-[60px] text-[13px]"
+              className="field mt-2 min-h-[60px] text-[14px]"
               placeholder="e.g. Brilliant energy. Go for the fruit stand first — everyone agreed next time\u2019ll be there at 8am sharp."
               value={recapText}
               onChange={(event) => setRecapText(event.target.value)}
@@ -1376,13 +1376,13 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           </div>
         )}
         {recapPosted && (
-          <p className="mb-2 text-[11px] font-semibold text-verified">Recap saved. Everyone can see it on this activity.</p>
+          <p className="mb-2 text-[12px] font-semibold text-verified">Recap saved. Everyone can see it on this activity.</p>
         )}
 
         {isArchived ? (
           <div className="shrink-0 -mx-3 border-t border-line bg-white/95 px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-4 text-center backdrop-blur">
-            <p className="text-[13px] font-bold text-ink">This activity is complete — the group is archived.</p>
-            <p className="mt-1 text-[10px] text-muted">You can still read the whole chat history. The host can reopen it from the group info sheet.</p>
+            <p className="text-[14px] font-bold text-ink">This activity is complete — the group is archived.</p>
+            <p className="mt-1 text-[11px] text-muted">You can still read the whole chat history. The host can reopen it from the group info sheet.</p>
           </div>
         ) : (
         <div className="sticky bottom-0 -mx-3 border-t border-line bg-white px-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2">
@@ -1393,18 +1393,18 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                   <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted" style={{ animationDelay: `${i * 0.18}s` }} />
                 ))}
               </div>
-              <p className="text-[10px] font-semibold text-muted">{typingLabel}</p>
+              <p className="text-[11px] font-semibold text-muted">{typingLabel}</p>
             </div>
           )}
-          {error && <p role="alert" className="px-2 pb-2 text-[12px] font-medium text-alert">{error}</p>}
+          {error && <p role="alert" className="px-2 pb-2 text-[13px] font-medium text-alert">{error}</p>}
           {replyTarget && (
             <div
               className="mb-2 flex items-center gap-2 rounded-xl border-l-2 px-3 py-2"
               style={{ borderLeftColor: senderColorHex(replyTarget.sender_id), backgroundColor: senderColorTint(replyTarget.sender_id) }}
             >
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold" style={{ color: senderColorHex(replyTarget.sender_id) }}>Replying to {replyTarget.sender_id === profile?.id ? 'You' : replyTarget.sender_name}</p>
-                <p className="truncate text-[11px] text-muted">
+                <p className="text-[12px] font-bold" style={{ color: senderColorHex(replyTarget.sender_id) }}>Replying to {replyTarget.sender_id === profile?.id ? 'You' : replyTarget.sender_name}</p>
+                <p className="truncate text-[12px] text-muted">
                   {replyTarget.type === 'image' ? (replyTarget.body || 'Photo') : replyTarget.type === 'audio' ? 'Voice note' : replyTarget.body}
                 </p>
               </div>
@@ -1428,7 +1428,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
               >
                 <Trash2 size={18} />
               </button>
-              <span className="flex items-center gap-1.5 text-[13px] font-bold tabular-nums text-alert">
+              <span className="flex items-center gap-1.5 text-[14px] font-bold tabular-nums text-alert">
                 <span className={`h-2 w-2 rounded-full bg-alert ${recordingPaused ? '' : 'animate-pulse'}`} aria-hidden />
                 {Math.floor(recordingElapsed / 60)}:{String(recordingElapsed % 60).padStart(2, '0')}
               </span>
@@ -1440,14 +1440,14 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
               >
                 {recordingPaused ? <Play size={15} fill="currentColor" /> : <Pause size={15} fill="currentColor" />}
               </button>
-              <p className="min-w-0 flex-1 truncate text-[11px] text-muted">
+              <p className="min-w-0 flex-1 truncate text-[12px] text-muted">
                 {recordingPaused ? 'Paused — resume or send' : 'Recording…'}
               </p>
               <button
                 type="button"
                 onClick={sendRecording}
                 aria-label="Send voice note"
-                className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(180deg,#f7a233,#ee7b1e)] px-3 text-[12px] font-bold text-ink"
+                className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(180deg,#f7a233,#ee7b1e)] px-3 text-[13px] font-bold text-ink"
               >
                 <Send size={14} /> Send
               </button>

@@ -64,7 +64,7 @@ export default function PublicHome() {
         </p>
         <div className="mt-4 space-y-2">
           {VALUE_PROPS.map(({ icon: Icon, text }) => (
-            <p key={text} className="flex items-center gap-2 text-[12px] text-ink/80">
+            <p key={text} className="flex items-center gap-2 text-[13px] text-ink/80">
               <Icon size={15} className="text-amber" aria-hidden />
               {text}
             </p>
@@ -74,7 +74,7 @@ export default function PublicHome() {
           Sign up free
           <ArrowRight size={17} aria-hidden />
         </Link>
-        <p className="mt-2 text-center text-[11px] text-muted">
+        <p className="mt-2 text-center text-[12px] text-muted">
           Already on board? Just <Link to="/login" className="font-semibold text-ink underline underline-offset-2">log in</Link>.
         </p>
       </section>
@@ -83,7 +83,7 @@ export default function PublicHome() {
       <section className="mx-auto max-w-[480px] px-4 pb-10">
         <div className="mb-2 flex items-center justify-between px-1">
           <h2 className="text-[14px] font-bold">Around Lagos</h2>
-          <span className="text-[11px] text-muted">A preview — log in to see everything</span>
+          <span className="text-[12px] text-muted">A preview — log in to see everything</span>
         </div>
 
         {loading ? (
@@ -96,7 +96,7 @@ export default function PublicHome() {
               <TaskCard key={task.id} task={task} verified={verifiedMap[task.host_id] === 'verified'} />
             ))}
             {tasks.length === 0 && (
-              <p className="py-6 text-center text-[13px] text-muted">
+              <p className="py-6 text-center text-[14px] text-muted">
                 Nothing in the feed right now — it fills up fast. Log in to catch the next one.
               </p>
             )}
@@ -112,11 +112,11 @@ export default function PublicHome() {
       {/* Footer trust line */}
       <footer className="border-t border-line bg-white px-5 py-5">
         <div className="mx-auto flex max-w-[480px] items-center justify-between gap-3">
-          <p className="text-[11px] leading-relaxed text-muted">
+          <p className="text-[12px] leading-relaxed text-muted">
             COME W&apos; ME · Lagos<br />
             Meet in public. Check each poster&apos;s reputation. Stay safe.
           </p>
-          <Link to="/login" className="shrink-0 rounded-full bg-sun/20 px-3 py-1.5 text-[11px] font-bold text-amber">
+          <Link to="/login" className="shrink-0 rounded-full bg-sun/20 px-3 py-1.5 text-[12px] font-bold text-amber">
             Lagosians onboard now
           </Link>
         </div>

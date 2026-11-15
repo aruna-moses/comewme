@@ -73,12 +73,12 @@ export default function ResetPassword() {
               <Check size={26} className="text-verified" />
             </div>
             <h1 className="mt-4 font-display text-[24px] font-bold">Password updated</h1>
-            <p className="mt-2 text-[13px] text-muted">You&apos;re back in. Redirecting you now…</p>
+            <p className="mt-2 text-[14px] text-muted">You&apos;re back in. Redirecting you now…</p>
           </div>
         ) : !ready ? (
           <div className="card p-6 text-center">
             <p className="font-display text-[18px] font-bold">This link isn&apos;t working</p>
-            <p className="mt-2 text-[13px] text-muted">
+            <p className="mt-2 text-[14px] text-muted">
               {expired
                 ? 'The reset link is probably expired or has already been used. Request a fresh one below.'
                 : 'Waiting for your reset link to confirm…'}
@@ -90,7 +90,7 @@ export default function ResetPassword() {
         ) : (
           <>
             <h1 className="font-display text-[28px] font-bold tracking-tight">Pick a new password</h1>
-            <p className="mt-1.5 text-[13px] text-muted">Make it something you&apos;ll remember this time.</p>
+            <p className="mt-1.5 text-[14px] text-muted">Make it something you&apos;ll remember this time.</p>
             <form onSubmit={handleSubmit} className="mt-6 space-y-3">
               <div>
                 <label className="label" htmlFor="new-password">New password</label>
@@ -131,7 +131,7 @@ export default function ResetPassword() {
                   required
                 />
               </div>
-              {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[13px] font-medium text-alert">{error}</p>}
+              {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[14px] font-medium text-alert">{error}</p>}
               <button type="submit" className="btn-primary w-full rounded-[16px]" disabled={busy || !password || !confirm}>
                 {busy ? 'Updating…' : 'Update password'}
               </button>

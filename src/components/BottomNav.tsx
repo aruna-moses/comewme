@@ -89,7 +89,7 @@ export default function BottomNav() {
           }`}
         >
           {icon(isActive)}
-          <span className="mt-0.5 text-[9px] font-bold leading-none tracking-tight">{label}</span>
+          <span className="mt-0.5 text-[10px] font-bold leading-none tracking-tight">{label}</span>
           {badgeCount > 0 && (
             <span
               aria-hidden="true"

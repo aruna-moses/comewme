@@ -68,7 +68,7 @@ export default function ReportButton({
           </p>
         ) : (
           <>
-            <p className="text-[12px] leading-relaxed text-muted">Reports are private. Share only the details needed for us to review what happened.</p>
+            <p className="text-[13px] leading-relaxed text-muted">Reports are private. Share only the details needed for us to review what happened.</p>
             <label className="label mt-3" htmlFor="violation-category">What is this about?</label>
             <select id="violation-category" className="field" value={category} onChange={(event) => setCategory(event.target.value as ViolationCategory)}>
               {VIOLATION_CATEGORIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
@@ -83,7 +83,7 @@ export default function ReportButton({
               minLength={3}
               required
             />
-            {error && <p role="alert" className="mt-2 text-[12px] text-alert">{error}</p>}
+            {error && <p role="alert" className="mt-2 text-[13px] text-alert">{error}</p>}
             <button type="button" className="btn-primary mt-3 w-full" disabled={busy || description.trim().length < 3} onClick={() => void sendReport()}>
               {busy ? 'Sending…' : 'Send report'}
             </button>

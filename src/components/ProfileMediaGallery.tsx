@@ -164,7 +164,7 @@ export default function ProfileMediaGallery({
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <h2 id="public-media-heading" className="font-display text-base font-bold">Public moments</h2>
-          <p className="mt-0.5 text-[11px] text-muted">Photos and videos you choose to share</p>
+          <p className="mt-0.5 text-[12px] text-muted">Photos and videos you choose to share</p>
         </div>
         {isOwner && (
           <button
@@ -189,16 +189,16 @@ export default function ProfileMediaGallery({
         )}
       </div>
 
-      <p className="mb-3 flex items-center gap-1.5 text-[10px] text-muted">
+      <p className="mb-3 flex items-center gap-1.5 text-[11px] text-muted">
         <LockKeyhole size={12} aria-hidden />
         Only media you add here is public. Up to {MAX_MEDIA} items.
       </p>
 
       {error && (
-        <div className="mb-3 rounded-xl border border-alert/20 bg-alert/10 p-3 text-[12px] text-alert">
+        <div className="mb-3 rounded-xl border border-alert/20 bg-alert/10 p-3 text-[13px] text-alert">
           <p role="alert">{error}</p>
           {/migration|not set up/i.test(error) && (
-            <p className="mt-1 text-[11px]">Apply <code>008_public_profile_media.sql</code> in Supabase SQL Editor.</p>
+            <p className="mt-1 text-[12px]">Apply <code>008_public_profile_media.sql</code> in Supabase SQL Editor.</p>
           )}
           {!/migration|not set up/i.test(error) && (
             <button type="button" className="mt-1 font-semibold underline" onClick={() => void loadMedia()}>
@@ -215,11 +215,11 @@ export default function ProfileMediaGallery({
       ) : media.length === 0 ? (
         <div className="card flex min-h-28 flex-col items-center justify-center p-4 text-center">
           <ImagePlus size={22} className="text-muted" aria-hidden />
-          <p className="mt-2 text-[12px] text-muted">
+          <p className="mt-2 text-[13px] text-muted">
             {isOwner ? 'Share a few moments so people can get to know you.' : 'No public photos or videos yet.'}
           </p>
           {isOwner && (
-            <p className="mt-1 text-[10px] text-muted">
+            <p className="mt-1 text-[11px] text-muted">
               JPG, PNG, WebP · MP4, WebM, MOV · 8 MB photos / 30 MB videos
             </p>
           )}
@@ -262,7 +262,7 @@ export default function ProfileMediaGallery({
       )}
 
       {isOwner && media.length > 0 && media.length < MAX_MEDIA && (
-        <p className="mt-2 text-[10px] text-muted">{MAX_MEDIA - media.length} more {MAX_MEDIA - media.length === 1 ? 'spot' : 'spots'} available</p>
+        <p className="mt-2 text-[11px] text-muted">{MAX_MEDIA - media.length} more {MAX_MEDIA - media.length === 1 ? 'spot' : 'spots'} available</p>
       )}
 
       {removePending && (

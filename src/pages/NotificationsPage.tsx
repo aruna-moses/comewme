@@ -49,14 +49,14 @@ export default function NotificationsPage() {
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="-ml-1 inline-flex items-center gap-1.5 text-amber" aria-label="Back to Discover">
           <ArrowLeft size={20} aria-hidden />
-          <span className="text-[13px] font-semibold">Back</span>
+          <span className="text-[14px] font-semibold">Back</span>
         </Link>
         <h1 className="font-display text-[18px] font-bold">Notifications</h1>
         {unreadNotifications > 0 && (
           <button
             type="button"
             onClick={() => void markAllNotificationsRead()}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-amber/40 bg-sun/20 px-3 py-1.5 text-[11px] font-semibold text-amber"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-amber/40 bg-sun/20 px-3 py-1.5 text-[12px] font-semibold text-amber"
           >
             <CheckCheck size={13} aria-hidden />
             Mark all read
@@ -69,14 +69,14 @@ export default function NotificationsPage() {
           <div className="py-12 text-center">
             <Sparkles size={32} className="mx-auto text-amber" aria-hidden />
             <p className="mt-4 font-display text-[18px] font-bold">All caught up</p>
-            <p className="mt-1 text-[13px] text-muted">
+            <p className="mt-1 text-[14px] text-muted">
               Nothing new here yet. When someone accepts your request, or we review something you sent, it lands on this page.
             </p>
           </div>
         ) : (
           grouped.map(([day, items]) => (
             <section key={day} className="mb-5">
-              <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">{day}</p>
+              <p className="mb-2 px-1 text-[12px] font-bold uppercase tracking-[0.14em] text-muted">{day}</p>
               <div className="space-y-2">
                 {items.map((item) => (
                   <NotificationRow key={item.id} item={item} onMarkRead={(id) => void markNotificationRead(id)} />
