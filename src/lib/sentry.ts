@@ -9,7 +9,8 @@
 
 import * as Sentry from '@sentry/react'
 
-const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined
+// Accept both spellings — people predictably type VITE_SENTRY_DNS (dns vs dsn).
+const dsn = (import.meta.env.VITE_SENTRY_DSN ?? import.meta.env.VITE_SENTRY_DNS) as string | undefined
 const isProduction = import.meta.env.PROD
 
 export function initSentry() {
