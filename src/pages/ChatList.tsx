@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Pin, Sparkles } from 'lucide-react'
+import { MapPin, Pin, Sparkles, ChevronDown } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { usePersistedState } from '../lib/drafts'
@@ -35,6 +35,7 @@ export default function ChatList() {
   }, [profile?.id])
 
   const [pinnedIds, setPinnedIds] = usePersistedState<string[]>('chats:pinned', [])
+  const [doneExpanded, setDoneExpanded] = useState(false)
   const isPinned = (id: string) => pinnedIds.includes(id)
   const togglePin = (id: string) => {
     setPinnedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
@@ -273,16 +274,27 @@ export default function ChatList() {
               </section>
             )}
             {buckets.done.length > 0 && (
-              <section aria-labelledby="completed-chats-heading">
-                <p id="completed-chats-heading" className="flex items-center gap-1.5 border-t border-line px-1 pt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
-                  Completed chats
-                  <span className="rounded-full bg-line px-2 py-0.5 text-[9px] font-extrabold tabular-nums text-ink/60">
-                    {buckets.done.length}
+              <section aria-labelledby="completed-chats-heading" className="border-t border-line pt-3">
+                <button
+                  type="button"
+                  onClick={() => setDoneExpanded((v) => !v)}
+                  aria-expanded={doneExpanded}
+                  aria-controls="completed-chats-list"
+                  className="flex w-full items-center justify-between gap-2 px-1 py-1 text-left text-[11px] font-bold uppercase tracking-[0.16em] text-muted transition"
+                >
+                  <span className="flex items-center gap-1.5">
+                    Completed chats
+                    <span className="rounded-full bg-line px-2 py-0.5 text-[9px] font-extrabold tabular-nums text-ink/60">
+                      {buckets.done.length}
+                    </span>
                   </span>
-                </p>
-                <div className="mt-2 space-y-2">
-                  {buckets.done.map((c) => renderRow(c))}
-                </div>
+                  <ChevronDown size={14} className={`transition-transform duration-200 ${doneExpanded ? 'rotate-180' : ''}`} aria-hidden />
+                </button>
+                {doneExpanded && (
+                  <div id="completed-chats-list" className="mt-2 space-y-2">
+                    {buckets.done.map((c) => renderRow(c))}
+                  </div>
+                )}
               </section>
             )}
           </div>
