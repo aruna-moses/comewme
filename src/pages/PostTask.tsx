@@ -25,7 +25,7 @@ export default function PostTask() {
   const [meetingPoint, setMeetingPoint] = usePersistedState(`${DRAFT}:meeting`, '')
   const [date, setDate] = usePersistedState(`${DRAFT}:date`, '')
   const [time, setTime] = usePersistedState(`${DRAFT}:time`, '')
-  const [spots, setSpots] = usePersistedState(`${DRAFT}:spots`, 2)
+  const [spots, setSpots] = usePersistedState(`${DRAFT}:spots`, '2')
   const [busy, setBusy] = useState(false)
   const [postingControlLoading, setPostingControlLoading] = useState(true)
   const [postingControlReady, setPostingControlReady] = useState(false)
@@ -66,7 +66,7 @@ export default function PostTask() {
   // Drop leftovers from builds that persisted an untouched empty form.
   useEffect(() => {
     const empty =
-      !title && !description && !meetingPoint && !date && !time && manualCategory === null && spots === 2 && step === 'form'
+      !title && !description && !meetingPoint && !date && !time && manualCategory === null && spots === '2' && step === 'form'
     if (empty) clearDraftGroup(DRAFT)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -77,7 +77,7 @@ export default function PostTask() {
     setMeetingPoint('')
     setDate('')
     setTime('')
-    setSpots(2)
+    setSpots('2')
     setArea(profile?.area || 'Yaba')
     setManualCategory(null)
     setStep('form')
@@ -125,7 +125,7 @@ export default function PostTask() {
           area,
           meeting_point: meetingPoint.trim(),
           date_time: when.toISOString(),
-          spots_needed: spots,
+          spots_needed: Math.max(1, Math.min(2147483647, parseInt(spots, 10) || 1)),
           fill_mode: 'review',
         },
         profile,
@@ -246,15 +246,20 @@ export default function PostTask() {
                 </label>
                 <input
                   id="spots"
-                  type="number"
-                  min={1}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
+                  maxLength={10}
                   className="field"
                   value={spots}
                   onChange={(e) => {
-                    const value = Number(e.target.value)
-                    if (Number.isSafeInteger(value) && value >= 1 && value <= 2147483647) {
-                      setSpots(value)
-                    }
+                    const raw = e.target.value.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '')
+                    setSpots(raw)
+                  }}
+                  onBlur={() => {
+                    const n = parseInt(spots, 10)
+                    setSpots(String(Number.isFinite(n) && n >= 1 ? n : 1))
                   }}
                 />
               </div>
@@ -377,7 +382,7 @@ export default function PostTask() {
                   <span className="font-semibold">When:</span> {whenStr || date || '—'}
                 </p>
                 <p className="text-[13px] text-ink">
-                  <span className="font-semibold">People needed:</span> {spots}
+                  <span className="font-semibold">People needed:</span> {Math.max(1, parseInt(spots, 10) || 1)}
                 </p>
                 <p className="text-[13px] text-ink">
                   <span className="font-semibold">Fill mode:</span> Review applicants
