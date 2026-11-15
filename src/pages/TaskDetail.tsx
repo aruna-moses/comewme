@@ -788,7 +788,7 @@ export default function TaskDetail() {
         </Sheet>
 
         {/* report sheet */}
-        <Sheet open={reportOpen} onClose={() => { setReportOpen(false); setReportDone(false); setReportSubject(''); setReportDetails('') }} title={reportDone ? 'Thanks for telling us' : 'Report task'}>
+        <Sheet open={reportOpen} onClose={() => { setReportOpen(false); setReportDone(false); setReportSubject(''); setReportDetails('') }} title={reportDone ? 'Thanks for telling us' : 'Report activity'}>
           {reportDone ? (
             <div className="py-4 text-center">
               <p role="status" className="font-display text-lg font-bold">Your report has been sent.</p>
@@ -797,7 +797,7 @@ export default function TaskDetail() {
           ) : (
             <>
               <div className="card rounded-[16px] p-4">
-                <p className="text-[12px] text-muted">Task</p>
+                <p className="text-[12px] text-muted">Activity</p>
                 <p className="mt-1 text-[14px] font-semibold">{task.title}</p>
                 <p className="mt-2 text-[12px] text-amber">Reporting host: {hostDisplayName}</p>
               </div>

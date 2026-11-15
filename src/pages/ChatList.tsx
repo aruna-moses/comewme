@@ -182,7 +182,7 @@ export default function ChatList() {
     <div className="pb-8">
       <header className="px-5 pb-2 pt-8">
         <h1 className="font-display text-[24px] font-bold leading-tight">Chats</h1>
-        <p className="mt-1 text-[14px] text-muted">Coordinate with your task group before you meet.</p>
+        <p className="mt-1 text-[14px] text-muted">Coordinate with your activity group before you meet.</p>
       </header>
 
       <div className="px-5 pt-4">
@@ -259,7 +259,7 @@ export default function ChatList() {
         )}
         {chats.length > 0 && (
           <p className="px-2 pt-5 text-center text-[12px] leading-relaxed text-muted">
-            Your task groups appear here once you&apos;ve joined. Say hello before you meet.
+            Your activity groups appear here once you've joined. Say hello before you meet.
           </p>
         )}
       </div>

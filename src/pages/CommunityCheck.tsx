@@ -20,7 +20,7 @@ const QUESTIONS = [
     options: [
       'Keep it private and report the person',
       'Share it if they seem friendly',
-      'Send it to the task group',
+      'Send it to the activity group',
     ],
     correct: 0,
     reassurance: 'Your verification code is only for you. Never share it.',

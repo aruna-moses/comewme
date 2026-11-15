@@ -35,7 +35,7 @@ const SECTIONS: Array<{ title: string; body: string | string[] }> = [
       'Sports & walks: basketball, football pickup games, gym meetups.',
       'Culture & nights out: galleries, open-mics, comedy, music events, food fairs.',
       'Shared rides (same destination, public transport moving together).',
-      'Moving help / small domestic tasks in public settings.',
+      'Moving help / small domestic activities in public settings.',
     ],
   },
   {
@@ -163,7 +163,7 @@ export default function CommunityGuidelines() {
         <div className="mt-4 rounded-2xl border border-alert/30 bg-alert/5 p-4 text-[13px]">
           <p className="font-bold text-alert">Most common question</p>
           <p className="mt-1 leading-relaxed text-ink/80">
-            "Can I post a sexual task?" → <strong>No.</strong> Sexual, romantic, or companionship-for-pay tasks are a permanent ban on first post, no appeal. This one isn&apos;t flexible.
+            "Can I post a sexual activity?" → <strong>No.</strong> Sexual, romantic, or companionship-for-pay activities are a permanent ban on first post, no appeal. This one isn&apos;t flexible.
           </p>
         </div>
 
@@ -180,7 +180,7 @@ export default function CommunityGuidelines() {
             id="guideline-search"
             type="text"
             className="field mt-2"
-            placeholder="e.g. Can I post a task to meet a girlfriend?"
+            placeholder="e.g. Can I post an activity to meet a girlfriend?"
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
           />
