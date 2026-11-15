@@ -214,3 +214,40 @@ export function mapLink(lat: number | null, lng: number | null, address: string 
   if (address) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
   return null
 }
+
+export interface AdminAlertRow {
+  id: string
+  source: string
+  sentry_issue_id: string | null
+  level: 'fatal' | 'error' | 'warning' | 'info' | string
+  title: string
+  culprit: string | null
+  url: string | null
+  acknowledged: boolean
+  acknowledged_by: string | null
+  acknowledged_at: string | null
+  created_at: string
+}
+
+export async function fetchAdminAlerts(limit = 20): Promise<AdminAlertRow[]> {
+  const { data, error } = await supabase
+    .from('admin_alerts')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw toError(error)
+  return (data ?? []) as AdminAlertRow[]
+}
+
+export async function setAdminAlertAcknowledged(id: string, acknowledged: boolean): Promise<void> {
+  const { data: u } = await supabase.auth.getUser()
+  const { error } = await supabase
+    .from('admin_alerts')
+    .update({
+      acknowledged,
+      acknowledged_by: acknowledged ? u.user?.id ?? null : null,
+      acknowledged_at: acknowledged ? new Date().toISOString() : null,
+    })
+    .eq('id', id)
+  if (error) throw toError(error)
+}

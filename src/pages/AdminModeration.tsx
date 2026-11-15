@@ -26,8 +26,8 @@ import {
   reviewViolation,
   reviewViolationAppeal,
 } from '../lib/api'
-import { fetchSOSAlerts, fetchPendingVerifications, fetchRecentReviews, fetchFeedbackForModerator, reviewFeedback, mapLink, reviewSOSAlert, reviewVerification } from '../lib/moderation'
-import type { SOSAlert, SOSStatus, VerificationSubmission, RecentReview, ReportForAdmin } from '../lib/moderation'
+import { fetchSOSAlerts, fetchPendingVerifications, fetchRecentReviews, fetchFeedbackForModerator, reviewFeedback, mapLink, reviewSOSAlert, reviewVerification, fetchAdminAlerts, setAdminAlertAcknowledged } from '../lib/moderation'
+import type { SOSAlert, SOSStatus, VerificationSubmission, RecentReview, ReportForAdmin, AdminAlertRow } from '../lib/moderation'
 import type { Violation, ViolationSeverity } from '../types'
 import { VIOLATION_CATEGORIES } from '../types'
 import { useNotifications } from '../context/NotificationContext'
@@ -75,6 +75,13 @@ const SOS_STATUS_STYLE: Record<SOSStatus, string> = {
   reviewed: 'bg-sun/25 text-amber',
   resolved: 'bg-verified/15 text-verified',
   false_alarm: 'bg-line text-muted',
+}
+
+const ALERT_LEVEL: Record<string, { pill: string; label: string }> = {
+  fatal: { pill: 'bg-alert text-white', label: 'FATAL' },
+  error: { pill: 'bg-alert/10 text-alert', label: 'ERROR' },
+  warning: { pill: 'bg-sun/25 text-amber', label: 'WARN' },
+  info: { pill: 'bg-line text-muted', label: 'INFO' },
 }
 
 function timeAgo(iso: string) {
@@ -158,6 +165,7 @@ export default function AdminModeration() {
   const [detailItem, setDetailItem] = useState<RecentReview | null>(null)
   const [recentFilter, setRecentFilter] = useState<'all' | RecentReview['kind']>('all')
   const [openSection, setOpenSection] = useState<Record<string, boolean>>({
+    alerts: true,
     sos: true,
     verifications: true,
     feedback: true,
@@ -166,6 +174,18 @@ export default function AdminModeration() {
     appeals: true,
     recent: false,
   })
+  const [systemAlerts, setSystemAlerts] = useState<AdminAlertRow[]>([])
+  const unackSystemAlerts = systemAlerts.filter((alert) => !alert.acknowledged).length
+
+  const toggleAck = async (alert: AdminAlertRow) => {
+    try {
+      await setAdminAlertAcknowledged(alert.id, !alert.acknowledged)
+      setSystemAlerts((cur) => cur.map((a) => (a.id === alert.id ? { ...a, acknowledged: !a.acknowledged } : a)))
+    } catch {
+      setError('Could not update that alert. Try again.')
+    }
+  }
+
   const toggleSection = (id: string) => setOpenSection((prev) => ({ ...prev, [id]: !prev[id] }))
   const [severity, setSeverity] = useState<Record<string, ViolationSeverity>>({})
   const [actions, setActions] = useState<Record<string, string>>({})
@@ -187,13 +207,14 @@ export default function AdminModeration() {
       const allowed = await isModerator()
       setModerator(allowed)
       if (!allowed) return
-      const [pendingReports, pendingAppeals, sos, pendingVerifications, recentReviews, pendingFeedback] = await Promise.all([
+      const [pendingReports, pendingAppeals, sos, pendingVerifications, recentReviews, pendingFeedback, sentryAlerts] = await Promise.all([
         getPendingReports(),
         getPendingViolationAppeals(),
         fetchSOSAlerts().catch(() => [] as SOSAlert[]),
         fetchPendingVerifications().catch(() => [] as VerificationSubmission[]),
         fetchRecentReviews(30).catch(() => [] as RecentReview[]),
         fetchFeedbackForModerator().catch(() => [] as ReportForAdmin[]),
+        fetchAdminAlerts(20).catch(() => [] as AdminAlertRow[]),
       ])
       setReports(pendingReports)
       setAppeals(pendingAppeals)
@@ -201,6 +222,7 @@ export default function AdminModeration() {
       setVerifications(pendingVerifications)
       setRecent(recentReviews)
       setFeedback(pendingFeedback)
+      setSystemAlerts(sentryAlerts)
       // Selection is anchored to the pending list — after a refresh, drop ids that are no longer pending
       setSelectedReports((prev) => new Set(pendingReports.filter((r) => prev.has(r.id)).map((r) => r.id)))
     } catch (e) {
@@ -375,6 +397,69 @@ export default function AdminModeration() {
           </div>
         ) : (
           <>
+            {/* System alerts (Sentry) */}
+            <CollapsibleSection
+              title="System alerts"
+              count={unackSystemAlerts}
+              sub={unackSystemAlerts === 0 ? 'All clear' : 'Sentry crash alerts'}
+              urgent={unackSystemAlerts > 0}
+              open={openSection.alerts}
+              onToggle={() => toggleSection('alerts')}
+              preview={unackSystemAlerts > 0 ? systemAlerts.find((a) => !a.acknowledged)?.title : undefined}
+            >
+              {systemAlerts.length === 0 && (
+                <p className="rounded-xl border border-line bg-canvas p-4 text-[13px] text-muted">
+                  No crash alerts yet. When Sentry reports a new issue in production, it lands here with a one-tap link to the exact stack trace.
+                </p>
+              )}
+              {systemAlerts.length > 0 && (
+                <ul className="divide-y divide-line">
+                  {systemAlerts.map((alert) => {
+                    const level = ALERT_LEVEL[alert.level] ?? ALERT_LEVEL.error
+                    return (
+                      <li key={alert.id} className="flex items-start gap-3 py-2.5">
+                        <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] ${level.pill}`}>
+                          {level.label}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[12px] font-semibold leading-snug text-ink">{alert.title}</p>
+                          {alert.culprit && (
+                            <p className="mt-0.5 truncate text-[10px] text-muted">{alert.culprit}</p>
+                          )}
+                          <p className="mt-0.5 text-[10px] text-muted">{timeAgo(alert.created_at)}</p>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => void toggleAck(alert)}
+                            className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold transition ${
+                              alert.acknowledged
+                                ? 'border-verified/40 bg-verified/15 text-verified'
+                                : 'border-line bg-white text-muted hover:border-amber/40 hover:text-amber'
+                            }`}
+                            aria-pressed={alert.acknowledged}
+                          >
+                            {alert.acknowledged ? 'Seen' : 'Mark seen'}
+                          </button>
+                          {alert.url && (
+                            <a
+                              href={alert.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber hover:underline"
+                              aria-label="Open this issue in Sentry"
+                            >
+                              Open issue <ExternalLink size={11} aria-hidden />
+                            </a>
+                          )}
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </CollapsibleSection>
+
             {/* SOS */}
             <CollapsibleSection
               title="SOS alerts"
