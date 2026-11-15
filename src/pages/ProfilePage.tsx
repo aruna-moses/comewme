@@ -7,7 +7,7 @@ import { fetchProfile, fetchReviews } from '../lib/api'
 import { VerifiedBadge } from '../components/Badges'
 import { supabase } from '../lib/supabase'
 import { AREAS, CATEGORIES } from '../types'
-import type { Profile, Review } from '../types'
+import type { Profile, Review, Task } from '../types'
 import Avatar from '../components/Avatar'
 import CharacterJourney from '../components/CharacterJourney'
 import PersonalitySelector from '../components/PersonalitySelector'
@@ -17,6 +17,102 @@ import TrustScoreDetail from '../components/TrustScoreDetail'
 import ProfileDetailsSheet from '../components/ProfileDetailsSheet'
 import { calculateTrustScore } from '../lib/trustScore'
 import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
+import { loadMyTasksForUser } from '../lib/myTasksData'
+import { categoryTileBg, taskEmoji } from '../lib/format'
+
+function PostsHistory({ userId }: { userId: string }) {
+  const [items, setItems] = useState<Task[] | null>(null)
+  const [expanded, setExpanded] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    loadMyTasksForUser(userId)
+      .then((bundle) => {
+        if (!alive) return
+        const now = Date.now()
+        const seen = new Set<string>()
+        const done: Task[] = []
+        for (const t of [...bundle.hosted, ...bundle.joined]) {
+          const finished = t.status === 'completed' || new Date(t.date_time).getTime() < now
+          if (finished && !seen.has(t.id)) {
+            seen.add(t.id)
+            done.push(t)
+          }
+        }
+        done.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
+        setItems(done)
+      })
+      .catch(() => alive && setItems([]))
+    return () => {
+      alive = false
+    }
+  }, [userId])
+
+  if (items === null) return null
+
+  if (items.length === 0) {
+    return (
+      <section className="mt-6">
+        <h2 className="font-display text-[17px] font-bold">Posts history</h2>
+        <p className="mt-2 rounded-2xl border border-line bg-white p-5 text-center text-[12px] leading-relaxed text-muted">
+          Completed activities will collect here once you wrap them.
+        </p>
+      </section>
+    )
+  }
+
+  const visible = expanded ? items : items.slice(0, 5)
+
+  return (
+    <section className="mt-6">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-display text-[17px] font-bold">Posts history</h2>
+        <Link to="/activities" className="text-[12px] font-semibold text-amber">
+          View all
+        </Link>
+      </div>
+      <ul className="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
+        {visible.map((task) => (
+          <li key={task.id}>
+            <Link
+              to={`/task/${task.id}`}
+              className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-canvas"
+            >
+              <span
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-[22px] ${categoryTileBg(task.category)}`}
+                aria-hidden="true"
+              >
+                {taskEmoji(task.category)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-semibold text-ink">{task.title}</span>
+                <span className="mt-0.5 block text-[11px] text-muted">
+                  {new Date(task.date_time).toLocaleDateString(undefined, {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </span>
+              </span>
+              <span className="shrink-0 rounded-full bg-line/60 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-muted">
+                {task.status === 'completed' ? 'Completed' : 'Passed'}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {items.length > 5 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-2 text-[12px] font-semibold text-amber"
+        >
+          {expanded ? 'Show less' : `Show all ${items.length} activities`}
+        </button>
+      )}
+    </section>
+  )
+}
 
 export default function ProfilePage() {
   const { id } = useParams<{ id: string }>()
@@ -261,6 +357,8 @@ export default function ProfilePage() {
         )}
 
         <ProfileMediaGallery profileId={profile.id} isOwner={isMe} />
+
+        {isMe && <PostsHistory userId={profile.id} />}
 
         {!isMe && me && (
           <div className="mt-5 flex justify-end">

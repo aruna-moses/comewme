@@ -63,25 +63,37 @@ export default function ChatList() {
     )
   }
 
-  // Split: Pinned > Attention > Catch-up > Brand-new (say hi first)
+  // Split: Pinned > Attention > Catch-up > Brand-new, done groups at the bottom
   const now = Date.now()
+  const isDoneChat = (c: (typeof chats)[number]) => {
+    if (c.task.status === 'completed') return true
+    return new Date(c.task.date_time).getTime() < now
+  }
   const buckets = {
     pinned: pinnedIds.map((id) => chats.find((c) => c.task.id === id)).filter(Boolean) as typeof chats,
     attention: chats.filter((c) => {
-      if (pinnedIds.includes(c.task.id)) return false
+      if (pinnedIds.includes(c.task.id) || isDoneChat(c)) return false
       if ((unreadByTask[c.task.id] ?? 0) > 0) return true
       const start = new Date(c.task.date_time).getTime()
       return start > now - 6 * 3600_000 && start - now < 24 * 3600_000
     }),
     quiet: [] as typeof chats,
     newChats: [] as typeof chats,
+    done: [] as typeof chats,
   }
   for (const c of chats) {
     if (pinnedIds.includes(c.task.id)) continue
     if (buckets.attention.includes(c)) continue
+    if (isDoneChat(c)) {
+      buckets.done.push(c)
+      continue
+    }
     if (c.lastMessage) buckets.quiet.push(c)
     else buckets.newChats.push(c)
   }
+  buckets.done.sort(
+    (a, b) => new Date(b.task.date_time).getTime() - new Date(a.task.date_time).getTime(),
+  )
 
   const renderRow = (c: typeof chats[number]) => {
     const unread = unreadByTask[c.task.id] ?? 0
@@ -106,12 +118,13 @@ export default function ChatList() {
         : days > 0
           ? 'bg-sun/15 text-amber'
           : 'bg-line/50 text-muted'
-    const happeningToday = days === 0
+    const doneChat = isDoneChat(c)
+    const happeningToday = !doneChat && days === 0
     return (
       <div key={c.task.id} className="relative">
         <Link
           to={`/task/${c.task.id}/chat`}
-          className={`card flex items-start gap-3 rounded-[18px] p-3.5 pr-10 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber ${happeningToday ? 'bg-gradient-to-br from-sun/25 via-amber/10 to-canvas ring-2 ring-amber/70 shadow-[0_12px_36px_rgba(247,162,51,0.25)]' : ''}`}
+          className={`card flex items-start gap-3 rounded-[18px] p-3.5 pr-10 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber ${happeningToday ? 'bg-gradient-to-br from-sun/25 via-amber/10 to-canvas ring-2 ring-amber/70 shadow-[0_12px_36px_rgba(247,162,51,0.25)]' : ''} ${doneChat ? 'opacity-70' : ''}`}
         >
         <div className="relative shrink-0">
           <div
@@ -139,7 +152,11 @@ export default function ChatList() {
             )}
           </div>
           <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted">
-            {happeningToday ? (
+            {doneChat ? (
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-muted">
+                {c.task.status === 'completed' ? 'Completed' : 'Passed'}
+              </span>
+            ) : happeningToday ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-amber">
                 <span className="h-1.5 w-1.5 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full bg-amber" aria-hidden />
                 Happening today
@@ -252,6 +269,19 @@ export default function ChatList() {
                 </p>
                 <div className="mt-2 space-y-2">
                   {buckets.newChats.map((c) => renderRow(c))}
+                </div>
+              </section>
+            )}
+            {buckets.done.length > 0 && (
+              <section aria-labelledby="completed-chats-heading">
+                <p id="completed-chats-heading" className="flex items-center gap-1.5 border-t border-line px-1 pt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+                  Completed chats
+                  <span className="rounded-full bg-line px-2 py-0.5 text-[9px] font-extrabold tabular-nums text-ink/60">
+                    {buckets.done.length}
+                  </span>
+                </p>
+                <div className="mt-2 space-y-2">
+                  {buckets.done.map((c) => renderRow(c))}
                 </div>
               </section>
             )}

@@ -428,6 +428,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
   }, [task, profile, replyTarget])
 
   const onToggleReaction = useCallback(async (messageId: string, emoji: string) => {
+    if (task?.status === 'completed') return
     setError(null)
     try {
       const toggled = await toggleMessageReaction(messageId, emoji)
@@ -854,6 +855,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       longPressTriggered.current = false
       return
     }
+    if (isArchived) return
     if (message.deleted_at || message.sender_id === profile?.id) return
     if ((event.target as HTMLElement).closest('button, a, input')) return
     setReplyTarget(message)
@@ -921,6 +923,9 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       eventIndex += 1
     }
   }
+
+  // Completed activities are archived: reading is allowed, posting is not.
+  const isArchived = task?.status === 'completed'
 
   if (!authorized || !task) {
     return (
@@ -1196,7 +1201,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                           const active = REACTIONS.filter((emoji) => (reactions[message.id]?.[emoji]?.count ?? 0) > 0)
                           if (active.length === 0) return null
                           return (
-                            <div className={`mt-1.5 flex flex-wrap items-center gap-1 ${mine ? 'justify-end' : ''}`} aria-label="Reactions">
+                            <div className={`mt-1.5 flex flex-wrap items-center gap-1 ${mine ? 'justify-end' : ''} ${isArchived ? 'pointer-events-none opacity-80' : ''}`} aria-label="Reactions">
                               {active.map((emoji) => {
                                 const info = reactions[message.id][emoji]
                                 const count = info.count
@@ -1225,6 +1230,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                         })()}
                         {actionMessageId === message.id && !message.deleted_at && (
                           <div className={`absolute top-full z-20 mt-1 flex min-w-[176px] flex-col overflow-hidden rounded-xl border border-line bg-white py-1 text-left shadow-lift ${mine ? 'right-0' : 'left-0'}`} role="menu" aria-label="Message actions">
+                            {!isArchived && (
                             <div className="flex items-center gap-0.5 border-b border-line px-1.5 pb-1.5 pt-0.5" aria-label="Quick reactions">
                               {REACTIONS.map((emoji) => (
                                 <button
@@ -1242,6 +1248,8 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                                 </button>
                               ))}
                             </div>
+                            )}
+                            {!isArchived && (
                             <button
                               type="button"
                               role="menuitem"
@@ -1253,6 +1261,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                             >
                               <Reply size={15} aria-hidden /> Reply
                             </button>
+                            )}
                             {message.type === 'text' && (
                               <button
                                 type="button"
@@ -1263,7 +1272,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                                 <Copy size={15} aria-hidden /> Copy
                               </button>
                             )}
-                            {isHost && (
+                            {isHost && !isArchived && (
                               <button
                                 type="button"
                                 role="menuitem"
@@ -1370,6 +1379,12 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           <p className="mb-2 text-[11px] font-semibold text-verified">Recap saved. Everyone can see it on this activity.</p>
         )}
 
+        {isArchived ? (
+          <div className="shrink-0 -mx-3 border-t border-line bg-white/95 px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-4 text-center backdrop-blur">
+            <p className="text-[13px] font-bold text-ink">This activity is complete — the group is archived.</p>
+            <p className="mt-1 text-[10px] text-muted">You can still read the whole chat history. The host can reopen it from the group info sheet.</p>
+          </div>
+        ) : (
         <div className="sticky bottom-0 -mx-3 border-t border-line bg-white px-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2">
           {typingOthers.length > 0 && (
             <div className="mb-1.5 flex items-center gap-2 px-2" aria-live="polite">
@@ -1479,6 +1494,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           </div>
           )}
         </div>
+        )}
       </section>
       <ConfirmDialog
         open={deleteTarget !== null}

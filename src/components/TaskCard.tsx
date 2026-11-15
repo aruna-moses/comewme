@@ -75,6 +75,12 @@ function countdownLabel(iso: string): string | null {
 }
 
 function statusLabel(t: Task): { label: string; tone: string } {
+  if (t.status === 'completed') {
+    return { label: 'Completed', tone: 'text-verified' }
+  }
+  if (new Date(t.date_time).getTime() < Date.now()) {
+    return { label: 'Passed', tone: 'text-muted' }
+  }
   const isFull = t.status === 'full' || t.spots_filled >= t.spots_needed
   if (isFull || t.status === 'cancelled') {
     return { label: isFull ? 'Full' : 'Cancelled', tone: 'text-muted' }

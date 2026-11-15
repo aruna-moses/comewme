@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
@@ -19,7 +19,7 @@ export default function MyTasks() {
   const [joined, setJoined] = useState<Task[]>(cached?.joined ?? [])
   const [applicationStatuses, setApplicationStatuses] = useState<Record<string, JoinStatus>>(cached?.statuses ?? {})
   const [verifiedMap, setVerifiedMap] = useState<Record<string, 'unverified' | 'pending' | 'verified'>>(cached?.verifiedMap ?? {})
-  const [tab, setTab] = useState<'hosting' | 'going'>('hosting')
+  const [tab, setTab] = useState<'hosting' | 'going' | 'done'>('hosting')
   const [pendingApplicants, setPendingApplicants] = useState<Record<string, number>>(cached?.pendingApplicants ?? {})
   const [loading, setLoading] = useState(() => !cached)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -68,24 +68,43 @@ export default function MyTasks() {
 
   const targetTaskId = new URLSearchParams(location.search).get('task')
 
+  const done = useMemo(() => {
+    const now = Date.now()
+    const isDone = (task: Task) =>
+      task.status === 'completed' || new Date(task.date_time).getTime() < now
+    const seen = new Set<string>()
+    const finished: Task[] = []
+    for (const task of [...hosted, ...joined]) {
+      if (!isDone(task) || seen.has(task.id)) continue
+      seen.add(task.id)
+      finished.push(task)
+    }
+    finished.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
+    return finished
+  }, [hosted, joined])
+
   useEffect(() => {
     if (loading || !targetTaskId) return
     if (hosted.some((task) => task.id === targetTaskId)) {
       setTab('hosting')
     } else if (joined.some((task) => task.id === targetTaskId)) {
       setTab('going')
+    } else if (done.some((task) => task.id === targetTaskId)) {
+      setTab('done')
     }
-  }, [loading, targetTaskId, hosted, joined])
+  }, [loading, targetTaskId, hosted, joined, done])
 
   useEffect(() => {
     if (loading || !targetTaskId) return
-    const targetInCurrentTab = (tab === 'hosting' ? hosted : joined).some((task) => task.id === targetTaskId)
+    const targetInCurrentTab = (tab === 'hosting' ? hosted : tab === 'going' ? joined : done).some(
+      (task) => task.id === targetTaskId,
+    )
     if (!targetInCurrentTab) return
     const timer = window.setTimeout(() => {
       document.getElementById(`task-${targetTaskId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 100)
     return () => window.clearTimeout(timer)
-  }, [loading, targetTaskId, tab, hosted, joined])
+  }, [loading, targetTaskId, tab, hosted, joined, done])
 
   if (loading) {
     return (
@@ -106,17 +125,19 @@ export default function MyTasks() {
     )
   }
 
-  const list = tab === 'hosting' ? hosted : joined
+  const list = tab === 'hosting' ? hosted : tab === 'going' ? joined : done
   const empty =
     tab === 'hosting'
       ? "You haven't hosted anything yet. Post an activity and people will join."
-      : "You haven't joined anything yet. Browse Discover and request to join."
+      : tab === 'going'
+        ? "You haven't joined anything yet. Browse Discover and request to join."
+        : 'Completed and past activities will land here once one wraps, done or expired.'
 
   return (
     <div className="pb-8">
       <header className="px-5 pb-2 pt-8">
         <h1 className="font-display text-[24px] font-bold leading-tight">Activities</h1>
-        <p className="mt-1 text-[14px] text-muted">Everything you&apos;ve posted and applied to.</p>
+        <p className="mt-1 text-[14px] text-muted">Everything you&apos;ve posted, applied to, and wrapped up.</p>
       </header>
 
       <div className="px-5 pt-4">
@@ -145,6 +166,16 @@ export default function MyTasks() {
             }`}
           >
             Applied ({joined.length})
+          </button>
+          <button
+            onClick={() => setTab('done')}
+            className={`flex-1 rounded-[12px] py-3 text-[12px] font-semibold transition ${
+              tab === 'done'
+                ? 'bg-white text-amber shadow-sm'
+                : 'text-muted'
+            }`}
+          >
+            Done ({done.length})
           </button>
         </div>
 
@@ -175,11 +206,15 @@ export default function MyTasks() {
                     ? (pendingApplicants[t.id] ?? 0) > 0
                       ? `${pendingApplicants[t.id]} waiting for your review`
                       : 'No applicants yet'
-                    : applicationStatus === 'accepted'
-                      ? 'Your group is ready'
-                      : applicationStatus === 'pending'
-                        ? 'Waiting for the host'
-                        : 'Application sent'}
+                    : tab === 'done'
+                      ? t.status === 'completed'
+                        ? 'Completed together'
+                        : 'Passed without completion'
+                      : applicationStatus === 'accepted'
+                        ? 'Your group is ready'
+                        : applicationStatus === 'pending'
+                          ? 'Waiting for the host'
+                          : 'Application sent'}
                 </span>
               </div>
             </div>
