@@ -55,10 +55,16 @@ export default function TaskDetail() {
   } | null>(null)
   const [decisionError, setDecisionError] = useState<string | null>(null)
   const [doneConfirmOpen, setDoneConfirmOpen] = useState(false)
-  const [completionCount, setCompletionCount] = useState<number | null>(null)
-  const closeCompletionCelebration = useCallback(() => setCompletionCount(null), [])
+  const [completionOpen, setCompletionOpen] = useState(false)
+
+  const completionSeenIndex = task?.id ? `comewme-completion-seen:${task.id}` : null
+  const completionCount = Math.max(
+    0,
+    hostProfile?.tasks_completed ?? profile?.tasks_completed ?? 0,
+  )
+  const closeCompletionCelebration = useCallback(() => setCompletionOpen(false), [])
   const findNextActivity = useCallback(() => {
-    setCompletionCount(null)
+    setCompletionOpen(false)
     navigate('/')
   }, [navigate])
 
@@ -89,6 +95,20 @@ export default function TaskDetail() {
   const isParticipant = Boolean(isHost || isAccepted)
   const isFull = Boolean(task && task.spots_filled >= task.spots_needed)
   const communityCheckPassed = Boolean(profile?.community_check_passed_at)
+
+  // Anyone who took part (host or accepted member) sees the celebration once per device.
+  useEffect(() => {
+    if (!task || task.status !== 'completed' || !completionSeenIndex) return
+    if (!isHost && !isAccepted) return
+    try {
+      if (window.localStorage.getItem(completionSeenIndex) === '1') return
+      window.localStorage.setItem(completionSeenIndex, '1')
+    } catch {
+      // storage unavailable — still celebrate
+    }
+    setCompletionOpen(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.id, task?.status, isHost, isAccepted])
 
   const load = useCallback(async (quiet?: boolean) => {
     if (!id) return
@@ -205,12 +225,16 @@ export default function TaskDetail() {
     setBusy(true)
     try {
       await markTaskDone(task.id)
-      const completedCount = (hostProfile?.tasks_completed ?? profile?.tasks_completed ?? 0) + 1
+      try {
+        if (task?.id) window.localStorage.setItem(`comewme-completion-seen:${task.id}`, '1')
+      } catch {
+        // storage unavailable — still celebrate
+      }
       setTask({ ...task, status: 'completed' })
       setHostProfile((current) =>
         current ? { ...current, tasks_completed: current.tasks_completed + 1 } : current,
       )
-      setCompletionCount(completedCount)
+      setCompletionOpen(true)
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Could not update')
     } finally {
@@ -902,7 +926,7 @@ export default function TaskDetail() {
           onCancel={() => setDoneConfirmOpen(false)}
           onConfirm={() => void handleDone()}
         />
-        {completionCount !== null && (
+        {completionOpen && (
           <TaskCompletionCelebration
             activityTitle={task.title}
             completedCount={completionCount}
