@@ -10,7 +10,7 @@ import { loadChatsForUser } from '../lib/chatsData'
 
 export default function ChatList() {
   const { profile } = useAuth()
-  const { unreadByTask, error: notificationError } = useNotifications()
+  const { unreadByTask, quoteCountByTask, error: notificationError } = useNotifications()
   const cached = profile?.id ? readCache<Awaited<ReturnType<typeof loadChatsForUser>>>(cacheKeys.chats(profile.id)) : undefined
 
   const [chats, setChats] = useState<Awaited<ReturnType<typeof loadChatsForUser>>>(cached ?? [])
@@ -116,6 +116,7 @@ export default function ChatList() {
 
   const renderRow = (c: typeof chats[number]) => {
     const unread = unreadByTask[c.task.id] ?? 0
+    const quotedYou = quoteCountByTask[c.task.id] ?? 0
     const pinned = isPinned(c.task.id)
     const muted = readMute(c.task.id)
     const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
@@ -203,12 +204,12 @@ export default function ChatList() {
                 {unread > 99 ? '99+' : unread}
               </span>
             )}
-            {c.replyCount > 0 && (
+            {quotedYou > 0 && (
               <span
-                aria-label={`${c.replyCount} ${c.replyCount === 1 ? 'message' : 'messages'} quoted you`}
+                aria-label={`${quotedYou} ${quotedYou === 1 ? 'message' : 'messages'} quoted you`}
                 className="flex h-5 min-w-5 items-center justify-center rounded-full border border-amber/40 bg-sun/25 px-1.5 text-[10px] font-extrabold uppercase leading-none text-amber"
               >
-                @{c.replyCount}
+                @{quotedYou}
               </span>
             )}
             {muted && <BellOff size={12} className="text-muted" aria-label="Muted" />}

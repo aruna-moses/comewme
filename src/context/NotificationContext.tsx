@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useAuth } from './AuthContext'
-import { fetchChatUnreadCounts, fetchNotificationBadgeCounts } from '../lib/api'
+import { fetchChatUnreadCounts, fetchNotificationBadgeCounts, fetchMyQuoteCounts } from '../lib/api'
 import type { NotificationBadgeCounts } from '../lib/api'
 import { EMPTY_MODERATION, fetchModerationCounts } from '../lib/moderation'
 import type { ModerationCounts } from '../lib/moderation'
@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase'
 
 interface NotificationState extends NotificationBadgeCounts {
   unreadByTask: Record<string, number>
+  quoteCountByTask: Record<string, number>
   moderation: ModerationCounts
   notifications: InAppNotification[]
   unreadNotifications: number
@@ -31,6 +32,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth()
   const [counts, setCounts] = useState(EMPTY_COUNTS)
   const [unreadByTask, setUnreadByTask] = useState<Record<string, number>>({})
+  const [quoteCountByTask, setQuoteCountByTask] = useState<Record<string, number>>({})
   const [moderation, setModeration] = useState<ModerationCounts>(EMPTY_MODERATION)
   const [notifications, setNotifications] = useState<InAppNotification[]>([])
   const [unreadNotifications, setUnreadNotifications] = useState(0)
@@ -43,6 +45,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if (!session?.user.id) {
       setCounts(EMPTY_COUNTS)
       setUnreadByTask({})
+      setQuoteCountByTask({})
       setModeration(EMPTY_MODERATION)
       setNotifications([])
       setUnreadNotifications(0)
@@ -53,9 +56,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     try {
       // Moderation is best-effort: if 014 has not been run yet the rest still works.
-      const [next, unreadCounts, mod, inbox, unreadInbox] = await Promise.all([
+      const [next, unreadCounts, quoteCounts, mod, inbox, unreadInbox] = await Promise.all([
         fetchNotificationBadgeCounts(),
         fetchChatUnreadCounts(),
+        fetchMyQuoteCounts().catch(() => ({} as Record<string, number>)),
         fetchModerationCounts().catch(() => EMPTY_MODERATION),
         fetchNotifications(30).catch(() => [] as InAppNotification[]),
         fetchUnreadCount().catch(() => 0),
@@ -63,6 +67,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       if (requestId !== requestSequence.current) return
       setCounts(next)
       setUnreadByTask(unreadCounts)
+      setQuoteCountByTask(quoteCounts)
       setModeration(mod)
       setNotifications(inbox)
       setUnreadNotifications(unreadInbox)
@@ -80,6 +85,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       requestSequence.current += 1
       setCounts(EMPTY_COUNTS)
       setUnreadByTask({})
+      setQuoteCountByTask({})
       setModeration(EMPTY_MODERATION)
       setNotifications([])
       setUnreadNotifications(0)
@@ -152,8 +158,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<NotificationState>(
-    () => ({ ...counts, unreadByTask, moderation, notifications, unreadNotifications, error: loadError ?? realtimeError, refresh, markNotificationRead, markAllNotificationsRead }),
-    [counts, unreadByTask, moderation, notifications, unreadNotifications, loadError, realtimeError, refresh, markNotificationRead, markAllNotificationsRead],
+    () => ({ ...counts, unreadByTask, quoteCountByTask, moderation, notifications, unreadNotifications, error: loadError ?? realtimeError, refresh, markNotificationRead, markAllNotificationsRead }),
+    [counts, unreadByTask, quoteCountByTask, moderation, notifications, unreadNotifications, loadError, realtimeError, refresh, markNotificationRead, markAllNotificationsRead],
   )
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>

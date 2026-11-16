@@ -280,6 +280,17 @@ export async function fetchChatUnreadCounts(): Promise<Record<string, number>> {
   )
 }
 
+export async function fetchMyQuoteCounts(): Promise<Record<string, number>> {
+  const { data, error } = await supabase.rpc('get_my_quote_counts')
+  if (error) throw toError(error)
+  return Object.fromEntries(
+    (data ?? []).map((row: { task_id: string; quote_count: number }) => [
+      row.task_id,
+      Number(row.quote_count),
+    ]),
+  )
+}
+
 export async function markChatRead(taskId: string): Promise<void> {
   const { error } = await supabase.rpc('mark_chat_read', { p_task_id: taskId })
   if (error) throw toError(error)
