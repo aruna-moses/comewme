@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import Sheet from '../components/Sheet'
+import { readSavedGoogleEmails } from '../lib/googleAccounts'
 import { supabase } from '../lib/supabase'
 
 /**
@@ -34,6 +36,8 @@ export default function Login() {
   const [notice, setNotice] = useState<string | null>(null)
   const [guidelinesFlash, setGuidelinesFlash] = useState(false)
   const guidelinesRef = useRef<HTMLLabelElement>(null)
+  const [googleAccounts, setGoogleAccounts] = useState<string[]>([])
+  const [googlePickerOpen, setGooglePickerOpen] = useState(false)
 
   useEffect(() => {
     if (session && profile) navigate(location.state?.from ?? '/', { replace: true })
@@ -51,6 +55,12 @@ export default function Login() {
       document.removeEventListener('visibilitychange', resetBusy)
       window.removeEventListener('pageshow', resetBusy)
     }
+  }, [])
+
+  // Google accounts this user has signed in with before on this device -
+  // powers the one-tap quick picker instead of forcing email + password entry.
+  useEffect(() => {
+    setGoogleAccounts(readSavedGoogleEmails())
   }, [])
 
   const flashGuidelinesNotice = (message: string) => {
@@ -107,7 +117,7 @@ export default function Login() {
     }
   }
 
-  async function handleGoogleSignIn() {
+  async function handleGoogleSignIn(googleEmail?: string) {
     setError(null)
     if (!guidelinesChecked) {
       flashGuidelinesNotice('Please tick the guidelines first — it takes two seconds.')
@@ -115,7 +125,7 @@ export default function Login() {
     }
     setBusy(true)
     try {
-      await signInWithGoogle(returnTo)
+      await signInWithGoogle(returnTo, googleEmail)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not sign in with Google.')
       setBusy(false)
@@ -188,7 +198,10 @@ export default function Login() {
               </p>
               <button
                 type="button"
-                onClick={() => void handleGoogleSignIn()}
+                onClick={() => {
+                  if (googleAccounts.length > 0) setGooglePickerOpen(true)
+                  else void handleGoogleSignIn()
+                }}
                 className="mt-5 flex w-full items-center justify-center gap-3 rounded-[16px] bg-ink py-3.5 text-[15px] font-bold text-canvas shadow-card transition enabled:hover:brightness-110 disabled:opacity-50"
                 disabled={busy}
                 aria-label="Continue with Google"
@@ -287,6 +300,42 @@ export default function Login() {
                   {busy ? 'One moment…' : mode === 'in' ? 'Sign in' : 'Create account'}
                 </button>
               </form>
+              <Sheet open={googlePickerOpen} onClose={() => setGooglePickerOpen(false)} title="Sign in with Google">
+                <p className="pb-4 text-[14px] leading-relaxed text-muted">
+                  Pick the Google account you want to sign in with. No email or password needed.
+                </p>
+                <div className="space-y-2 pb-4">
+                  {googleAccounts.map((accountEmail) => (
+                    <button
+                      key={accountEmail}
+                      type="button"
+                      onClick={() => {
+                        setGooglePickerOpen(false)
+                        void handleGoogleSignIn(accountEmail)
+                      }}
+                      className="flex w-full items-center gap-3 rounded-[16px] border border-line bg-white px-4 py-3 text-left transition hover:border-amber/60"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sun/20 text-[14px] font-extrabold text-amber">
+                        {accountEmail.slice(0, 1).toUpperCase()}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px] font-bold text-ink">{accountEmail}</span>
+                        <span className="block text-[13px] text-muted">Google account</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="btn-ghost w-full"
+                  onClick={() => {
+                    setGooglePickerOpen(false)
+                    void handleGoogleSignIn()
+                  }}
+                >
+                  Sign in with a different Google account
+                </button>
+              </Sheet>
               <p className="mt-5 text-center text-[15px] text-muted">
                 {mode === 'in' ? "Don't have an account?" : 'Already have one?'}{' '}
                 <button

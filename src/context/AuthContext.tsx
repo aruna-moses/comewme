@@ -12,6 +12,7 @@ import {
 } from '../lib/api'
 import type { Profile, Violation } from '../types'
 import { toError } from '../lib/errors'
+import { saveGoogleEmail } from '../lib/googleAccounts'
 
 const GOOGLE_GUIDELINES_CONSENT_KEY = 'comewme:google-guidelines-consent'
 const GOOGLE_GUIDELINES_CONSENT_MAX_AGE = 10 * 60 * 1000
@@ -26,7 +27,7 @@ interface AuthState {
   needsOnboarding: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, returnTo?: string) => Promise<{ needsConfirmation: boolean }>
-  signInWithGoogle: (returnTo?: string) => Promise<void>
+  signInWithGoogle: (returnTo?: string, googleEmail?: string) => Promise<void>
   signInWithPhone: (phone: string) => Promise<void>
   verifyPhoneOtp: (phone: string, token: string) => Promise<void>
   signOut: () => Promise<void>
@@ -113,6 +114,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next)
       if (next?.user.id) {
+        const identities = next.user.identities ?? []
+        const isGoogle =
+          identities.some((identity) => identity.provider === 'google') ||
+          next.user.user_metadata?.provider === 'google'
+        if (isGoogle && next.user.email) saveGoogleEmail(next.user.email)
         setLoading(true)
         void loadUserState(next.user.id)
       } else {
@@ -165,14 +171,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // When email confirmation is on, no session is returned yet.
         return { needsConfirmation: !data.session }
       },
-      async signInWithGoogle(returnTo = '/') {
+      async signInWithGoogle(returnTo = '/', googleEmail?: string) {
         sessionStorage.setItem(GOOGLE_GUIDELINES_CONSENT_KEY, String(Date.now()))
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
             redirectTo: `${window.location.origin}/onboarding?returnTo=${encodeURIComponent(returnTo)}`,
             // Show the user's list of Google accounts instead of forcing them down the "create account" path.
-            queryParams: { prompt: 'select_account' },
+            // loginHint preselects the account the user picked from our quick picker; access_type keeps
+            // repeat sign-ins seamless for users with an established Google session.
+            queryParams: {
+              prompt: 'select_account',
+              access_type: 'offline',
+              ...(googleEmail ? { login_hint: googleEmail } : {}),
+            },
           },
         })
         if (error) {
