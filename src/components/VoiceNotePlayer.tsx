@@ -33,7 +33,7 @@ export default function VoiceNotePlayer({
   const audioRef = useRef<HTMLAudioElement>(null)
   const [mediaDuration, setMediaDuration] = useState<number | null>(null)
   const [rate, setRate] = useState<(typeof SPEEDS)[number]>(1)
-  const totalDuration = mediaDuration ?? duration
+  const totalDuration = duration ?? mediaDuration
   const progress = totalDuration ? Math.min(currentTime / totalDuration, 1) : 0
   const finished = Boolean(totalDuration) && currentTime >= (totalDuration ?? 0) - 0.15 && !isPlaying
 

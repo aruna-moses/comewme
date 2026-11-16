@@ -579,7 +579,9 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           autoGainControl: true,
         },
       })
-      const supportedTypes = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus']
+      // Prefer AAC-in-MP4: the one container every browser on every OS can
+      // play back. Chrome's Opus/WebM can't be decoded by iOS at all.
+      const supportedTypes = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus']
       const mimeType = typeof MediaRecorder.isTypeSupported === 'function'
         ? supportedTypes.find((type) => MediaRecorder.isTypeSupported(type))
         : undefined
