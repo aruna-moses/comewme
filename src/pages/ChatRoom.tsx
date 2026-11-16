@@ -782,6 +782,14 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
     }
   }, [applyReactions])
 
+  // Auto-grow the composer textarea to fit wrapped lines, up to ~140px, then scroll
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`
+  }, [draft])
+
   useEffect(() => {
     if (!task || !authorized) return
     const channel = supabase
@@ -906,14 +914,6 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
   if (loading) return <Spinner full />
 
   const happeningToday = task ? isToday(task.date_time) : false
-
-  // Auto-grow the composer textarea to fit wrapped lines, up to ~140px, then scroll
-  useEffect(() => {
-    const el = inputRef.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${Math.min(el.scrollHeight, 140)}px`
-  }, [draft])
 
   // Merge messages and system events into one chronological, glanceable timeline.
   const timelineItems: Array<{ kind: 'message'; message: Message } | { kind: 'event'; event: ChatSystemEvent }> = []
