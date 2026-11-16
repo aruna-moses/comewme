@@ -142,10 +142,11 @@ serve(async (req) => {
   const incoming = req.headers.get('authorization') ?? '';
   const incomingSecret = req.headers.get('x-push-secret') ?? '';
 
+  // Two legitimate callers only: the Database Webhook (service role key) and an
+  // optional shared secret. Anything else — including arbitrary JWTs — is refused.
   const isAuthorized =
     (serviceKey && incoming === `Bearer ${serviceKey}`) ||
-    (pushSecret && incomingSecret === pushSecret) ||
-    incoming.startsWith('Bearer eyJ');
+    (pushSecret && incomingSecret === pushSecret);
 
   if (!isAuthorized) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {

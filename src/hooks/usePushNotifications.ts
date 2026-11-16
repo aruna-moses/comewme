@@ -73,6 +73,22 @@ export function usePushNotifications(): PushNotificationsState {
         }
       })()
       if (Notification.permission === 'granted' && saved) {
+        // The server prunes dead tokens (FCM UNREGISTERED). If ours is gone
+        // there, "Enabled" would be a lie — ask the user to re-enable.
+        const { data: still, error: checkError } = await supabase
+          .from('user_push_tokens')
+          .select('token')
+          .eq('token', saved)
+          .maybeSingle()
+        if (!checkError && !(still as { token?: string } | null)?.token) {
+          try {
+            window.localStorage.removeItem('comewme-fcm-token')
+          } catch {
+            // ignore
+          }
+          if (alive) setStatus('default')
+          return
+        }
         if (alive) setStatus('enabled')
         return
       }
