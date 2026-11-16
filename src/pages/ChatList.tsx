@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import { MapPin, Pin, BellOff, ChevronDown, MoreVertical } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
-import { usePersistedState } from '../lib/drafts'
 import { useMutedChats } from '../hooks/useMutedChats'
+import { usePinnedChats } from '../hooks/usePinnedChats'
 import { formatTime, taskEmoji, categoryTileBg } from '../lib/format'
 import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
 import { loadChatsForUser } from '../lib/chatsData'
@@ -157,14 +157,10 @@ export default function ChatList() {
     }
   }, [profile?.id])
 
-  const [pinnedIds, setPinnedIds] = usePersistedState<string[]>('chats:pinned', [])
+  const { isMuted, toggleMute } = useMutedChats()
+  const { isPinned, togglePin, pinnedIds } = usePinnedChats()
   const [doneExpanded, setDoneExpanded] = useState(false)
   const [menuFor, setMenuFor] = useState<string | null>(null)
-  const { isMuted, toggleMute } = useMutedChats()
-  const isPinned = (id: string) => pinnedIds.includes(id)
-  const togglePin = (id: string) => {
-    setPinnedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
 
   if (loading) {
     return (
@@ -205,13 +201,13 @@ export default function ChatList() {
   }
 
   const buckets = {
-    pinned: (pinnedIds.map((id) => chats.find((c) => c.task.id === id)).filter(Boolean) as typeof chats)
+    pinned: ([...pinnedIds].map((id) => chats.find((c) => c.task.id === id)).filter(Boolean) as typeof chats)
       .sort((a, b) => lastActivityOf(b) - lastActivityOf(a)),
     live: [] as typeof chats,
     done: [] as typeof chats,
   }
   for (const c of chats) {
-    if (pinnedIds.includes(c.task.id)) continue
+    if (isPinned(c.task.id)) continue
     if (isDoneChat(c)) {
       buckets.done.push(c)
       continue
@@ -354,7 +350,7 @@ export default function ChatList() {
                 type="button"
                 role="menuitem"
                 onClick={() => {
-                  togglePin(c.task.id)
+                  void togglePin(c.task.id)
                   setMenuFor(null)
                 }}
                 className="flex min-h-10 w-full items-center gap-2 px-3 text-[15px] font-medium text-ink hover:bg-canvas"
