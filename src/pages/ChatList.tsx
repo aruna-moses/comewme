@@ -20,18 +20,26 @@ export default function ChatList() {
   useEffect(() => {
     let alive = true
     if (!profile?.id) return
-    void loadChatsForUser(profile.id)
-      .then((entries) => {
-        if (!alive) return
-        setChats(entries)
-        writeCache(cacheKeys.chats(profile.id!), entries)
-        setLoading(false)
-      })
-      .catch(() => {
-        if (alive) setLoading(false)
-      })
+    const refresh = () => {
+      void loadChatsForUser(profile.id)
+        .then((entries) => {
+          if (!alive) return
+          setChats(entries)
+          writeCache(cacheKeys.chats(profile.id!), entries)
+          setLoading(false)
+        })
+        .catch(() => {
+          if (alive) setLoading(false)
+        })
+    }
+    refresh()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && alive) refresh()
+    }
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
       alive = false
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [profile?.id])
 
@@ -77,6 +85,30 @@ export default function ChatList() {
                 sender_id: row.sender_id,
                 created_at: row.created_at,
               },
+            })
+            return next
+          })
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages' },
+        (payload) => {
+          const row = payload.new as { task_id: string; created_at: string }
+          const taskId = row.task_id
+          if (!taskId || !knownIdsRef.current.has(taskId)) return
+          setChats((current) => {
+            const index = current.findIndex((c) => c.task.id === taskId)
+            if (index === -1) return current
+            const entry = current[index]
+            const next = current.slice()
+            next.splice(index, 1)
+            next.unshift({
+              task: entry.task,
+              acceptedAt: entry.acceptedAt,
+              lastMessage: entry.lastMessage
+                ? { ...entry.lastMessage, created_at: row.created_at }
+                : null,
             })
             return next
           })
@@ -149,7 +181,12 @@ export default function ChatList() {
   }
   const FRESH_JOINED_MS = 3600_000 // 1 hour
   const buckets = {
-    pinned: pinnedIds.map((id) => chats.find((c) => c.task.id === id)).filter(Boolean) as typeof chats,
+    pinned: (pinnedIds.map((id) => chats.find((c) => c.task.id === id)).filter(Boolean) as typeof chats)
+      .sort((a, b) => {
+        const aT = a.lastMessage ? new Date(a.lastMessage.created_at).getTime() : new Date(a.task.date_time).getTime()
+        const bT = b.lastMessage ? new Date(b.lastMessage.created_at).getTime() : new Date(b.task.date_time).getTime()
+        return bT - aT
+      }),
     live: [] as typeof chats,
     done: [] as typeof chats,
   }
