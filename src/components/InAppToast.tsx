@@ -3,11 +3,20 @@ import { Link, useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
-import { usePushNotifications } from '../hooks/usePushNotifications'
 import { markNotificationRead, type InAppNotification } from '../lib/notifications'
 import { supabase } from '../lib/supabase'
 import { playReceive } from '../lib/sounds'
 import { fetchMutedTaskIds } from '../lib/chatMute'
+
+/** Synchronous check: is push configured on THIS device right now? No async resolution — safe at INSERT time. */
+function pushDeliversHere(): boolean {
+  try {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return false
+    return Boolean(window.localStorage.getItem('comewme-fcm-token'))
+  } catch {
+    return false
+  }
+}
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
@@ -22,16 +31,11 @@ function timeAgo(iso: string) {
 export default function InAppToast() {
   const { refresh } = useNotifications()
   const { session } = useAuth()
-  const { status: pushStatus } = usePushNotifications()
   const location = useLocation()
   const [queue, setQueue] = useState<InAppNotification[]>([])
   const [visible, setVisible] = useState(false)
   const timerRef = useRef<number | null>(null)
   const shownRef = useRef<Set<string>>(new Set())
-  const pushStatusRef = useRef(pushStatus)
-  useEffect(() => {
-    pushStatusRef.current = pushStatus
-  }, [pushStatus])
 
   // Live subscription — catches INSERT events, not refetched rows from a page load.
   useEffect(() => {
@@ -54,8 +58,8 @@ export default function InAppToast() {
                 return
               }
             }
-            // Push already reaches this device — skip the in-app duplicate banner
-            if (pushStatusRef.current === 'enabled') {
+            // Off-app push already reaches this device — never show the in-app duplicate
+            if (pushDeliversHere()) {
               void refresh()
               return
             }

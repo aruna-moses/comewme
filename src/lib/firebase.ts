@@ -20,7 +20,8 @@ function app(): FirebaseApp | null {
   return existing ?? initializeApp(config)
 }
 
-function messagingOrNull(): Messaging | null {
+/** Shared handle to the Firebase Messaging instance, so other modules can subscribe. */
+export function messagingOrNullSafe(): Messaging | null {
   const instance = app()
   if (!instance) return null
   try {
@@ -91,7 +92,7 @@ export async function registerForPush(
     return { token: null, step: 'permission', error: 'Permission was not granted' }
   }
 
-  const messaging = messagingOrNull()
+  const messaging = messagingOrNullSafe()
   if (!messaging) {
     return { token: null, step: 'token', error: 'Firebase messaging could not start' }
   }

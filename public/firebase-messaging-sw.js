@@ -39,13 +39,15 @@ if (FIREBASE_CONFIG.apiKey.startsWith('REPLACE_WITH')) {
     const body = data.body || ''
     const url = data.url || '/'
 
+    // One banner slot per conversation, re-alerted on every message —
+    // like WhatsApp. No shared '<app>-push' tag that quietly swallows updates.
     self.registration.showNotification(title, {
       body,
       icon: '/logo.png',
       badge: '/logo.png',
       data: { url },
-      tag: 'comewme-push',
-      requireInteraction: true,
+      tag: url,
+      renotify: true,
     })
   })
 

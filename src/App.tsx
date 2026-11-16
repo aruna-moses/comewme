@@ -10,6 +10,7 @@ import WarningModal, { activeRestriction, unacknowledgedWarning } from './compon
 import ModerationAlert from './components/ModerationAlert'
 import InAppToast from './components/InAppToast'
 import { unlockAudio } from './lib/sounds'
+import { useForegroundPush } from './hooks/useForegroundPush'
 
 import TaskDetail from './pages/TaskDetail'
 import ChatRoom from './pages/ChatRoom'
@@ -91,6 +92,8 @@ export default function App() {
     signOut,
   } = useAuth()
   const location = useLocation()
+  // iOS/web foreground banners — mirrors the SW so pushes show even mid-app
+  useForegroundPush()
 
   if (loading) return <Spinner full />
 
