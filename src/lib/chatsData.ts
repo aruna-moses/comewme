@@ -11,6 +11,7 @@ export interface ChatEntry {
     sender_id: string
     created_at: string
   } | null
+  replyCount: number
 }
 
 /** Tasks where the user is the host or an accepted participant, newest activity first. */
@@ -52,6 +53,20 @@ export async function loadChatsForUser(profileId: string): Promise<ChatEntry[]> 
   const acceptedAtByTaskId = new Map<string, string | null>()
   ;(joinRes.data ?? []).forEach((j) => acceptedAtByTaskId.set(j.task_id, j.accepted_at ?? null))
 
+  // Count, per task, how many messages quote one of *my* messages. Single grouped query for all chats.
+  let replyCountsByTaskId = new Map<string, number>()
+  {
+    const { data: replyRows } = await supabase
+      .from('messages')
+      .select('task_id')
+      .eq('reply_to_sender_id', profileId)
+    if (replyRows) {
+      const counts = new Map<string, number>()
+      for (const row of replyRows) counts.set(row.task_id, (counts.get(row.task_id) ?? 0) + 1)
+      replyCountsByTaskId = counts
+    }
+  }
+
   const enriched = await Promise.all(
     unique.map(async (t) => {
       const { data: msgsRes } = await supabase
@@ -60,7 +75,12 @@ export async function loadChatsForUser(profileId: string): Promise<ChatEntry[]> 
         .eq('task_id', t.id)
         .order('created_at', { ascending: false })
         .limit(1)
-      return { task: t, acceptedAt: acceptedAtByTaskId.get(t.id) ?? null, lastMessage: (msgsRes ?? [])[0] ?? null }
+      return {
+        task: t,
+        acceptedAt: acceptedAtByTaskId.get(t.id) ?? null,
+        lastMessage: (msgsRes ?? [])[0] ?? null,
+        replyCount: replyCountsByTaskId.get(t.id) ?? 0,
+      }
     }),
   )
 

@@ -203,6 +203,14 @@ export default function ChatList() {
                 {unread > 99 ? '99+' : unread}
               </span>
             )}
+            {c.replyCount > 0 && (
+              <span
+                aria-label={`${c.replyCount} ${c.replyCount === 1 ? 'message' : 'messages'} quoted you`}
+                className="flex h-5 min-w-5 items-center justify-center rounded-full border border-amber/40 bg-sun/25 px-1.5 text-[10px] font-extrabold uppercase leading-none text-amber"
+              >
+                @{c.replyCount}
+              </span>
+            )}
             {muted && <BellOff size={12} className="text-muted" aria-label="Muted" />}
           </div>
         </Link>
