@@ -568,16 +568,24 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
         throw new Error('Voice recording is not supported in this browser.')
       }
-      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const audioStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          // Prioritize pristine, present vocal quality for voice notes:
+          channelCount: 1, // mono — optimal for speech, less bandwidth
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      })
       const supportedTypes = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus']
       const mimeType = typeof MediaRecorder.isTypeSupported === 'function'
         ? supportedTypes.find((type) => MediaRecorder.isTypeSupported(type))
         : undefined
       const recorder = new MediaRecorder(audioStream, {
         ...(mimeType ? { mimeType } : {}),
-        // Voice notes are speech: 32 kbps opus uploads ~4x faster than the
-        // browser default and still sounds clean in a chat.
-        audioBitsPerSecond: 32_000,
+        // Whisper-clean speech at ~6 MB/min at 128 kbps Opus — still fast to upload on 4G
+        // while sounding dramatically richer than the default 32 kbps / unspecified browser default.
+        audioBitsPerSecond: 128_000,
       })
       mediaRecorder.current = recorder
       recordingChunks.current = []
