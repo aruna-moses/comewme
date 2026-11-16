@@ -181,6 +181,29 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'No userId in payload' }), { status: 400 })
   }
 
+  // Respect the per-user mute table. Any chat notification pointing at /task/<id> is suppressed.
+  const linkMatch = /\/task\/([0-9a-fA-F-]{36})(?:[/?#]|$)/.exec(url)
+  const mutedTaskId = linkMatch ? linkMatch[1] : null
+  if (mutedTaskId) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    if (supabaseKey) {
+      const dbForMute = createClient(supabaseUrl, supabaseKey)
+      const { data: mutedRow, error: muteError } = await dbForMute
+        .from('muted_chats')
+        .select('task_id')
+        .eq('user_id', userId)
+        .eq('task_id', mutedTaskId)
+        .maybeSingle()
+      if (!muteError && mutedRow) {
+        return new Response(JSON.stringify({ sent: 0, pruned: 0, muted: true }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+    }
+  }
+
   const saRaw = Deno.env.get('FIREBASE_SERVICE_ACCOUNT')
   if (!saRaw) {
     return new Response(JSON.stringify({ error: 'FIREBASE_SERVICE_ACCOUNT secret is not set' }), { status: 500 })

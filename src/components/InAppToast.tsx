@@ -7,6 +7,7 @@ import { usePushNotifications } from '../hooks/usePushNotifications'
 import { markNotificationRead, type InAppNotification } from '../lib/notifications'
 import { supabase } from '../lib/supabase'
 import { playReceive } from '../lib/sounds'
+import { fetchMutedTaskIds } from '../lib/chatMute'
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
@@ -41,16 +42,29 @@ export default function InAppToast() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
         const row = payload.new as InAppNotification
         if (row.user_id !== uid) return
-        if (shownRef.current.has(row.id)) return
-        // Push already reaches this device — skip the in-app duplicate banner
-        if ((row as { type?: string }).type === 'chat' && pushStatusRef.current === 'enabled') {
+        void (async () => {
+          if (shownRef.current.has(row.id)) return
+          // Chat notifications for a muted group stay silent — on or off app.
+          if ((row as { type?: string }).type === 'chat') {
+            const linkMatch = /\/task\/([0-9a-fA-F-]{36})(?:[/?#]|$)/.exec(row.link_path ?? '')
+            if (linkMatch) {
+              const muted = await fetchMutedTaskIds(uid)
+              if (muted.has(linkMatch[1])) {
+                void refresh()
+                return
+              }
+            }
+            // Push already reaches this device — skip the in-app duplicate banner
+            if (pushStatusRef.current === 'enabled') {
+              void refresh()
+              return
+            }
+          }
+          shownRef.current.add(row.id)
+          setQueue((q) => (q.length >= 3 ? q : [...q, row]))
           void refresh()
-          return
-        }
-        shownRef.current.add(row.id)
-        setQueue((q) => (q.length >= 3 ? q : [...q, row]))
-        void refresh()
-        playReceive()
+          playReceive()
+        })()
       })
       .subscribe()
     return () => {

@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { MapPin, Pin, BellOff, ChevronDown, MoreVertical } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
-import { usePersistedState, readDraft, writeDraft, clearDraft } from '../lib/drafts'
+import { usePersistedState } from '../lib/drafts'
+import { useMutedChats } from '../hooks/useMutedChats'
 import { formatTime, taskEmoji, categoryTileBg } from '../lib/format'
 import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
 import { loadChatsForUser } from '../lib/chatsData'
@@ -159,24 +160,7 @@ export default function ChatList() {
   const [pinnedIds, setPinnedIds] = usePersistedState<string[]>('chats:pinned', [])
   const [doneExpanded, setDoneExpanded] = useState(false)
   const [menuFor, setMenuFor] = useState<string | null>(null)
-  const [muteTick, setMuteTick] = useState(0)
-  const readMute = (id: string) => {
-    try {
-      return readDraft<boolean>(`chat:${id}:mute`)?.value ?? false
-    } catch {
-      return false
-    }
-  }
-  const setMute = (id: string, mute: boolean) => {
-    try {
-      if (mute) writeDraft(`chat:${id}:mute`, true)
-      else clearDraft(`chat:${id}:mute`)
-    } catch {
-      // best-effort — ignore write failures
-    }
-    setMuteTick((t) => t + 1)
-  }
-  void muteTick
+  const { isMuted, toggleMute } = useMutedChats()
   const isPinned = (id: string) => pinnedIds.includes(id)
   const togglePin = (id: string) => {
     setPinnedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
@@ -248,7 +232,7 @@ export default function ChatList() {
     const unread = unreadByTask[c.task.id] ?? 0
     const quotedYou = quoteCountByTask[c.task.id] ?? 0
     const pinned = isPinned(c.task.id)
-    const muted = readMute(c.task.id)
+    const muted = isMuted(c.task.id)
     const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
     const start = new Date(c.task.date_time)
     const days = Math.round((startOfDay(start) - startOfDay(new Date(now))) / 86_400_000)
@@ -286,7 +270,8 @@ export default function ChatList() {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              {pinned && <Pin size={12} className="shrink-0 text-muted" fill="currentColor" aria-hidden />}
+              {pinned && <Pin size={12} className="shrink-0 text-amber" fill="currentColor" aria-label="Pinned chat" />}
+              {muted && <BellOff size={12} className="shrink-0 text-muted" aria-label="Muted" />}
               <h2 className="line-clamp-2 font-display text-[17px] font-semibold leading-snug -tracking-[0.01em] text-ink">
                 {c.task.title}
               </h2>
@@ -321,28 +306,31 @@ export default function ChatList() {
               <span className="inline-flex min-w-0 items-center gap-1 font-semibold text-ink/80"><MapPin size={9} className="shrink-0" aria-hidden /><span className="truncate">{c.task.area}</span></span>
             </div>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <div className="flex shrink-0 flex-col items-end gap-1">
             <span className={`text-[14px] leading-none tabular-nums ${unread > 0 ? 'font-semibold text-amber' : 'text-muted'}`}>
               {c.lastMessage ? formatTime(c.lastMessage.created_at) : formatTime(c.task.date_time)}
             </span>
-            {unread > 0 && (
-              <span
-                aria-label={`${unread} unread ${unread === 1 ? 'message' : 'messages'}`}
-                className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[12px] font-bold leading-none text-white"
-                style={{ backgroundColor: 'rgb(var(--color-amber))' }}
-              >
-                {unread > 99 ? '99+' : unread}
+            {(unread > 0 || quotedYou > 0) && (
+              <span className="flex items-center justify-end gap-1">
+                {unread > 0 && (
+                  <span
+                    aria-label={`${unread} unread ${unread === 1 ? 'message' : 'messages'}`}
+                    className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[12px] font-bold leading-none text-white"
+                    style={{ backgroundColor: 'rgb(var(--color-amber))' }}
+                  >
+                    {unread > 99 ? '99+' : unread}
+                  </span>
+                )}
+                {quotedYou > 0 && (
+                  <span
+                    aria-label={`${quotedYou} ${quotedYou === 1 ? 'message' : 'messages'} quoted you`}
+                    className="flex h-5 min-w-5 items-center justify-center rounded-full border border-amber/40 bg-sun/25 px-1.5 text-[10px] font-extrabold uppercase leading-none text-amber"
+                  >
+                    @{quotedYou}
+                  </span>
+                )}
               </span>
             )}
-            {quotedYou > 0 && (
-              <span
-                aria-label={`${quotedYou} ${quotedYou === 1 ? 'message' : 'messages'} quoted you`}
-                className="flex h-5 min-w-5 items-center justify-center rounded-full border border-amber/40 bg-sun/25 px-1.5 text-[10px] font-extrabold uppercase leading-none text-amber"
-              >
-                @{quotedYou}
-              </span>
-            )}
-            {muted && <BellOff size={12} className="text-muted" aria-label="Muted" />}
           </div>
         </Link>
         <button
@@ -378,7 +366,7 @@ export default function ChatList() {
                 type="button"
                 role="menuitem"
                 onClick={() => {
-                  setMute(c.task.id, !muted)
+                  void toggleMute(c.task.id)
                   setMenuFor(null)
                 }}
                 className="flex min-h-10 w-full items-center gap-2 px-3 text-[15px] font-medium text-ink hover:bg-canvas"

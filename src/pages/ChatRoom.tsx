@@ -34,6 +34,7 @@ import {
 import { formatTime, isSameDay, formatDateTime, isToday } from '../lib/format'
 import { senderColorHex, senderColorTint } from '../lib/senderColor'
 import { usePersistedState } from '../lib/drafts'
+import { useMutedChats } from '../hooks/useMutedChats'
 import type { JoinRequest, Message, Task, ChatSystemEvent } from '../types'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
@@ -59,7 +60,8 @@ export default function ChatRoom() {
   const [systemEvents, setSystemEvents] = useState<ChatSystemEvent[]>([])
   const [recapText, setRecapText] = useState('')
   const [recapPosted, setRecapPosted] = useState(false)
-  const [muteThisChat, setMuteThisChat] = usePersistedState<boolean>(`chat:${id}:mute`, false)
+  const { isMuted, toggleMute } = useMutedChats()
+  const muteThisChat = isMuted(id ?? '')
   const [reactions, setReactions] = useState<Record<string, Record<string, { count: number; mine: boolean }>>>({})
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [attachSheetOpen, setAttachSheetOpen] = useState(false)
@@ -1005,7 +1007,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             aria-pressed={muteThisChat}
             onClick={(event) => {
               event.stopPropagation()
-              setMuteThisChat((v) => !v)
+              if (id) void toggleMute(id)
             }}
           >
             {muteThisChat ? <VolumeX size={19} aria-hidden /> : <Volume2 size={19} aria-hidden />}
