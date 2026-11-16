@@ -11,10 +11,10 @@ import ModerationAlert from './components/ModerationAlert'
 import InAppToast from './components/InAppToast'
 import { unlockAudio } from './lib/sounds'
 
-const TaskDetail = lazy(() => import('./pages/TaskDetail'))
-const ChatRoom = lazy(() => import('./pages/ChatRoom'))
-const MyTasks = lazy(() => import('./pages/MyTasks'))
-const ChatList = lazy(() => import('./pages/ChatList'))
+import TaskDetail from './pages/TaskDetail'
+import ChatRoom from './pages/ChatRoom'
+import MyTasks from './pages/MyTasks'
+import ChatList from './pages/ChatList'
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const Login = lazy(() => import('./pages/Login'))
 const Onboarding = lazy(() => import('./pages/Onboarding'))
@@ -203,7 +203,7 @@ export default function App() {
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        </Routes>
       </Suspense>
       <ModerationAlert />
       <InAppToast />
