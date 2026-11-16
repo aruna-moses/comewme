@@ -143,10 +143,10 @@ export default function ChatList() {
     const happeningToday = !doneChat && days === 0
     const menuOpen = menuFor === c.task.id
     return (
-      <div key={c.task.id} className="relative">
+      <div key={c.task.id} className={`card relative flex items-center gap-2 rounded-[18px] py-2.5 pl-3.5 pr-2 transition hover:bg-canvas active:scale-[0.99] ${happeningToday ? 'bg-gradient-to-br from-sun/25 via-amber/10 to-canvas ring-2 ring-amber/70 shadow-[0_12px_36px_rgba(247,162,51,0.25)]' : ''} ${doneChat ? 'opacity-70' : ''}`}>
         <Link
           to={`/task/${c.task.id}/chat`}
-          className={`card grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[18px] px-3.5 py-3 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber ${happeningToday ? 'bg-gradient-to-br from-sun/25 via-amber/10 to-canvas ring-2 ring-amber/70 shadow-[0_12px_36px_rgba(247,162,51,0.25)]' : ''} ${doneChat ? 'opacity-70' : ''}`}
+          className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 flex-1 min-w-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
         >
           <div
             className={`flex h-14 w-14 items-center justify-center rounded-full text-[26px] shadow-sm ring-1 ring-black/5 ${categoryTileBg(c.task.category)}`}
@@ -213,16 +213,16 @@ export default function ChatList() {
           aria-label="Chat options"
           aria-haspopup="menu"
           aria-expanded={menuOpen}
-          className="absolute bottom-1.5 right-1 flex h-7 w-7 items-center justify-center rounded-full text-muted transition hover:bg-canvas hover:text-ink"
+          className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-full text-muted transition hover:bg-canvas hover:text-ink"
         >
-          <MoreVertical size={14} aria-hidden />
+          <MoreVertical size={16} aria-hidden />
         </button>
         {menuOpen && (
           <>
             <button type="button" aria-hidden tabIndex={-1} className="fixed inset-0 z-10 cursor-default" onClick={() => setMenuFor(null)} />
             <div
               role="menu"
-              className="absolute bottom-8 right-2 z-20 min-w-[164px] overflow-hidden rounded-xl border border-line bg-white py-1 text-left shadow-lift"
+              className="absolute left-1/2 top-full z-20 mt-1.5 min-w-[168px] -translate-x-1/2 overflow-hidden rounded-xl border border-line bg-white py-1 text-left shadow-lift"
             >
               <button
                 type="button"
