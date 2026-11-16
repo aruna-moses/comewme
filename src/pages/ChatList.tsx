@@ -81,8 +81,7 @@ export default function ChatList() {
             const next = current.slice()
             next.splice(index, 1)
             next.unshift({
-              task: entry.task,
-              acceptedAt: entry.acceptedAt,
+              ...entry,
               lastMessage: {
                 body: row.body,
                 type: (row.type === 'text' || row.type === 'image' || row.type === 'audio' ? row.type : 'text'),
@@ -109,11 +108,32 @@ export default function ChatList() {
             const next = current.slice()
             next.splice(index, 1)
             next.unshift({
-              task: entry.task,
-              acceptedAt: entry.acceptedAt,
+              ...entry,
               lastMessage: entry.lastMessage
                 ? { ...entry.lastMessage, created_at: row.created_at }
                 : null,
+            })
+            return next
+          })
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'activity_system_events' },
+        (payload) => {
+          const row = payload.new as { task_id: string; created_at: string }
+          const taskId = row.task_id
+          if (!taskId || !knownIdsRef.current.has(taskId)) return
+          // System event = real chat activity (join, check-in, on-my-way, recap...). Bump the row.
+          setChats((current) => {
+            const index = current.findIndex((c) => c.task.id === taskId)
+            if (index === -1) return current
+            const entry = current[index]
+            const next = current.slice()
+            next.splice(index, 1)
+            next.unshift({
+              ...entry,
+              lastEventAt: row.created_at,
             })
             return next
           })
@@ -192,13 +212,17 @@ export default function ChatList() {
     return new Date(c.task.date_time).getTime() < now
   }
   const FRESH_JOINED_MS = 3600_000 // 1 hour
+  const lastActivityOf = (c: (typeof chats)[number]) => {
+    const lastMsgMs = c.lastMessage ? new Date(c.lastMessage.created_at).getTime() : 0
+    const lastEventMs = c.lastEventAt ? new Date(c.lastEventAt).getTime() : 0
+    const joinedMs = c.acceptedAt ? new Date(c.acceptedAt).getTime() : 0
+    const createdMs = new Date(c.task.created_at).getTime()
+    return Math.max(lastMsgMs, lastEventMs, joinedMs, createdMs)
+  }
+
   const buckets = {
     pinned: (pinnedIds.map((id) => chats.find((c) => c.task.id === id)).filter(Boolean) as typeof chats)
-      .sort((a, b) => {
-        const aT = a.lastMessage ? new Date(a.lastMessage.created_at).getTime() : new Date(a.task.date_time).getTime()
-        const bT = b.lastMessage ? new Date(b.lastMessage.created_at).getTime() : new Date(b.task.date_time).getTime()
-        return bT - aT
-      }),
+      .sort((a, b) => lastActivityOf(b) - lastActivityOf(a)),
     live: [] as typeof chats,
     done: [] as typeof chats,
   }
@@ -217,7 +241,6 @@ export default function ChatList() {
     const accepted = c.acceptedAt ? new Date(c.acceptedAt).getTime() : NaN
     return Number.isFinite(accepted) && now - accepted <= FRESH_JOINED_MS
   })
-  const lastActivityOf = (c: (typeof chats)[number]) => (c.lastMessage ? new Date(c.lastMessage.created_at).getTime() : new Date(c.task.date_time).getTime())
   buckets.live.sort((a, b) => lastActivityOf(b) - lastActivityOf(a))
   buckets.done.sort((a, b) => lastActivityOf(b) - lastActivityOf(a))
 
