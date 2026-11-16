@@ -205,23 +205,6 @@ export default function MyTasks() {
               className={targetTaskId === t.id ? 'task-reminder-highlight rounded-[22px]' : ''}
             >
               <TaskCard task={t} verified={verifiedMap[t.host_id] === 'verified'} applicationStatus={tab === 'going' ? applicationStatus : undefined} reviewBadge={tab === 'hosting' ? pendingApplicants[t.id] ?? 0 : 0} />
-              <div className="mt-2 px-1">
-                <span className="text-[14px] font-semibold text-muted">
-                  {tab === 'hosting'
-                    ? (pendingApplicants[t.id] ?? 0) > 0
-                      ? `${pendingApplicants[t.id]} waiting for your review`
-                      : 'No applicants yet'
-                    : tab === 'done'
-                      ? t.status === 'completed'
-                        ? 'Completed together'
-                        : 'Passed without completion'
-                      : applicationStatus === 'accepted'
-                        ? 'Your group is ready'
-                        : applicationStatus === 'pending'
-                          ? 'Waiting for the host'
-                          : 'Application sent'}
-                </span>
-              </div>
             </div>
           )})}
           {!loadError && list.length === 0 && (
