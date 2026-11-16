@@ -170,7 +170,7 @@ export default function Onboarding() {
             <div className="mt-6 flex flex-col items-center">
               <span className="flex h-[104px] w-[104px] items-center justify-center overflow-hidden rounded-full bg-[#ece9e2] text-muted">
                 {avatarPreview
-                  ? <img src={avatarPreview} alt="Profile preview" className="h-full w-full object-cover" />
+                  ? <img loading="lazy" decoding="async" src={avatarPreview} alt="Profile preview" className="h-full w-full object-cover" />
                   : <UserRound size={44} aria-hidden />}
               </span>
               <label className="mt-3 inline-flex cursor-pointer items-center gap-1.5 text-[15px] font-semibold text-amber">

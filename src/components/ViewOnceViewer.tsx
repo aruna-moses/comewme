@@ -60,8 +60,7 @@ export default function ViewOnceViewer({ url, caption, viewerName, onClose }: Pr
       </div>
 
       <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2">
-        <img
-          src={url}
+        <img loading="lazy" decoding="async"           src={url}
           alt="View once photo"
           draggable={false}
           onContextMenu={(event) => event.preventDefault()}

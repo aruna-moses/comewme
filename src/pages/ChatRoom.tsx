@@ -1157,7 +1157,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                               className="block overflow-hidden rounded-xl"
                               aria-label="Open photo"
                             >
-                              <img
+                              <img loading="lazy" decoding="async" 
                                 src={message.url}
                                 alt={message.body || 'Photo shared in the group chat'}
                                 className={`max-h-72 max-w-full object-cover transition ${message.pending ? 'opacity-75' : ''}`}

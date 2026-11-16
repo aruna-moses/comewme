@@ -50,7 +50,7 @@ export default function ChatList() {
       if (mute) writeDraft(`chat:${id}:mute`, true)
       else clearDraft(`chat:${id}:mute`)
     } catch {
-      // ignore — best effort
+      // ignore â€” best effort
     }
     setMuteTick((t) => t + 1)
   }
@@ -170,7 +170,7 @@ export default function ChatList() {
                         ? 'Sent a voice note'
                         : c.lastMessage.body
                   }`
-                : 'No messages yet — say hello.'}
+                : 'No messages yet â€” say hello.'}
             </p>
             <div className="mt-0 flex min-w-0 items-center gap-1.5 leading-none text-[13px] text-muted">
               {doneChat ? (
@@ -187,19 +187,19 @@ export default function ChatList() {
                   {countdownLabel}
                 </span>
               )}
-              <span aria-hidden="true" className="shrink-0">·</span>
+              <span aria-hidden="true" className="shrink-0">Â·</span>
               <span className="inline-flex min-w-0 items-center gap-1 font-semibold text-ink/80"><MapPin size={9} className="shrink-0" aria-hidden /><span className="truncate">{c.task.area}</span></span>
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
-            <span className={`text-[14px] leading-none tabular-nums ${unread > 0 ? 'font-semibold text-[#F58220]' : 'text-muted'}`}>
+            <span className={`text-[14px] leading-none tabular-nums ${unread > 0 ? 'font-semibold text-amber' : 'text-muted'}`}>
               {c.lastMessage ? formatTime(c.lastMessage.created_at) : formatTime(c.task.date_time)}
             </span>
             {unread > 0 && (
               <span
                 aria-label={`${unread} unread ${unread === 1 ? 'message' : 'messages'}`}
                 className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[12px] font-bold leading-none text-white"
-                style={{ backgroundColor: '#F58220' }}
+                style={{ backgroundColor: 'rgb(var(--color-amber))' }}
               >
                 {unread > 99 ? '99+' : unread}
               </span>
@@ -325,7 +325,7 @@ export default function ChatList() {
             {buckets.newChats.length > 0 && (
               <section aria-labelledby="new-chats-heading">
                 <p id="new-chats-heading" className="px-1 text-[13px] font-bold uppercase tracking-[0.16em] text-muted">
-                  Just accepted — say hi
+                  Just accepted â€” say hi
                 </p>
                 <div className="mt-2 space-y-2">
                   {buckets.newChats.map((c) => renderRow(c))}

@@ -101,7 +101,7 @@ export default function InAppToast() {
         onClick={dismiss}
         className="flex items-start gap-3 rounded-2xl border border-line bg-white/95 p-3.5 shadow-lift backdrop-blur"
       >
-        <img src="/logo.png" alt="" aria-hidden className="h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm" />
+        <img loading="lazy" decoding="async" src="/logo.png" alt="" aria-hidden className="h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm" />
         <span className="min-w-0 flex-1">
           <span className="flex items-center justify-between gap-2">
             <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">

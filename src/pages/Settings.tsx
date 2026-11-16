@@ -100,8 +100,7 @@ export default function Settings() {
 
       {/* photo */}
       <div className="card mt-2 flex items-center gap-4 p-4">
-        <img
-          src={
+        <img loading="lazy" decoding="async"           src={
             profile.avatar_url ??
             `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(profile.display_name)}&backgroundColor=F7A233`
           }

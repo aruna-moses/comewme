@@ -39,8 +39,7 @@ export default function PhotoLightbox({ url, caption, senderName, onClose }: Pro
       </div>
 
       <div className="flex min-h-0 flex-1 items-center justify-center px-2">
-        <img
-          src={url}
+        <img loading="lazy" decoding="async"           src={url}
           alt={caption || 'Photo shared in the group chat'}
           draggable={false}
           onClick={(event) => event.stopPropagation()}

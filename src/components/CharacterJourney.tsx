@@ -94,7 +94,7 @@ export default function CharacterJourney({
           <div className="pointer-events-none absolute -right-7 -top-10 h-40 w-40 rounded-full bg-sun/20 blur-2xl" />
           <div className="relative flex items-center gap-3">
             <div className="relative flex h-[138px] w-[108px] shrink-0 items-end justify-center overflow-hidden rounded-[20px] bg-white/70 pb-1 shadow-sm ring-1 ring-white/80">
-              <img
+              <img loading="lazy" decoding="async" 
                 src={personaImage}
                 alt={`${personaName}, your journey character`}
                 className="h-full w-full object-contain object-bottom"
@@ -165,7 +165,7 @@ export default function CharacterJourney({
               )
             })}
             <div className="journey-character absolute bottom-full z-10 -translate-x-1/2" style={markerStyle}>
-              <img
+              <img loading="lazy" decoding="async" 
                 src={personaImage}
                 alt={`${personaName} journey character`}
                 className="journey-persona-bob h-10 w-8 object-contain object-bottom"
@@ -242,7 +242,7 @@ export default function CharacterJourney({
               ))}
             </div>
             <div className="relative mx-auto flex h-[150px] w-[130px] items-end justify-center overflow-hidden rounded-[24px] bg-sun/20">
-              <img
+              <img loading="lazy" decoding="async" 
                 src={personaImage}
                 alt={`${personaName}, your journey character`}
                 className="journey-persona-bob h-full w-full object-contain object-bottom"

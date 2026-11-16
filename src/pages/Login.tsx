@@ -127,16 +127,14 @@ export default function Login() {
       <div className="flex-1 px-5 pb-6 pt-8">
         <div className="mx-auto w-full max-w-[390px]">
           <div className="flex items-center gap-2">
-            <img
-              src="/logo.png"
+            <img loading="lazy" decoding="async"               src="/logo.png"
               alt="Come w' me logo"
               className="h-8 w-8 rounded-[10px] object-cover"
             />
             <span className="font-display text-[20px] font-bold tracking-tight">Come w' me</span>
           </div>
 
-          <img
-            src="/signin-banner.png"
+          <img loading="lazy" decoding="async"             src="/signin-banner.png"
             alt="A group of friends meeting for a walk in the park"
             className="mt-6 h-[210px] w-full rounded-[16px] object-cover"
           />

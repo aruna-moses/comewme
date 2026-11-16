@@ -39,7 +39,7 @@ export default function PublicHome() {
       <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[480px] items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="Come w' me logo" className="h-8 w-8 rounded-[10px] object-cover" />
+            <img loading="lazy" decoding="async" src="/logo.png" alt="Come w' me logo" className="h-8 w-8 rounded-[10px] object-cover" />
             <span className="font-display text-[17px] font-bold leading-none tracking-tight text-ink">COME W&apos; ME</span>
           </Link>
           <div className="flex items-center gap-2">

@@ -333,7 +333,7 @@ export default function AdvertisePage() {
                 style={{ aspectRatio: String(AD_SLOT_ASPECT) }}
               >
                 {imagePreview ? (
-                  <img src={imagePreview} alt="Ad crop preview" className="h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={imagePreview} alt="Ad crop preview" className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full items-center justify-center gap-2 text-muted">
                     <ImagePlus size={16} />
