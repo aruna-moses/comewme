@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Camera, ChevronDown, Copy, Mic, MoreVertical, Paperclip, Pause, Pin, Play, Reply, Send, Trash2, X, Clock3, MapPin, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, Camera, ChevronDown, Copy, Mic, MoreVertical, Pause, Pin, Play, Plus, Reply, Send, Trash2, X, Clock3, MapPin, Volume2, VolumeX, Image as ImageIcon, File as FileIcon } from 'lucide-react'
 import { playSend } from '../lib/sounds'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
@@ -62,6 +62,7 @@ export default function ChatRoom() {
   const [muteThisChat, setMuteThisChat] = usePersistedState<boolean>(`chat:${id}:mute`, false)
   const [reactions, setReactions] = useState<Record<string, Record<string, { count: number; mine: boolean }>>>({})
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const [attachSheetOpen, setAttachSheetOpen] = useState(false)
   const [draft, setDraft] = usePersistedState(`chat:${id}:draft`, '')
   const [uploading, setUploading] = useState(false)
   const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
@@ -1464,26 +1465,71 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
               </button>
             </div>
           ) : (
-          <div className="flex items-end gap-1.5">
-            <label className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-canvas ${uploading ? 'pointer-events-none opacity-50' : ''}`} title="Take a photo">
-              <Camera size={19} aria-hidden />
-              <input type="file" accept="image/*" capture="environment" aria-label="Take a photo" className="sr-only" disabled={uploading} onChange={(event) => {
-                const file = event.currentTarget.files?.[0]
-                if (file) setPendingPhoto(file)
-                event.currentTarget.value = ''
-              }} />
-            </label>
-            <label className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-canvas ${uploading ? 'pointer-events-none opacity-50' : ''}`} title="Attach a photo or audio">
-              <Paperclip size={19} aria-hidden />
-              <input type="file" accept="image/*,audio/*" aria-label="Attach a photo or audio" className="sr-only" disabled={uploading} onChange={(event) => {
-                const file = event.currentTarget.files?.[0]
-                if (file && file.type.startsWith('image/') && file.type !== 'image/svg+xml') setPendingPhoto(file)
-                else if (file) void handleAttach(file)
-                event.currentTarget.value = ''
-              }} />
-            </label>
-            <button type="button" onClick={() => void startRecording()} disabled={uploading} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-canvas text-muted disabled:opacity-50" aria-label="Record voice note">
-              <Mic size={19} aria-hidden />
+          <div className="relative flex items-end gap-1.5">
+            {attachSheetOpen && (
+              <div className="absolute bottom-full left-1 z-30 mb-2 grid grid-cols-4 gap-2 rounded-2xl border border-line bg-white p-3 shadow-lift">
+                <label className={`flex h-16 w-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl bg-canvas text-[12px] font-semibold text-muted transition hover:bg-sun/20 hover:text-amber ${uploading ? 'pointer-events-none opacity-50' : ''}`} title="Photos">
+                  <ImageIcon size={21} aria-hidden />
+                  Photos
+                  <input type="file" accept="image/*" aria-label="Pick photo" className="sr-only" disabled={uploading} onChange={(event) => {
+                    const file = event.currentTarget.files?.[0]
+                    if (file) setPendingPhoto(file)
+                    setAttachSheetOpen(false)
+                    event.currentTarget.value = ''
+                  }} />
+                </label>
+                <label className={`flex h-16 w-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl bg-canvas text-[12px] font-semibold text-muted transition hover:bg-sun/20 hover:text-amber ${uploading ? 'pointer-events-none opacity-50' : ''}`} title="Camera">
+                  <Camera size={21} aria-hidden />
+                  Camera
+                  <input type="file" accept="image/*" capture="environment" aria-label="Take photo" className="sr-only" disabled={uploading} onChange={(event) => {
+                    const file = event.currentTarget.files?.[0]
+                    if (file) setPendingPhoto(file)
+                    setAttachSheetOpen(false)
+                    event.currentTarget.value = ''
+                  }} />
+                </label>
+                <button
+                  type="button"
+                  disabled={uploading}
+                  title="Location"
+                  className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-2xl bg-canvas text-[12px] font-semibold text-muted transition hover:bg-sun/20 hover:text-amber disabled:opacity-50"
+                  onClick={() => {
+                    if (!navigator.geolocation || !profile) { setAttachSheetOpen(false); return }
+                    navigator.geolocation.getCurrentPosition(
+                      (pos) => {
+                        const lat = pos.coords.latitude.toFixed(5)
+                        const lng = pos.coords.longitude.toFixed(5)
+                        void handleSend(`📍 My location: https://www.google.com/maps?q=${lat},${lng}`, 'text')
+                        setAttachSheetOpen(false)
+                      },
+                      () => setAttachSheetOpen(false),
+                      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
+                    )
+                  }}
+                >
+                  <MapPin size={21} aria-hidden />
+                  Location
+                </button>
+                <label className={`flex h-16 w-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl bg-canvas text-[12px] font-semibold text-muted transition hover:bg-sun/20 hover:text-amber ${uploading ? 'pointer-events-none opacity-50' : ''}`} title="Document">
+                  <FileIcon size={21} aria-hidden />
+                  Document
+                  <input type="file" accept="*/*" aria-label="Attach document" className="sr-only" disabled={uploading} onChange={(event) => {
+                    const file = event.currentTarget.files?.[0]
+                    if (file) void handleAttach(file)
+                    setAttachSheetOpen(false)
+                    event.currentTarget.value = ''
+                  }} />
+                </label>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setAttachSheetOpen((v) => !v)}
+              aria-label={attachSheetOpen ? 'Hide attachments' : 'Attach'}
+              aria-expanded={attachSheetOpen}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-canvas hover:text-ink"
+            >
+              <Plus size={22} aria-hidden />
             </button>
             <textarea
               ref={inputRef}
@@ -1501,19 +1547,29 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
               maxLength={2000}
               disabled={uploading}
             />
-            <button
-              type="button"
-              onClick={() => void handleSend(draft)}
-              disabled={!draft.trim() || uploading}
-              aria-label="Send message"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#0B0B0F] transition active:scale-95 disabled:cursor-not-allowed disabled:bg-line disabled:text-muted"
-              style={(!draft.trim() || uploading) ? undefined : {
-                backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)',
-                boxShadow: '0 1px 2px rgb(238 123 30 / 35%), 0 6px 14px -6px rgb(238 123 30 / 45%)',
-              }}
-            >
-              {uploading ? <span className="text-[11px]">…</span> : <Send size={17} aria-hidden />}
-            </button>
+            {!draft.trim() ? (
+              <button
+                type="button"
+                onClick={() => void startRecording()}
+                disabled={uploading || attachSheetOpen}
+                aria-label="Record voice note"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#0B0B0F] transition active:scale-95 disabled:cursor-not-allowed disabled:bg-line disabled:text-muted"
+                style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)', boxShadow: '0 1px 2px rgb(238 123 30 / 35%), 0 6px 14px -6px rgb(238 123 30 / 45%)' }}
+              >
+                <Mic size={19} aria-hidden />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void handleSend(draft)}
+                disabled={uploading}
+                aria-label="Send message"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#0B0B0F] transition active:scale-95 disabled:opacity-60"
+                style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)', boxShadow: '0 1px 2px rgb(238 123 30 / 35%), 0 6px 14px -6px rgb(238 123 30 / 45%)' }}
+              >
+                {uploading ? <span className="text-[11px]">…</span> : <Send size={17} aria-hidden />}
+              </button>
+            )}
           </div>
           )}
         </div>
