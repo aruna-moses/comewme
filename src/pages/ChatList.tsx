@@ -37,9 +37,14 @@ export default function ChatList() {
       if (document.visibilityState === 'visible' && alive) refresh()
     }
     document.addEventListener('visibilitychange', onVisible)
+    // Safety net: if realtime is flaky, poll while this tab is visible
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible' && alive) refresh()
+    }, 15_000)
     return () => {
       alive = false
       document.removeEventListener('visibilitychange', onVisible)
+      window.clearInterval(poll)
     }
   }, [profile?.id])
 
