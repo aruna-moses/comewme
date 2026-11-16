@@ -68,10 +68,11 @@ export default function MyTasks() {
 
   const targetTaskId = new URLSearchParams(location.search).get('task')
 
+  const nowMs = useMemo(() => Date.now(), [])
+  const isDone = (task: Task) =>
+    task.status === 'completed' || new Date(task.date_time).getTime() < nowMs
+
   const done = useMemo(() => {
-    const now = Date.now()
-    const isDone = (task: Task) =>
-      task.status === 'completed' || new Date(task.date_time).getTime() < now
     const seen = new Set<string>()
     const finished: Task[] = []
     for (const task of [...hosted, ...joined]) {
@@ -81,22 +82,26 @@ export default function MyTasks() {
     }
     finished.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
     return finished
-  }, [hosted, joined])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hosted, joined, nowMs])
+
+  const hostedActive = useMemo(() => hosted.filter((t) => !isDone(t)), [hosted, nowMs]) // eslint-disable-line react-hooks/exhaustive-deps
+  const joinedActive = useMemo(() => joined.filter((t) => !isDone(t)), [joined, nowMs]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (loading || !targetTaskId) return
-    if (hosted.some((task) => task.id === targetTaskId)) {
+    if (hostedActive.some((task) => task.id === targetTaskId)) {
       setTab('hosting')
-    } else if (joined.some((task) => task.id === targetTaskId)) {
+    } else if (joinedActive.some((task) => task.id === targetTaskId)) {
       setTab('going')
     } else if (done.some((task) => task.id === targetTaskId)) {
       setTab('done')
     }
-  }, [loading, targetTaskId, hosted, joined, done])
+  }, [loading, targetTaskId, hostedActive, joinedActive, done])
 
   useEffect(() => {
     if (loading || !targetTaskId) return
-    const targetInCurrentTab = (tab === 'hosting' ? hosted : tab === 'going' ? joined : done).some(
+    const targetInCurrentTab = (tab === 'hosting' ? hostedActive : tab === 'going' ? joinedActive : done).some(
       (task) => task.id === targetTaskId,
     )
     if (!targetInCurrentTab) return
@@ -125,7 +130,7 @@ export default function MyTasks() {
     )
   }
 
-  const list = tab === 'hosting' ? hosted : tab === 'going' ? joined : done
+  const list = tab === 'hosting' ? hostedActive : tab === 'going' ? joinedActive : done
   const empty =
     tab === 'hosting'
       ? "You haven't hosted anything yet. Post an activity and people will join."
@@ -150,7 +155,7 @@ export default function MyTasks() {
                 : 'text-muted'
             }`}
           >
-            Posted ({hosted.length})
+            Posted ({hostedActive.length})
             {pendingApplications > 0 && (
               <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#e53935] px-1.5 align-middle text-[12px] font-bold leading-none text-white">
                 {pendingApplications > 99 ? '99+' : pendingApplications}
@@ -165,7 +170,7 @@ export default function MyTasks() {
                 : 'text-muted'
             }`}
           >
-            Applied ({joined.length})
+            Applied ({joinedActive.length})
           </button>
           <button
             onClick={() => setTab('done')}
