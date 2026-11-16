@@ -61,6 +61,7 @@ export default function ChatRoom() {
   const [recapPosted, setRecapPosted] = useState(false)
   const [muteThisChat, setMuteThisChat] = usePersistedState<boolean>(`chat:${id}:mute`, false)
   const [reactions, setReactions] = useState<Record<string, Record<string, { count: number; mine: boolean }>>>({})
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const [draft, setDraft] = usePersistedState(`chat:${id}:draft`, '')
   const [uploading, setUploading] = useState(false)
   const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
@@ -906,6 +907,14 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
 
   const happeningToday = task ? isToday(task.date_time) : false
 
+  // Auto-grow the composer textarea to fit wrapped lines, up to ~140px, then scroll
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`
+  }, [draft])
+
   // Merge messages and system events into one chronological, glanceable timeline.
   const timelineItems: Array<{ kind: 'message'; message: Message } | { kind: 'event'; event: ChatSystemEvent }> = []
   {
@@ -1476,8 +1485,10 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             <button type="button" onClick={() => void startRecording()} disabled={uploading} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-canvas text-muted disabled:opacity-50" aria-label="Record voice note">
               <Mic size={19} aria-hidden />
             </button>
-            <input
-              className="field min-h-[42px] min-w-0 flex-1 border-0 bg-canvas px-3"
+            <textarea
+              ref={inputRef}
+              rows={1}
+              className="field min-h-[42px] min-w-0 max-h-[150px] flex-1 resize-none overflow-y-auto border-0 bg-canvas px-3 py-2 leading-snug"
               placeholder="Message the group…"
               value={draft}
               onChange={(event) => handleDraftChange(event.target.value)}
