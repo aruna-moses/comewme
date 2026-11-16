@@ -161,6 +161,18 @@ export default function ChatList() {
   const { isPinned, togglePin, pinnedIds } = usePinnedChats()
   const [doneExpanded, setDoneExpanded] = useState(false)
   const [menuFor, setMenuFor] = useState<string | null>(null)
+  const [actionPill, setActionPill] = useState<string | null>(null)
+  const actionTimer = useRef<number | null>(null)
+  const flashAction = (message: string) => {
+    setActionPill(message)
+    if (actionTimer.current !== null) window.clearTimeout(actionTimer.current)
+    actionTimer.current = window.setTimeout(() => setActionPill(null), 2000)
+  }
+  useEffect(() => {
+    return () => {
+      if (actionTimer.current !== null) window.clearTimeout(actionTimer.current)
+    }
+  }, [])
 
   if (loading) {
     return (
@@ -253,7 +265,7 @@ export default function ChatList() {
     const happeningToday = !doneChat && days === 0
     const menuOpen = menuFor === c.task.id
     return (
-      <div key={c.task.id} className={`relative flex items-center gap-1.5 border-b border-line py-2 pl-4 pr-2 transition hover:bg-canvas active:scale-[0.99] ${happeningToday ? 'bg-gradient-to-r from-sun/20 via-amber/10 to-transparent ring-1 ring-inset ring-amber/40' : ''} ${doneChat ? 'opacity-70' : ''}`}>
+      <div key={c.task.id} className={`relative flex items-center gap-1.5 border-b border-line py-2 pl-4 pr-2 transition-colors hover:bg-canvas ${happeningToday ? 'bg-gradient-to-r from-sun/20 via-amber/10 to-transparent ring-1 ring-inset ring-amber/40' : ''} ${doneChat ? 'opacity-70' : ''}`}>
         <Link
           to={`/task/${c.task.id}/chat`}
           className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 flex-1 min-w-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
@@ -350,6 +362,7 @@ export default function ChatList() {
                 type="button"
                 role="menuitem"
                 onClick={() => {
+                  flashAction(pinned ? 'Chat unpinned' : 'Chat pinned — stays on top')
                   void togglePin(c.task.id)
                   setMenuFor(null)
                 }}
@@ -362,6 +375,7 @@ export default function ChatList() {
                 type="button"
                 role="menuitem"
                 onClick={() => {
+                  flashAction(muted ? 'Notifications unmuted' : 'Chat muted — notifications off')
                   void toggleMute(c.task.id)
                   setMenuFor(null)
                 }}
@@ -462,6 +476,11 @@ export default function ChatList() {
           </>
         )}
       </div>
+      {actionPill && (
+        <p role="status" aria-live="polite" className="pointer-events-none fixed bottom-24 left-1/2 z-[60] -translate-x-1/2 whitespace-nowrap rounded-full bg-ink px-4 py-2 text-[13px] font-semibold text-white shadow-lift">
+          {actionPill}
+        </p>
+      )}
     </div>
   )
 }
