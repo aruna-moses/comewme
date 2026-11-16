@@ -120,8 +120,15 @@ export default function ChatList() {
         },
       )
       .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          if (typeof window !== 'undefined') {
+            // Lightweight signal so users can verify in DevTools → Console the channel is live
+            console.info('[comewme] ChatList live-reorder channel ready')
+          }
+          return
+        }
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.warn('ChatList realtime channel issue:', status)
+          console.warn('[comewme] ChatList realtime channel issue:', status)
         }
       })
     return () => {
