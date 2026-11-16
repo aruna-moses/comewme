@@ -1114,7 +1114,9 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                       <div className="relative min-w-0 max-w-full" data-chat-message-actions>
                         <div
                           className={`chat-message-bubble inline-block max-w-full p-2 text-left transition ${
-                            mine ? 'rounded-2xl rounded-br-[6px] bg-sun/65' : 'rounded-2xl rounded-bl-[6px] bg-white'
+                            mine
+                              ? 'rounded-2xl rounded-br-[6px] chat-bubble-mine'
+                              : 'rounded-2xl rounded-bl-[6px] bg-white'
                           } ${message.deleted_at ? 'italic text-muted' : ''}`}
                           style={selectedForReply || flashMessageId === message.id
                             ? { boxShadow: `0 0 0 2px ${senderColor}`, backgroundColor: senderColorTint(message.sender_id) }
@@ -1488,8 +1490,18 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
               maxLength={2000}
               disabled={uploading}
             />
-            <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber text-[#0B0B0F] disabled:opacity-50" onClick={() => void handleSend(draft)} disabled={!draft.trim() || uploading} aria-label="Send message">
-              {uploading ? <span className="text-xs">…</span> : <Send size={17} aria-hidden />}
+            <button
+              type="button"
+              onClick={() => void handleSend(draft)}
+              disabled={!draft.trim() || uploading}
+              aria-label="Send message"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#0B0B0F] transition active:scale-95 disabled:cursor-not-allowed disabled:bg-line disabled:text-muted"
+              style={(!draft.trim() || uploading) ? undefined : {
+                backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)',
+                boxShadow: '0 1px 2px rgb(238 123 30 / 35%), 0 6px 14px -6px rgb(238 123 30 / 45%)',
+              }}
+            >
+              {uploading ? <span className="text-[11px]">…</span> : <Send size={17} aria-hidden />}
             </button>
           </div>
           )}
