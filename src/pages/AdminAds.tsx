@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Check, Pause, X } from 'lucide-react'
 import { isModerator } from '../lib/api'
-import { fetchAdsForReview, reviewAd } from '../lib/ads'
+import { fetchAdsForReview, reviewAd, adRunState, AD_RUN_LABEL } from '../lib/ads'
 import type { Ad } from '../lib/ads'
 import { AdFace } from '../components/AdCarousel'
 import { AD_SLOT_ASPECT } from '../lib/adSlot'
@@ -34,7 +34,12 @@ export default function AdminAds() {
       const ok = await isModerator()
       setAllowed(ok)
       if (!ok) return
-      setAds(await fetchAdsForReview())
+      const rows = await fetchAdsForReview()
+      // Anything waiting on a human floats to the top; the rest newest first.
+      setAds(rows.sort((a, b) => {
+        const weight = (ad: Ad) => (ad.status === 'pending' ? 0 : 1)
+        return weight(a) - weight(b) || b.created_at.localeCompare(a.created_at)
+      }))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load ads.')
     } finally {
@@ -100,6 +105,11 @@ export default function AdminAds() {
                   <div className="min-w-0">
                     <p className="truncate text-[15px] font-semibold text-ink">{ad.brand_name}</p>
                     <p className="truncate text-[14px] text-muted">{ad.headline}</p>
+                    {ad.status === 'approved' && (
+                      <p className="mt-0.5 text-[12px] font-semibold text-amber">
+                        {AD_RUN_LABEL[adRunState(ad)]}
+                      </p>
+                    )}
                   </div>
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold uppercase tracking-wide ${STATUS_STYLE[ad.status]}`}

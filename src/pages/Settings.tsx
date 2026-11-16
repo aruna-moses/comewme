@@ -196,13 +196,18 @@ export default function Settings() {
           <div>
             <p className="text-[15px] font-semibold">Advertise Your Business</p>
             <p className="mt-0.5 text-[14px] leading-relaxed text-muted">
-              Run a sponsored ad at the top of Discover. Reach Lagosians looking for things to do.
+              Run a sponsored strip at the top of Discover. Reach Lagosians looking for things to do.
             </p>
           </div>
         </div>
-        <Link to="/advertise" className="btn-primary w-full mt-3 text-sm font-bold">
-          Create an Ad
-        </Link>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Link to="/advertise" className="btn-primary btn-sm">
+            Create an ad
+          </Link>
+          <Link to="/advertise/campaigns" className="btn-ghost btn-sm">
+            Your ads
+          </Link>
+        </div>
       </div>
 
       {/* account details — sits directly under the photo */}

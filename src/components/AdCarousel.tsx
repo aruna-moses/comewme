@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { fetchActiveAds } from '../lib/ads'
 import type { Ad } from '../lib/ads'
 import { AD_SLOT_ASPECT } from '../lib/adSlot'
 
 /** Shown when no paid ads are live yet, so the slot never looks broken. */
 const HOUSE_AD: Ad = {
-  id: 'house-apple',
+  id: 'house-advertise',
   advertiser_id: null,
-  brand_name: 'Apple',
-  headline: 'iPhone',
-  cta_text: 'Shop now',
-  destination_url: 'https://www.apple.com',
+  brand_name: "Come w' me",
+  headline: 'Put your business in front of Lagos',
+  cta_text: 'Advertise',
+  destination_url: '/advertise',
   image_url: null,
-  brand_color: '#1d1d1f',
+  brand_color: '#FF9F1C',
   start_date: '',
   end_date: '',
   status: 'approved',
@@ -21,27 +22,60 @@ const HOUSE_AD: Ad = {
   reviewed_at: null,
 }
 
-export function AdFace({ ad }: { ad: Ad }) {
+/** Black or white text on an arbitrary brand colour. */
+function readableOn(hex: string): string {
+  const raw = hex.replace('#', '').trim()
+  const full = raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw
+  const value = Number.parseInt(full, 16)
+  if (full.length !== 6 || Number.isNaN(value)) return '#ffffff'
+  const r = (value >> 16) & 255
+  const g = (value >> 8) & 255
+  const b = value & 255
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.68 ? '#0B0B0F' : '#ffffff'
+}
+
+/**
+ * The creative itself. `banner` is the edge-to-edge Discover slot; `card` keeps
+ * the rounded look used in previews and the review queue.
+ */
+export function AdFace({ ad, variant = 'card' }: { ad: Ad; variant?: 'card' | 'banner' }) {
+  const banner = variant === 'banner'
+  const radius = banner ? '' : 'rounded-[10px]'
+  const textColor = readableOn(ad.brand_color)
+
+  const cta = (
+    <span
+      className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-bold leading-none"
+      style={{ backgroundColor: ad.brand_color, color: textColor }}
+    >
+      {ad.cta_text || 'View'}
+    </span>
+  )
+
   if (ad.image_url) {
     return (
-      <div className="relative h-full w-full overflow-hidden rounded-[10px]">
+      <div className={`relative h-full w-full overflow-hidden ${radius}`}>
         <img
           src={ad.image_url}
-          alt={ad.brand_name}
-          className="h-full w-full object-cover"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-        <div className="absolute inset-0 flex flex-col justify-center px-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
-            {ad.brand_name}
-          </p>
-          <p className="mt-0.5 line-clamp-1 text-[15px] font-bold leading-tight text-white">
-            {ad.headline}
-          </p>
-          <p className="mt-0.5 text-[12px] font-semibold" style={{ color: ad.brand_color }}>
-            {ad.cta_text} →
-          </p>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-black/10" />
+        <div className={`relative flex h-full items-center gap-3 ${banner ? 'px-4' : 'px-3'}`}>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[10px] font-bold uppercase tracking-[0.14em] text-white/75">
+              {ad.brand_name}
+            </p>
+            <p
+              className={`mt-0.5 text-[16px] font-bold leading-tight text-white ${
+                banner ? 'line-clamp-2' : 'truncate'
+              }`}
+            >
+              {ad.headline}
+            </p>
+          </div>
+          {cta}
         </div>
       </div>
     )
@@ -49,29 +83,27 @@ export function AdFace({ ad }: { ad: Ad }) {
 
   return (
     <div
-      className="flex h-full w-full items-center gap-3 overflow-hidden rounded-[10px] px-3"
+      className={`flex h-full w-full items-center gap-3 overflow-hidden ${radius} ${banner ? 'px-4' : 'px-3'}`}
       style={{ backgroundColor: `${ad.brand_color}14` }}
     >
-      <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[15px] font-bold text-white"
+      <span
+        className="h-8 w-1.5 shrink-0 rounded-full"
         style={{ backgroundColor: ad.brand_color }}
         aria-hidden
-      >
-        {ad.brand_name.trim().charAt(0).toUpperCase() || 'A'}
-      </div>
+      />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[14px] font-bold leading-tight text-ink">{ad.brand_name}</p>
-        <p className="truncate text-[12px] leading-tight text-muted">
+        <p className="truncate text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+          {ad.brand_name}
+        </p>
+        <p
+          className={`mt-0.5 text-[16px] font-bold leading-tight text-ink ${
+            banner ? 'line-clamp-2' : 'truncate'
+          }`}
+        >
           {ad.headline}
-          {ad.cta_text ? ` · ${ad.cta_text}` : ''}
         </p>
       </div>
-      <span
-        className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white"
-        style={{ backgroundColor: ad.brand_color }}
-      >
-        {ad.cta_text || 'View'}
-      </span>
+      {cta}
     </div>
   )
 }
@@ -109,44 +141,59 @@ export default function AdCarousel() {
   }, [ads])
 
   const current = ads[index] ?? HOUSE_AD
-  const clickable = /^https?:\/\//i.test(current.destination_url)
+  const isExternal = /^https?:\/\//i.test(current.destination_url)
+  const isInternal = current.destination_url.startsWith('/')
 
   const body = (
-    <div
-      className="w-full overflow-hidden rounded-[10px]"
-      style={{ aspectRatio: String(AD_SLOT_ASPECT) }}
-    >
-      <AdFace ad={current} />
+    <div className="relative w-full overflow-hidden" style={{ aspectRatio: String(AD_SLOT_ASPECT) }}>
+      <AdFace ad={current} variant="banner" />
     </div>
   )
 
   return (
-    <div className="sticky top-0 z-40 mx-5 mt-4 rounded-xl border border-line bg-white p-2.5 shadow-sm">
-      <div className="mb-1.5 flex items-center justify-between px-0.5">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-          Advertisement
+    /* Full-bleed: the sponsored strip runs from one edge of the app column to
+       the other instead of sitting inside the feed gutter. */
+    <div className="sticky top-0 z-40 border-b border-line bg-canvas/95 backdrop-blur">
+      <div className="flex items-center justify-between gap-3 px-4 pb-1 pt-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted">
+          Sponsored
         </span>
-        {ads.length > 1 && (
+        {ads.length > 1 ? (
           <div className="flex items-center gap-1">
             {ads.map((ad, i) => (
               <button
                 key={ad.id}
                 type="button"
-                aria-label={`Show ad ${i + 1}`}
+                aria-label={`Show ad ${i + 1} of ${ads.length}`}
+                aria-current={i === index}
                 onClick={() => setIndex(i)}
-                className={`h-1 rounded-full transition-all ${
-                  i === index ? 'w-3.5 bg-amber' : 'w-1 bg-line'
-                }`}
+                className={`h-1 rounded-full transition-all ${i === index ? 'w-4 bg-amber' : 'w-1 bg-line'}`}
               />
             ))}
           </div>
+        ) : (
+          <span className="text-[10px] font-semibold text-muted/70">Ad</span>
         )}
       </div>
 
-      {clickable ? (
-        <a href={current.destination_url} target="_blank" rel="noopener noreferrer">
+      {isExternal ? (
+        <a
+          href={current.destination_url}
+          target="_blank"
+          rel="noopener noreferrer sponsored"
+          aria-label={`${current.brand_name}: ${current.headline}`}
+          className="block"
+        >
           {body}
         </a>
+      ) : isInternal ? (
+        <Link
+          to={current.destination_url}
+          aria-label={`${current.brand_name}: ${current.headline}`}
+          className="block"
+        >
+          {body}
+        </Link>
       ) : (
         body
       )}

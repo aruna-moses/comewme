@@ -13,7 +13,7 @@ import {
   X,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { submitAd } from '../lib/ads'
+import { daysBetween, normalizeDestinationUrl, submitAd } from '../lib/ads'
 import type { Ad } from '../lib/ads'
 import { AD_SLOT_ASPECT, lagosTodayISO } from '../lib/adSlot'
 import { clearDraftGroup, usePersistedState } from '../lib/drafts'
@@ -106,6 +106,11 @@ export default function AdvertisePage() {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
+  function setDuration(days: number) {
+    const start = form.startDate || today
+    setForm((prev) => ({ ...prev, startDate: start, endDate: addDays(start, days - 1) }))
+  }
+
   function pickFile(file: File | undefined) {
     setImageError(null)
     if (!file) return
@@ -147,7 +152,9 @@ export default function AdvertisePage() {
   }
 
   const step1Valid = form.brandName.trim().length > 0
-  const step2Valid = form.headline.trim().length > 0 && form.destinationUrl.trim().length > 0
+  const destination = normalizeDestinationUrl(form.destinationUrl)
+  const destinationInvalid = form.destinationUrl.trim().length > 0 && !destination
+  const step2Valid = form.headline.trim().length > 0 && Boolean(destination)
   const step3Valid =
     form.startDate.length > 0 && form.endDate.length > 0 && form.endDate >= form.startDate
   const canSubmit = step1Valid && step2Valid && step3Valid
@@ -159,7 +166,11 @@ export default function AdvertisePage() {
       return
     }
     if (!canSubmit) {
-      setSubmitError('Please complete every step before submitting.')
+      setSubmitError(
+        destinationInvalid
+          ? 'Check the link on step 2 — it needs to be a real web address.'
+          : 'Please complete every step before submitting.',
+      )
       return
     }
     setSubmitting(true)
@@ -170,7 +181,7 @@ export default function AdvertisePage() {
           brandName: form.brandName,
           headline: form.headline,
           ctaText: form.ctaText,
-          destinationUrl: form.destinationUrl,
+          destinationUrl: destination ?? form.destinationUrl,
           brandColor: form.brandColor,
           startDate: form.startDate,
           endDate: form.endDate,
@@ -211,13 +222,13 @@ export default function AdvertisePage() {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-verified/15">
               <CheckCircle2 size={28} className="text-verified" />
             </div>
-            <h1 className="mt-4 font-display text-[22px] font-bold text-ink">Ad submitted</h1>
+            <h1 className="mt-4 font-display text-[22px] font-bold text-ink">Submitted for review</h1>
             <p className="mt-2 text-[15px] leading-relaxed text-muted">
-              Your ad is waiting for review. We usually check within 24 hours and message you on
-              WhatsApp if anything is missing.
+              We usually check within 24 hours and message you on WhatsApp if anything is missing.
             </p>
+
             <div className="mt-5 rounded-xl border border-line bg-canvas p-3 text-left">
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-muted">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                 Your ad
               </p>
               <p className="mt-1 text-[15px] font-semibold text-ink">{form.brandName}</p>
@@ -226,14 +237,30 @@ export default function AdvertisePage() {
                 {form.startDate} → {form.endDate}
               </p>
               <span className="mt-2 inline-block rounded-full bg-sun/20 px-2 py-0.5 text-[12px] font-bold uppercase tracking-wide text-amber">
-                Pending review
+                In review
               </span>
             </div>
-            <Link to="/" className="btn-primary mt-5 w-full">
-              Back to Discover
+
+            <ol className="mt-4 space-y-2 text-left">
+              {[
+                'We check the picture, copy and link.',
+                'We send a payment request on WhatsApp.',
+                'It goes live on Discover the moment payment lands.',
+              ].map((text, i) => (
+                <li key={text} className="flex items-start gap-2.5 text-[13px] leading-relaxed text-muted">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-bold text-canvas">
+                    {i + 1}
+                  </span>
+                  {text}
+                </li>
+              ))}
+            </ol>
+
+            <Link to="/advertise/campaigns" className="btn-primary mt-5 w-full">
+              View your ads
             </Link>
-            <Link to="/settings" className="btn-ghost mt-2 w-full">
-              Go to Settings
+            <Link to="/" className="btn-ghost mt-2 w-full">
+              Back to Discover
             </Link>
           </div>
         </div>
@@ -470,16 +497,26 @@ export default function AdvertisePage() {
                 id="destinationUrl"
                 type="url"
                 inputMode="url"
-                className="field"
-                placeholder="https://wa.me/2348012345678"
+                className={`field ${destinationInvalid ? 'border-alert focus:border-alert' : ''}`}
+                placeholder="wa.me/2348012345678"
                 value={form.destinationUrl}
                 onChange={(e) => set('destinationUrl', e.target.value)}
+                aria-invalid={destinationInvalid}
+                aria-describedby="destination-help"
               />
-              <p className="mt-1 text-[13px] leading-relaxed text-muted">
-                This is where a tap on your ad takes people. It can be your website, Instagram,
-                booking page, or a WhatsApp chat link
-                (<span className="font-mono text-[12px]">https://wa.me/234…</span>). Without it the
-                ad would lead nowhere, so it is required.
+              {destinationInvalid ? (
+                <p role="alert" className="mt-1 text-[13px] font-medium text-alert">
+                  That does not look like a web address. Try something like tasteoflagos.com or
+                  wa.me/2348012345678.
+                </p>
+              ) : destination ? (
+                <p className="mt-1 truncate text-[13px] text-verified">
+                  Opens {destination}
+                </p>
+              ) : null}
+              <p id="destination-help" className="mt-1 text-[13px] leading-relaxed text-muted">
+                Your website, Instagram, booking page or a WhatsApp chat link. You can paste it
+                without <span className="font-mono text-[12px]">https://</span> — we add it for you.
               </p>
             </div>
           </div>
@@ -492,6 +529,24 @@ export default function AdvertisePage() {
                 <CalendarDays size={15} className="text-amber" />
                 When should it run?
               </p>
+
+              <div className="mt-3 flex gap-2">
+                {[7, 14, 30].map((days) => {
+                  const active =
+                    form.endDate === addDays(form.startDate || today, days - 1)
+                  return (
+                    <button
+                      key={days}
+                      type="button"
+                      onClick={() => setDuration(days)}
+                      className={`chip flex-1 justify-center ${active ? 'chip-active' : ''}`}
+                      aria-pressed={active}
+                    >
+                      {days} days
+                    </button>
+                  )
+                })}
+              </div>
 
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <div>
@@ -551,22 +606,25 @@ export default function AdvertisePage() {
               <div className="border-b border-line px-4 py-3">
                 <p className="text-[15px] font-semibold text-ink">How it looks in the app</p>
                 <p className="text-[13px] text-muted">
-                  Real size, on the Discover feed, pinned above the activity list.
+                  Real size, edge to edge at the top of Discover, pinned above the activity list.
                 </p>
               </div>
 
-              {/* Fake Discover screen */}
+              {/* Fake Discover screen — the real full-bleed strip */}
               <div className="bg-canvas p-3">
                 <div className="overflow-hidden rounded-2xl border border-line bg-white">
-                  <div className="px-3 pt-3">
+                  <div className="px-3 pb-2 pt-3">
                     <p className="font-display text-[15px] font-bold text-ink">COME W&apos; ME</p>
                   </div>
-                  <div className="mt-2 rounded-xl border border-line bg-white p-2.5 mx-2">
-                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-                      Advertisement
-                    </p>
-                    <div className="w-full overflow-hidden rounded-[10px]" style={{ aspectRatio: String(AD_SLOT_ASPECT) }}>
-                      <AdFace ad={previewAd} />
+                  <div className="border-y border-line bg-canvas/95">
+                    <div className="flex items-center justify-between px-4 pb-1 pt-2">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted">
+                        Sponsored
+                      </span>
+                      <span className="text-[10px] font-semibold text-muted/70">Ad</span>
+                    </div>
+                    <div className="w-full overflow-hidden" style={{ aspectRatio: String(AD_SLOT_ASPECT) }}>
+                      <AdFace ad={previewAd} variant="banner" />
                     </div>
                   </div>
                   <div className="space-y-1 px-3 py-3">
@@ -585,7 +643,7 @@ export default function AdvertisePage() {
                 <Row label="Brand" value={form.brandName} />
                 <Row label="Headline" value={form.headline} />
                 <Row label="Button" value={form.ctaText} />
-                <Row label="Link" value={form.destinationUrl} />
+                <Row label="Link" value={destination ?? form.destinationUrl} />
                 <Row label="Colour" value={form.brandColor.toUpperCase()} />
                 <Row label="Picture" value={imageFile ? imageFile.name : 'None'} />
                 <Row label="Runs" value={`${form.startDate} → ${form.endDate}`} />
@@ -663,11 +721,11 @@ function fileToDataUrl(file: File) {
   })
 }
 
-function daysBetween(start: string, end: string) {
-  const a = new Date(`${start}T00:00:00`).getTime()
-  const b = new Date(`${end}T00:00:00`).getTime()
-  if (Number.isNaN(a) || Number.isNaN(b)) return 0
-  return Math.round((b - a) / 86_400_000) + 1
+function addDays(iso: string, days: number) {
+  const date = new Date(`${iso}T00:00:00Z`)
+  if (Number.isNaN(date.getTime())) return iso
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
 }
 
 function Row({ label, value }: { label: string; value: string }) {

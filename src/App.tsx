@@ -28,6 +28,7 @@ const Violations = lazy(() => import('./pages/Violations'))
 const AdminModeration = lazy(() => import('./pages/AdminModeration'))
 const AdminAds = lazy(() => import('./pages/AdminAds'))
 const Advertise = lazy(() => import('./pages/Advertise'))
+const MyAds = lazy(() => import('./pages/MyAds'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const CommunityGuidelines = lazy(() => import('./pages/CommunityGuidelines'))
@@ -191,6 +192,14 @@ export default function App() {
           element={
             <RequireAuth>
               <Advertise />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/advertise/campaigns"
+          element={
+            <RequireAuth>
+              <MyAds />
             </RequireAuth>
           }
         />

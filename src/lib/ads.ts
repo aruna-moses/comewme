@@ -123,3 +123,71 @@ export async function reviewAd(
     .eq('id', adId)
   if (error) throw toError(error)
 }
+
+/** Advertisers can pull back a submission that has not been reviewed yet. */
+export async function withdrawAd(ad: Ad) {
+  const { error } = await supabase.from('advertisements').delete().eq('id', ad.id)
+  if (error) throw toError(error)
+  // Drop the creative too - the row is the only thing pointing at it.
+  const marker = '/object/public/ad-media/'
+  const index = ad.image_url?.indexOf(marker) ?? -1
+  if (index >= 0 && ad.image_url) {
+    const path = ad.image_url.slice(index + marker.length)
+    try {
+      await supabase.storage.from('ad-media').remove([path])
+    } catch {
+      // A leftover file is harmless; the submission is already gone.
+    }
+  }
+}
+
+/**
+ * Where an ad is in its life, in the words an advertiser understands.
+ * Approved ads still need their dates checked - approval does not mean live.
+ */
+export type AdRunState = 'pending' | 'scheduled' | 'live' | 'ended' | 'paused' | 'rejected'
+
+export function adRunState(ad: Ad, today = lagosTodayISO()): AdRunState {
+  if (ad.status === 'pending') return 'pending'
+  if (ad.status === 'rejected') return 'rejected'
+  if (ad.status === 'paused') return 'paused'
+  if (today < ad.start_date) return 'scheduled'
+  if (today > ad.end_date) return 'ended'
+  return 'live'
+}
+
+export const AD_RUN_LABEL: Record<AdRunState, string> = {
+  pending: 'In review',
+  scheduled: 'Scheduled',
+  live: 'Live now',
+  ended: 'Finished',
+  paused: 'Paused',
+  rejected: 'Changes needed',
+}
+
+export function daysBetween(start: string, end: string): number {
+  const a = Date.parse(`${start}T00:00:00Z`)
+  const b = Date.parse(`${end}T00:00:00Z`)
+  if (Number.isNaN(a) || Number.isNaN(b)) return 0
+  return Math.round((b - a) / 86_400_000) + 1
+}
+
+/**
+ * Turn whatever someone typed into a link we can actually open.
+ * "tasteoflagos.com" and "wa.me/234..." both become https URLs; anything that
+ * cannot be a website returns null so the form can explain itself.
+ */
+export function normalizeDestinationUrl(raw: string): string | null {
+  const value = raw.trim()
+  if (!value) return null
+  // Accept a bare domain, a full URL, or a WhatsApp short link.
+  const withScheme = /^https?:\/\//i.test(value) ? value : `https://${value}`
+  try {
+    const url = new URL(withScheme)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+    if (!url.hostname.includes('.')) return null
+    return url.toString()
+  } catch {
+    return null
+  }
+}
