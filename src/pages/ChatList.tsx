@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Pin, BellOff, ChevronDown, MoreVertical } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -7,6 +7,7 @@ import { usePersistedState, readDraft, writeDraft, clearDraft } from '../lib/dra
 import { formatTime, taskEmoji, categoryTileBg } from '../lib/format'
 import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
 import { loadChatsForUser } from '../lib/chatsData'
+import { supabase } from '../lib/supabase'
 
 export default function ChatList() {
   const { profile } = useAuth()
@@ -31,6 +32,63 @@ export default function ChatList() {
       })
     return () => {
       alive = false
+    }
+  }, [profile?.id])
+
+  // Keep the latest loaded chat ids in a ref so the realtime listener can filter without re-subscribing
+  const knownIdsRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    knownIdsRef.current = new Set(chats.map((c) => c.task.id))
+  }, [chats])
+
+  // Realtime: a new message in any of our chats bumps that chat to the top, matching WhatsApp ordering.
+  useEffect(() => {
+    const userId = profile?.id
+    if (!userId) return
+    const channel = supabase
+      .channel(`chat-list:${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          const row = payload.new as {
+            task_id: string
+            body: string
+            type: string
+            sender_name: string
+            sender_id: string
+            created_at: string
+          }
+          const taskId = row.task_id
+          if (!taskId || !knownIdsRef.current.has(taskId)) return
+          setChats((current) => {
+            const index = current.findIndex((c) => c.task.id === taskId)
+            if (index === -1) return current
+            const entry = current[index]
+            const next = current.slice()
+            next.splice(index, 1)
+            next.unshift({
+              task: entry.task,
+              acceptedAt: entry.acceptedAt,
+              lastMessage: {
+                body: row.body,
+                type: (row.type === 'text' || row.type === 'image' || row.type === 'audio' ? row.type : 'text'),
+                sender_name: row.sender_name,
+                sender_id: row.sender_id,
+                created_at: row.created_at,
+              },
+            })
+            return next
+          })
+        },
+      )
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('ChatList realtime channel issue:', status)
+        }
+      })
+    return () => {
+      void supabase.removeChannel(channel)
     }
   }, [profile?.id])
 
