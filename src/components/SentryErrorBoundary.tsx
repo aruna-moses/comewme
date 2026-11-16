@@ -33,6 +33,8 @@ export default function SentryErrorBoundary({ children }: { children: ReactNode 
         const message = stripPrefix(err.message || 'Unknown error')
         const stack = err.stack ?? ''
         const stackPreview = stack.split('\n').slice(0, 7).join('\n')
+        const componentStack = (error as { componentStack?: string }).componentStack ?? ''
+        const componentPreview = componentStack.split('\n').slice(0, 30).join('\n')
 
         return (
           <div role="alert" className="mx-auto flex min-h-screen max-w-lg flex-col items-start justify-center gap-5 p-6">
@@ -50,6 +52,11 @@ export default function SentryErrorBoundary({ children }: { children: ReactNode 
             <div className="max-h-56 w-full overflow-auto rounded-2xl border border-line bg-canvas p-4 text-[11px] leading-snug font-mono text-ink/70">
               <pre>{stackPreview}</pre>
             </div>
+            {componentStack && (
+            <pre className="max-h-40 w-full overflow-auto rounded-2xl border border-line bg-canvas p-3 text-[10px] leading-snug font-mono text-ink/70">
+              {componentPreview}
+            </pre>
+            )}
             <div className="flex w-full flex-col gap-2">
               <button
                 type="button"
