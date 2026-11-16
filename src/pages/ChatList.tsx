@@ -50,7 +50,7 @@ export default function ChatList() {
       if (mute) writeDraft(`chat:${id}:mute`, true)
       else clearDraft(`chat:${id}:mute`)
     } catch {
-      // ignore â€” best effort
+      // best-effort — ignore write failures
     }
     setMuteTick((t) => t + 1)
   }
@@ -170,7 +170,7 @@ export default function ChatList() {
                         ? 'Sent a voice note'
                         : c.lastMessage.body
                   }`
-                : 'No messages yet â€” say hello.'}
+                : 'No messages yet — say hello.'}
             </p>
             <div className="mt-0 flex min-w-0 items-center gap-1.5 leading-none text-[13px] text-muted">
               {doneChat ? (
@@ -187,7 +187,7 @@ export default function ChatList() {
                   {countdownLabel}
                 </span>
               )}
-              <span aria-hidden="true" className="shrink-0">Â·</span>
+              <span aria-hidden="true" className="shrink-0">·</span>
               <span className="inline-flex min-w-0 items-center gap-1 font-semibold text-ink/80"><MapPin size={9} className="shrink-0" aria-hidden /><span className="truncate">{c.task.area}</span></span>
             </div>
           </div>
@@ -325,7 +325,7 @@ export default function ChatList() {
             {buckets.newChats.length > 0 && (
               <section aria-labelledby="new-chats-heading">
                 <p id="new-chats-heading" className="px-1 text-[13px] font-bold uppercase tracking-[0.16em] text-muted">
-                  Just accepted â€” say hi
+                  Just accepted — say hi
                 </p>
                 <div className="mt-2 space-y-2">
                   {buckets.newChats.map((c) => renderRow(c))}
