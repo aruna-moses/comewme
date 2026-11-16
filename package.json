@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
+    "chk-encoding": "node scripts/check-encoding.mjs",
     "seed": "node --env-file=.env scripts/seed.mjs"
   },
   "dependencies": {
