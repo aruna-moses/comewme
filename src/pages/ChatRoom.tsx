@@ -1114,7 +1114,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                       <div className="relative min-w-0 max-w-full" data-chat-message-actions>
                         <div
                           className={`chat-message-bubble inline-block max-w-full p-2 text-left transition ${
-                            mine ? 'rounded-2xl rounded-br-[6px] bg-sun/40' : 'rounded-2xl rounded-bl-[6px] bg-white'
+                            mine ? 'rounded-2xl rounded-br-[6px] bg-sun/65' : 'rounded-2xl rounded-bl-[6px] bg-white'
                           } ${message.deleted_at ? 'italic text-muted' : ''}`}
                           style={selectedForReply || flashMessageId === message.id
                             ? { boxShadow: `0 0 0 2px ${senderColor}`, backgroundColor: senderColorTint(message.sender_id) }
