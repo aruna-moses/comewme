@@ -23,8 +23,10 @@ export function readSavedGoogleEmails(): string[] {
 
 export function saveGoogleEmail(email: string) {
   try {
-    const current = readSavedGoogleEmails().filter((entry) => entry !== email)
-    current.unshift(email)
+    const normalized = email.trim().toLowerCase()
+    if (!normalized) return
+    const current = readSavedGoogleEmails().filter((entry) => entry !== normalized)
+    current.unshift(normalized)
     window.localStorage.setItem(GOOGLE_ACCOUNTS_KEY, JSON.stringify(current.slice(0, 5)))
   } catch {
     // Best effort only - the picker is a convenience, never a blocker.

@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Sheet from '../components/Sheet'
-import { readSavedGoogleEmails } from '../lib/googleAccounts'
+import { readSavedGoogleEmails, saveGoogleEmail } from '../lib/googleAccounts'
 import { supabase } from '../lib/supabase'
 
 /**
@@ -36,6 +36,7 @@ export default function Login() {
   const [notice, setNotice] = useState<string | null>(null)
   const [guidelinesFlash, setGuidelinesFlash] = useState(false)
   const guidelinesRef = useRef<HTMLLabelElement>(null)
+  const [googleError, setGoogleError] = useState<string | null>(null)
   const [googleAccounts, setGoogleAccounts] = useState<string[]>([])
   const [googlePickerOpen, setGooglePickerOpen] = useState(false)
 
@@ -63,8 +64,9 @@ export default function Login() {
     setGoogleAccounts(readSavedGoogleEmails())
   }, [])
 
-  const flashGuidelinesNotice = (message: string) => {
-    setError(message)
+  const flashGuidelinesNotice = (message: string, target: 'email' | 'google' = 'email') => {
+    if (target === 'google') setGoogleError(message)
+    else setError(message)
     guidelinesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     setGuidelinesFlash(true)
     window.setTimeout(() => setGuidelinesFlash(false), 2500)
@@ -118,18 +120,37 @@ export default function Login() {
   }
 
   async function handleGoogleSignIn(googleEmail?: string) {
-    setError(null)
+    setGoogleError(null)
     if (!guidelinesChecked) {
-      flashGuidelinesNotice('Please tick the guidelines first — it takes two seconds.')
+      flashGuidelinesNotice('Please tick the guidelines first, then tap Continue with Google.', 'google')
       return
     }
+    if (googleEmail) saveGoogleEmail(googleEmail)
     setBusy(true)
     try {
       await signInWithGoogle(returnTo, googleEmail)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not sign in with Google.')
+      setGoogleError(e instanceof Error ? e.message : 'Could not sign in with Google.')
       setBusy(false)
     }
+  }
+
+  // Saved Google accounts turn the button into a one-tap picker. First-time
+  // users go straight to Google's own account chooser, which already lists the
+  // accounts signed in on their phone.
+  function handleGoogleTap() {
+    setNotice(null)
+    setGoogleError(null)
+    if (!guidelinesChecked) {
+      flashGuidelinesNotice('Please tick the guidelines first, then tap Continue with Google.', 'google')
+      return
+    }
+    if (googleAccounts.length > 0) {
+      setError(null)
+      setGooglePickerOpen(true)
+      return
+    }
+    void handleGoogleSignIn()
   }
 
   return (
@@ -196,13 +217,51 @@ export default function Login() {
                   ? 'Find something worth doing today and someone to do it with.'
                   : 'Create an account. It takes a minute.'}
               </p>
+              <label
+                ref={guidelinesRef}
+                className={`mt-5 flex cursor-pointer items-start gap-2.5 rounded-[16px] border p-3 text-[14px] leading-relaxed transition ${
+                  guidelinesFlash
+                    ? 'border-alert bg-alert/10 text-alert ring-4 ring-alert/20'
+                    : 'border-line bg-white text-muted'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#ff9f1c]"
+                  checked={guidelinesChecked}
+                  onChange={(event) => {
+                    setGuidelinesChecked(event.target.checked)
+                    if (event.target.checked) {
+                      setGoogleError(null)
+                      setError(null)
+                      setGuidelinesFlash(false)
+                    }
+                  }}
+                  aria-describedby="guidelines-label"
+                />
+                <span id="guidelines-label">
+                  I agree to follow the{' '}
+                  <Link
+                    to="/community-guidelines"
+                    onClick={(event) => event.stopPropagation()}
+                    className="font-semibold text-amber underline underline-offset-2"
+                  >
+                    Community Guidelines
+                  </Link>{' '}
+                  and understand that violations may lead to a warning, temporary suspension, or permanent ban.
+                </span>
+                {guidelinesFlash && <AlertTriangle size={20} className="ml-auto shrink-0 text-alert" aria-hidden />}
+              </label>
+              {googleError && (
+                <p role="alert" className="mt-3 flex items-start gap-2 rounded-xl bg-alert/10 p-3 text-[15px] font-medium text-alert">
+                  <AlertTriangle size={17} className="mt-0.5 shrink-0" aria-hidden />
+                  <span>{googleError}</span>
+                </p>
+              )}
               <button
                 type="button"
-                onClick={() => {
-                  if (googleAccounts.length > 0) setGooglePickerOpen(true)
-                  else void handleGoogleSignIn()
-                }}
-                className="mt-5 flex w-full items-center justify-center gap-3 rounded-[16px] bg-ink py-3.5 text-[15px] font-bold text-canvas shadow-card transition enabled:hover:brightness-110 disabled:opacity-50"
+                onClick={handleGoogleTap}
+                className="mt-3 flex w-full items-center justify-center gap-3 rounded-[16px] bg-ink py-3.5 text-[15px] font-bold text-canvas shadow-card transition enabled:hover:brightness-110 disabled:opacity-50"
                 disabled={busy}
                 aria-label="Continue with Google"
               >
@@ -214,6 +273,11 @@ export default function Login() {
                 </svg>
                 {busy ? 'One moment…' : 'Continue with Google'}
               </button>
+              <p className="mt-2 text-center text-[13px] leading-relaxed text-muted">
+                {googleAccounts.length > 0
+                  ? 'Your saved Google accounts are one tap away.'
+                  : 'You’ll pick from the Google accounts already on this device.'}
+              </p>
               <div className="my-4 flex items-center gap-3" aria-hidden="true">
                 <div className="h-px flex-1 bg-line" />
                 <span className="text-[13px] font-semibold uppercase tracking-wide text-muted">or continue with email</span>
@@ -259,27 +323,6 @@ export default function Login() {
                     </button>
                   </div>
                 </div>
-                <label
-                  ref={guidelinesRef}
-                  className={`flex cursor-pointer items-start gap-2 pt-1 text-[14px] leading-relaxed transition ${
-                    guidelinesFlash
-                      ? 'rounded-xl border-2 border-alert bg-alert/10 p-2 text-alert ring-4 ring-alert/20'
-                      : 'text-muted'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 h-4 w-4 accent-[#ff9f1c]"
-                    checked={guidelinesChecked}
-                    onChange={(event) => setGuidelinesChecked(event.target.checked)}
-                    aria-describedby="guidelines-label"
-                  />
-                  <span id="guidelines-label">
-                    I agree to follow the Community Guidelines and understand that violations may lead to a warning,
-                    temporary suspension, or permanent ban.
-                  </span>
-                  {guidelinesFlash && <AlertTriangle size={22} className="ml-auto shrink-0 text-alert" aria-hidden />}
-                </label>
                 {mode === 'in' && (
                   <button
                     type="button"
@@ -296,7 +339,7 @@ export default function Login() {
                   </p>
                 )}
                 {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[15px] font-medium text-verified">{notice}</p>}
-                <button type="submit" className="btn-primary w-full" disabled={busy || !guidelinesChecked}>
+                <button type="submit" className="btn-primary w-full" disabled={busy}>
                   {busy ? 'One moment…' : mode === 'in' ? 'Sign in' : 'Create account'}
                 </button>
               </form>

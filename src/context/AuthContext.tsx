@@ -177,13 +177,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           provider: 'google',
           options: {
             redirectTo: `${window.location.origin}/onboarding?returnTo=${encodeURIComponent(returnTo)}`,
-            // Show the user's list of Google accounts instead of forcing them down the "create account" path.
-            // loginHint preselects the account the user picked from our quick picker; access_type keeps
-            // repeat sign-ins seamless for users with an established Google session.
+            // Picking a saved account should be a single tap: login_hint lets Google sign straight
+            // through. A fresh user gets the account chooser, which lists the accounts already on
+            // their phone. access_type keeps repeat sign-ins seamless.
             queryParams: {
-              prompt: 'select_account',
+              ...(googleEmail ? { login_hint: googleEmail } : { prompt: 'select_account' }),
               access_type: 'offline',
-              ...(googleEmail ? { login_hint: googleEmail } : {}),
             },
           },
         })
