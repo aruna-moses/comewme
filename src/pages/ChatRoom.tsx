@@ -945,6 +945,20 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
   // Completed activities are archived: reading is allowed, posting is not.
   const isArchived = task?.status === 'completed'
 
+  // Index of replies by the message id they quote — used to surface "@n replies" on my bubbles
+  const repliesByMessage = (() => {
+    const map = new Map<string, Message[]>()
+    for (const item of timelineItems) {
+      if (item.kind !== 'message') continue
+      const target = item.message.reply_to_message_id
+      if (!target) continue
+      const bucket = map.get(target) ?? []
+      bucket.push(item.message)
+      map.set(target, bucket)
+    }
+    return map
+  })()
+
   if (!authorized || !task) {
     return (
       <main className="flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center">
@@ -1347,7 +1361,27 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                         </button>
                       )}
                     </div>
-                    <p className="mt-1 text-[12px] text-muted">{formatTime(message.created_at)}</p>
+                    <div className={`mt-1 flex items-center gap-1.5 ${mine ? 'justify-end' : ''}`}>
+                      <p className="text-[13px] text-muted">{formatTime(message.created_at)}</p>
+                      {(() => {
+                        const replies = repliesByMessage.get(message.id)
+                        if (!replies || replies.length === 0) return null
+                        return (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              const firstReply = replies[0]
+                              scrollToMessage(firstReply.id)
+                            }}
+                            className="inline-flex items-center gap-1 rounded-full bg-sun/20 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-amber transition active:scale-95"
+                            aria-label={`Jump to ${replies.length} quoted ${replies.length === 1 ? 'reply' : 'replies'}`}
+                          >
+                            <span aria-hidden>@</span>{replies.length}
+                          </button>
+                        )
+                      })()}
+                    </div>
                   </div>
                   {mine && (
                     <Link to={`/profile/${message.sender_id}`} aria-label="View your profile">
