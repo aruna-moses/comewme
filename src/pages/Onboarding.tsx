@@ -5,9 +5,12 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { isUsernameTaken } from '../lib/api'
 import { AREAS, CATEGORIES } from '../types'
+import { PERSONAS } from '../components/PersonalitySelector'
+import { personaImageSrc } from '../lib/personas'
 import type { Category, Profile } from '../types'
 
-const STEPS = ['Name', 'Area', 'Interests', 'Rules'] as const
+const STEPS = ['Name', 'Area', 'Interests', 'Vibe', 'Rules'] as const
+const VIBE_STEP_INDEX = 3
 
 export default function Onboarding() {
   const { session, profile, completeOnboarding } = useAuth()
@@ -26,6 +29,7 @@ export default function Onboarding() {
   const [area, setArea] = useState(profile?.area ?? 'Yaba')
   const [bio, setBio] = useState(profile?.bio ?? '')
   const [interests, setInterests] = useState<Category[]>(profile?.interests ?? [])
+  const [characterGender, setCharacterGender] = useState<'female' | 'male' | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle')
@@ -126,6 +130,7 @@ export default function Onboarding() {
           phone: session.user.phone ?? null,
           bio: bio.trim() || null,
           interests,
+          character_persona: characterGender === 'male' ? 'burna' : 'maya',
         })
         .select()
         .single()
@@ -349,7 +354,49 @@ export default function Onboarding() {
           </>
         )}
 
-        {step === 3 && (
+        {step === VIBE_STEP_INDEX && (
+          <>
+            <h1 className="font-display text-[26px] font-bold leading-tight">Who is your character?</h1>
+            <p className="mt-1.5 text-[15px] text-muted">
+              No pressure - everyone starts with a default character that fits how they show up. You can always change characters later from your profile.
+            </p>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              {(['female', 'male'] as const).map((option) => {
+                const persona = PERSONAS.find((candidate) => candidate.gender === option)
+                if (!persona) return null
+                const selected = characterGender === option
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setCharacterGender(option)}
+                    aria-pressed={selected}
+                    className={`overflow-hidden rounded-[18px] border text-left transition ${
+                      selected ? 'border-amber ring-2 ring-sun/30' : 'border-line bg-white hover:border-amber/60'
+                    }`}
+                  >
+                    <span className="relative block h-[110px] items-end justify-center overflow-hidden bg-canvas">
+                      <img
+                        src={personaImageSrc(persona.id)}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-contain object-bottom"
+                      />
+                    </span>
+                    <span className="block p-2.5">
+                      <span className="block text-[15px] font-bold text-ink">{persona.name}</span>
+                      <span className="mt-0.5 block text-[12px] leading-relaxed text-muted">{persona.personality}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        {step === 4 && (
           <>
             <h1 className="font-display text-[26px] font-bold leading-tight">
               Four rules, that's it
@@ -409,12 +456,13 @@ export default function Onboarding() {
             </button>
           )}
 
-          {step < 3 ? (
+          {step < STEPS.length - 1 ? (
             <button
               className="btn-primary flex-1"
               disabled={
                 (step === 0 && (!displayName.trim() || usernameStatus === 'taken' || usernameStatus === 'invalid' || usernameStatus === 'checking' || username.trim().length < 3)) ||
-                (step === 2 && interests.length === 0)
+                (step === 2 && interests.length === 0) ||
+                (step === VIBE_STEP_INDEX && !characterGender)
               }
               onClick={() => setStep((s) => s + 1)}
             >

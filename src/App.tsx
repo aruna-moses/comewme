@@ -9,6 +9,7 @@ import GuidelinesModal from './components/GuidelinesModal'
 import WarningModal, { activeRestriction, unacknowledgedWarning } from './components/WarningModal'
 import ModerationAlert from './components/ModerationAlert'
 import InAppToast from './components/InAppToast'
+import WelcomeCelebration from './components/WelcomeCelebration'
 import { unlockAudio } from './lib/sounds'
 import { useForegroundPush } from './hooks/useForegroundPush'
 
@@ -210,6 +211,7 @@ export default function App() {
       </Suspense>
       <ModerationAlert />
       <InAppToast />
+      <WelcomeCelebration />
       <AudioUnlock />
       <BottomNav />
       {session && restriction && <WarningModal violation={restriction} onAcknowledge={async () => undefined} />}

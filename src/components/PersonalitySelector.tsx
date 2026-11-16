@@ -4,9 +4,9 @@ import { updateProfile } from '../lib/api'
 import { personaImageSrc } from '../lib/personas'
 import type { CharacterPersona, Profile } from '../types'
 
-type Gender = 'female' | 'male'
+export type Gender = 'female' | 'male'
 
-type Persona = {
+export type Persona = {
   id: CharacterPersona
   name: string
   gender: Gender
@@ -14,7 +14,7 @@ type Persona = {
   personality: string
 }
 
-const PERSONAS: Persona[] = [
+export const PERSONAS: Persona[] = [
   {
     id: 'tari',
     name: 'Tari',
@@ -101,8 +101,8 @@ const PERSONAS: Persona[] = [
   },
 ]
 
-function findPersona(id: CharacterPersona | null | undefined) {
-  return PERSONAS.find((persona) => persona.id === id)
+export function findPersona(id: CharacterPersona | null | undefined) {
+  return PERSONAS.find((persona) => persona.id === id) ?? null
 }
 
 export default function PersonalitySelector({
