@@ -4,6 +4,7 @@ import { Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Sheet from '../components/Sheet'
 import { readSavedGoogleEmails, saveGoogleEmail } from '../lib/googleAccounts'
+import { hideGoogleOneTap, showGoogleOneTap } from '../lib/googleOneTap'
 import { supabase } from '../lib/supabase'
 
 /**
@@ -17,6 +18,7 @@ export default function Login() {
     signIn,
     signUp,
     signInWithGoogle,
+    signInWithGoogleCredential,
     session,
     profile,
   } = useAuth()
@@ -63,6 +65,24 @@ export default function Login() {
   useEffect(() => {
     setGoogleAccounts(readSavedGoogleEmails())
   }, [])
+
+  // Once the guidelines are accepted, let Google offer the account that is
+  // already signed in on this device: one tap on Google's chip and the user is
+  // in, with no redirect. If Google's script cannot render the prompt (blocked
+  // script, in-app webview, unsupported browser) the button below still works.
+  useEffect(() => {
+    if (!guidelinesChecked) return
+    let active = true
+    void showGoogleOneTap((credential) => {
+      if (active) void completeGoogleCredential(credential)
+    }).catch(() => {
+      // Progressive enhancement only - never surface this failure.
+    })
+    return () => {
+      active = false
+      hideGoogleOneTap()
+    }
+  }, [guidelinesChecked])
 
   const flashGuidelinesNotice = (message: string, target: 'email' | 'google' = 'email') => {
     if (target === 'google') setGoogleError(message)
@@ -120,6 +140,7 @@ export default function Login() {
   }
 
   async function handleGoogleSignIn(googleEmail?: string) {
+    hideGoogleOneTap()
     setGoogleError(null)
     if (!guidelinesChecked) {
       flashGuidelinesNotice('Please tick the guidelines first, then tap Continue with Google.', 'google')
@@ -146,11 +167,27 @@ export default function Login() {
       return
     }
     if (googleAccounts.length > 0) {
+      hideGoogleOneTap()
       setError(null)
       setGooglePickerOpen(true)
       return
     }
     void handleGoogleSignIn()
+  }
+
+  // Google One Tap already verified the account with Google, so this path is a
+  // single request to Supabase rather than a full redirect dance.
+  async function completeGoogleCredential(credential: string) {
+    hideGoogleOneTap()
+    setBusy(true)
+    setGoogleError(null)
+    try {
+      await signInWithGoogleCredential(credential)
+      navigate(returnTo, { replace: true })
+    } catch (e) {
+      setGoogleError(e instanceof Error ? e.message : 'Could not sign in with Google.')
+      setBusy(false)
+    }
   }
 
   return (

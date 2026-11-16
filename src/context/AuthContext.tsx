@@ -28,6 +28,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, returnTo?: string) => Promise<{ needsConfirmation: boolean }>
   signInWithGoogle: (returnTo?: string, googleEmail?: string) => Promise<void>
+  signInWithGoogleCredential: (credential: string) => Promise<void>
   signInWithPhone: (phone: string) => Promise<void>
   verifyPhoneOtp: (phone: string, token: string) => Promise<void>
   signOut: () => Promise<void>
@@ -190,6 +191,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           sessionStorage.removeItem(GOOGLE_GUIDELINES_CONSENT_KEY)
           throw toError(error)
         }
+      },
+      async signInWithGoogleCredential(credential) {
+        // One Tap hands us a Google ID token. Supabase verifies it against the
+        // same OAuth client, so the user lands straight in a session with no
+        // redirect round trip.
+        sessionStorage.setItem(GOOGLE_GUIDELINES_CONSENT_KEY, String(Date.now()))
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: credential,
+        })
+        if (error) {
+          sessionStorage.removeItem(GOOGLE_GUIDELINES_CONSENT_KEY)
+          throw toError(error)
+        }
+        await refreshAuthenticatedUserState()
       },
       async signInWithPhone(phone) {
         const { error } = await supabase.auth.signInWithOtp({
