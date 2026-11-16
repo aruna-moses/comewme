@@ -168,9 +168,9 @@ export default function ChatList() {
     const accepted = c.acceptedAt ? new Date(c.acceptedAt).getTime() : NaN
     return Number.isFinite(accepted) && now - accepted <= FRESH_JOINED_MS
   })
-  buckets.done.sort(
-    (a, b) => new Date(b.task.date_time).getTime() - new Date(a.task.date_time).getTime(),
-  )
+  const lastActivityOf = (c: (typeof chats)[number]) => (c.lastMessage ? new Date(c.lastMessage.created_at).getTime() : new Date(c.task.date_time).getTime())
+  buckets.live.sort((a, b) => lastActivityOf(b) - lastActivityOf(a))
+  buckets.done.sort((a, b) => lastActivityOf(b) - lastActivityOf(a))
 
   const renderRow = (c: typeof chats[number]) => {
     const unread = unreadByTask[c.task.id] ?? 0
