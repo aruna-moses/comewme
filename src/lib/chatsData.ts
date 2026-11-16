@@ -3,6 +3,7 @@ import type { Task } from '../types'
 
 export interface ChatEntry {
   task: Task
+  acceptedAt: string | null
   lastMessage: {
     body: string
     type: 'text' | 'image' | 'audio'
@@ -22,7 +23,7 @@ export async function loadChatsForUser(profileId: string): Promise<ChatEntry[]> 
       .order('date_time', { ascending: false }),
     supabase
       .from('join_requests')
-      .select('task_id, status')
+      .select('task_id, status, accepted_at')
       .eq('requester_id', profileId)
       .eq('status', 'accepted'),
   ])
@@ -48,6 +49,9 @@ export async function loadChatsForUser(profileId: string): Promise<ChatEntry[]> 
     return true
   })
 
+  const acceptedAtByTaskId = new Map<string, string | null>()
+  ;(joinRes.data ?? []).forEach((j) => acceptedAtByTaskId.set(j.task_id, j.accepted_at ?? null))
+
   const enriched = await Promise.all(
     unique.map(async (t) => {
       const { data: msgsRes } = await supabase
@@ -56,7 +60,7 @@ export async function loadChatsForUser(profileId: string): Promise<ChatEntry[]> 
         .eq('task_id', t.id)
         .order('created_at', { ascending: false })
         .limit(1)
-      return { task: t, lastMessage: (msgsRes ?? [])[0] ?? null }
+      return { task: t, acceptedAt: acceptedAtByTaskId.get(t.id) ?? null, lastMessage: (msgsRes ?? [])[0] ?? null }
     }),
   )
 

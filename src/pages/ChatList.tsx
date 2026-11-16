@@ -83,34 +83,33 @@ export default function ChatList() {
     )
   }
 
-  // Split: Pinned > Attention > Catch-up > Brand-new, done groups at the bottom
+  // Split: pin first, then one clean list, done groups collapsed at the bottom.
   const now = Date.now()
   const isDoneChat = (c: (typeof chats)[number]) => {
     if (c.task.status === 'completed') return true
     return new Date(c.task.date_time).getTime() < now
   }
+  const FRESH_JOINED_MS = 3600_000 // 1 hour
   const buckets = {
     pinned: pinnedIds.map((id) => chats.find((c) => c.task.id === id)).filter(Boolean) as typeof chats,
-    attention: chats.filter((c) => {
-      if (pinnedIds.includes(c.task.id) || isDoneChat(c)) return false
-      if ((unreadByTask[c.task.id] ?? 0) > 0) return true
-      const start = new Date(c.task.date_time).getTime()
-      return start > now - 6 * 3600_000 && start - now < 24 * 3600_000
-    }),
-    quiet: [] as typeof chats,
-    newChats: [] as typeof chats,
+    live: [] as typeof chats,
     done: [] as typeof chats,
   }
   for (const c of chats) {
     if (pinnedIds.includes(c.task.id)) continue
-    if (buckets.attention.includes(c)) continue
     if (isDoneChat(c)) {
       buckets.done.push(c)
       continue
     }
-    if (c.lastMessage) buckets.quiet.push(c)
-    else buckets.newChats.push(c)
+    buckets.live.push(c)
   }
+  const newChats = buckets.live.filter((c) => {
+    // Only for groups the user was freshly accepted into (within 1h) and hasn't spoken in yet
+    if (c.task.host_id === profile?.id) return false
+    if (c.lastMessage) return false
+    const accepted = c.acceptedAt ? new Date(c.acceptedAt).getTime() : NaN
+    return Number.isFinite(accepted) && now - accepted <= FRESH_JOINED_MS
+  })
   buckets.done.sort(
     (a, b) => new Date(b.task.date_time).getTime() - new Date(a.task.date_time).getTime(),
   )
@@ -143,7 +142,7 @@ export default function ChatList() {
     const happeningToday = !doneChat && days === 0
     const menuOpen = menuFor === c.task.id
     return (
-      <div key={c.task.id} className={`card relative flex items-center gap-2 rounded-[18px] py-2.5 pl-3.5 pr-2 transition hover:bg-canvas active:scale-[0.99] ${happeningToday ? 'bg-gradient-to-br from-sun/25 via-amber/10 to-canvas ring-2 ring-amber/70 shadow-[0_12px_36px_rgba(247,162,51,0.25)]' : ''} ${doneChat ? 'opacity-70' : ''}`}>
+      <div key={c.task.id} className={`relative flex items-center gap-1.5 border-b border-line py-2 pl-4 pr-2 transition hover:bg-canvas active:scale-[0.99] ${happeningToday ? 'bg-gradient-to-r from-sun/20 via-amber/10 to-transparent ring-1 ring-inset ring-amber/40' : ''} ${doneChat ? 'opacity-70' : ''}`}>
         <Link
           to={`/task/${c.task.id}/chat`}
           className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 flex-1 min-w-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
@@ -262,14 +261,14 @@ export default function ChatList() {
         <p className="mt-1 text-[15px] text-muted">Coordinate with your activity group before you meet.</p>
       </header>
 
-      <div className="px-5 pt-4">
+      <div className="pb-8">
         {notificationError && (
-          <p role="status" className="mb-3 rounded-xl bg-[#fff4d1] p-3 text-[14px] leading-relaxed text-[#7a622f]">
+          <p role="status" className="mx-4 mb-3 rounded-xl bg-[#fff4d1] p-3 text-[14px] leading-relaxed text-[#7a622f]">
             {notificationError}
           </p>
         )}
         {chats.length === 0 ? (
-          <div className="card mx-4 mt-6 flex flex-col items-center px-6 py-10 text-center">
+          <div className="mx-4 mt-6 flex flex-col items-center px-6 py-10 text-center">
             <div
               className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
               style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)' }}
@@ -287,59 +286,40 @@ export default function ChatList() {
             </div>
             <h3 className="font-display text-lg font-bold text-ink">No chats yet</h3>
             <p className="mt-1 text-[15px] text-muted">
-              Start a conversation in a group you're hosting or joined.
+              Start a conversation in a group you&apos;re hosting or joined.
             </p>
           </div>
         ) : (
-          <div className="space-y-5">
+          <>
             {buckets.pinned.length > 0 && (
-              <section aria-labelledby="pinned-heading">
-                <p id="pinned-heading" className="flex items-center gap-1.5 px-1 text-[13px] font-bold uppercase tracking-[0.16em] text-amber">
+              <section aria-labelledby="pinned-heading" className="border-t border-line">
+                <p id="pinned-heading" className="flex items-center gap-1.5 border-b border-line px-4 pb-1.5 pt-1 text-[12px] font-bold uppercase tracking-[0.16em] text-amber">
                   <Pin size={12} aria-hidden /> Pinned
                 </p>
-                <div className="mt-2 space-y-2">
-                  {buckets.pinned.map((c) => renderRow(c))}
-                </div>
+                {buckets.pinned.map((c) => renderRow(c))}
               </section>
             )}
-            {buckets.attention.length > 0 && (
-              <section aria-labelledby="attention-heading">
-                <p id="attention-heading" className="px-1 text-[13px] font-bold uppercase tracking-[0.16em] text-muted">
-                  Needs your attention
-                </p>
-                <div className="mt-2 space-y-2">
-                  {buckets.attention.map((c) => renderRow(c))}
-                </div>
+            {buckets.live.length > 0 && (
+              <section aria-label="Recent chats" className="border-t border-line">
+                {buckets.live.map((c) => renderRow(c))}
               </section>
             )}
-            {buckets.quiet.length > 0 && (
-              <section aria-labelledby="quiet-heading">
-                <p id="quiet-heading" className="px-1 text-[13px] font-bold uppercase tracking-[0.16em] text-muted">
-                  All caught up
-                </p>
-                <div className="mt-2 space-y-2">
-                  {buckets.quiet.map((c) => renderRow(c))}
-                </div>
-              </section>
-            )}
-            {buckets.newChats.length > 0 && (
-              <section aria-labelledby="new-chats-heading">
-                <p id="new-chats-heading" className="px-1 text-[13px] font-bold uppercase tracking-[0.16em] text-muted">
+            {newChats.length > 0 && (
+              <section aria-labelledby="new-chats-heading" className="border-t border-line">
+                <p id="new-chats-heading" className="border-b border-line px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
                   Just accepted — say hi
                 </p>
-                <div className="mt-2 space-y-2">
-                  {buckets.newChats.map((c) => renderRow(c))}
-                </div>
+                {newChats.map((c) => renderRow(c))}
               </section>
             )}
             {buckets.done.length > 0 && (
-              <section aria-labelledby="completed-chats-heading" className="border-t border-line pt-3">
+              <section aria-labelledby="completed-chats-heading" className="border-t border-line">
                 <button
                   type="button"
                   onClick={() => setDoneExpanded((v) => !v)}
                   aria-expanded={doneExpanded}
                   aria-controls="completed-chats-list"
-                  className="flex w-full items-center justify-between gap-2 px-1 py-1 text-left text-[13px] font-bold uppercase tracking-[0.16em] text-muted transition"
+                  className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[12px] font-bold uppercase tracking-[0.16em] text-muted transition"
                 >
                   <span className="flex items-center gap-1.5">
                     Completed chats
@@ -350,18 +330,13 @@ export default function ChatList() {
                   <ChevronDown size={14} className={`transition-transform duration-200 ${doneExpanded ? 'rotate-180' : ''}`} aria-hidden />
                 </button>
                 {doneExpanded && (
-                  <div id="completed-chats-list" className="mt-2 space-y-2">
+                  <div id="completed-chats-list">
                     {buckets.done.map((c) => renderRow(c))}
                   </div>
                 )}
               </section>
             )}
-          </div>
-        )}
-        {chats.length > 0 && (
-          <p className="px-2 pt-5 text-center text-[14px] leading-relaxed text-muted">
-            Your activity groups appear here once you've joined. Say hello before you meet.
-          </p>
+          </>
         )}
       </div>
     </div>
