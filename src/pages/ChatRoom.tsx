@@ -994,23 +994,28 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
 
       {/* Pinned message — fixed strip under the header, always visible */}
       {pinnedMessage && (
-        <div className="flex shrink-0 items-stretch border-b border-amber/40 bg-sun/15">
+        <div className="flex shrink-0 items-stretch border-b border-amber/40 bg-gradient-to-r from-sun/25 via-amber/15 to-canvas">
           <button
             type="button"
             onClick={() => scrollToMessage(pinnedMessage.id)}
-            className="flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5 text-left transition hover:bg-amber/10"
+            className="group flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5 text-left transition hover:bg-amber/10"
             aria-label="Jump to pinned message"
           >
-            <Pin size={13} className="shrink-0 text-amber" aria-hidden />
+            <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sun to-amber shadow-sm">
+              <Pin size={15} className="text-ink" fill="currentColor" strokeWidth={1.5} aria-hidden />
+            </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[11px] font-extrabold uppercase leading-tight tracking-[0.16em] text-amber">
-                Pinned{pinnedMessage.sender_id === profile?.id ? ' · You' : ''}
+              <span className="flex items-center gap-1.5">
+                <span className="block text-[10px] font-extrabold uppercase leading-none tracking-[0.16em] text-amber">Pinned</span>
+                {pinnedMessage.sender_id !== profile?.id && (
+                  <span className="truncate text-[10px] font-semibold leading-none text-muted">· {pinnedMessage.sender_name}</span>
+                )}
               </span>
-              <span className="block truncate text-[14px] font-medium leading-snug text-ink/85">
+              <span className="mt-0.5 block truncate text-[14px] font-semibold leading-snug text-ink">
                 {pinnedMessage.type === 'image' ? (pinnedMessage.body || 'Photo') : pinnedMessage.type === 'audio' ? 'Voice note' : pinnedMessage.body}
               </span>
             </span>
-            <ChevronDown size={16} className="shrink-0 text-amber/70" aria-hidden />
+            <ChevronDown size={17} className="shrink-0 text-amber/80 transition-transform duration-200 group-hover:translate-y-0.5" aria-hidden />
           </button>
           {isHost && (
             <button
@@ -1127,8 +1132,8 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                             mine
                               ? 'rounded-2xl rounded-br-[6px] chat-bubble-mine'
                               : 'rounded-2xl rounded-bl-[6px] bg-white'
-                          } ${message.deleted_at ? 'italic text-muted' : ''}`}
-                          style={selectedForReply || flashMessageId === message.id
+                          } ${message.deleted_at ? 'italic text-muted' : ''} ${flashMessageId === message.id ? 'bubble-flash' : ''}`}
+                          style={selectedForReply
                             ? { boxShadow: `0 0 0 2px ${senderColor}`, backgroundColor: senderColorTint(message.sender_id) }
                             : undefined}
                           onPointerDown={(event) => handleMessagePointerDown(message, event)}
@@ -1143,15 +1148,22 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                           onClick={(event) => selectMessageForReply(message, event)}
                         >
                           {message.reply_to_message_id && message.reply_to_preview && (
-                            <div
-                              className="mb-1.5 min-w-0 rounded-r-lg border-l-2 px-2 py-1 text-left"
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                event.preventDefault()
+                                if (message.reply_to_message_id) scrollToMessage(message.reply_to_message_id)
+                              }}
+                              className="mb-1.5 block min-w-0 w-full rounded-r-lg border-l-2 px-2 py-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+                              aria-label="Jump to quoted message"
                               style={{ borderLeftColor: senderColorHex(message.reply_to_sender_id), backgroundColor: senderColorTint(message.reply_to_sender_id) }}
                             >
                               <p className="truncate text-[12px] font-bold" style={{ color: senderColorHex(message.reply_to_sender_id) }}>
                                 {message.reply_to_sender_id && profile?.id && message.reply_to_sender_id === profile.id ? 'You' : message.reply_to_sender_name ?? 'Message'}
                               </p>
                               <p className="truncate text-[13px] text-muted">{message.reply_to_preview}</p>
-                            </div>
+                            </button>
                           )}
                           {!message.deleted_at && message.type === 'image' && message.view_once && (
                             <ViewOnceCard
