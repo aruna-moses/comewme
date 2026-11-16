@@ -120,7 +120,9 @@ async function sendToToken(
           // doesn't also auto-display a duplicate.
           data: { title, body, url: url ?? '/' },
           webpush: {
-            headers: { Urgency: 'high' },
+            // Drop stale pushes instead of firehosing a device that was offline —
+            // a 30-minute-old chat nudge helps nobody.
+            headers: { Urgency: 'high', TTL: '1800' },
             fcmOptions: { link: url ?? '/' },
           },
         },
