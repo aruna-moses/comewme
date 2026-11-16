@@ -1,12 +1,12 @@
--- Accurate media labels in chat push + in-app notification previews.
--- Before: any media-only message collapsed to the literal string '[media]'.
--- After: every message previews truthfully —
---   Voice note (0:42)            — voice note with no caption
---   Voice note (0:42) · caption  — voice note with a caption
---   Photo                        — image, no caption
---   Photo · caption              — image with a caption
---   Location                     — shared location
---   <actual text>                — plain text
+-- Chat notifications: accurate media labels, ON TOP of the activity-title fix (v035).
+-- Before this migration, a media-only message read "[media]".
+-- After: voice notes show length, photos say "Photo", locations say "Location".
+-- Title = the activity title (as introduced in 035). Body = "<sender>: <preview>".
+--   title: "Friday Kickback"
+--   body:  "Aruna: Voice note (0:42)"
+--   body:  "Aruna: Photo"
+--   body:  "Aruna: Location"
+--   body:  "Aruna: see you at 7"
 
 create or replace function public.notify_on_chat_message()
 returns trigger
@@ -15,9 +15,14 @@ security definer
 set search_path = public
 as $$
 declare
+  v_title text;
   v_caption text;
   v_duration text;
 begin
+  select title into v_title
+  from public.tasks
+  where id = new.task_id;
+
   v_caption := nullif(trim(coalesce(new.body, '')), '');
   v_duration := case
     when new.duration is not null and new.duration > 0
@@ -29,8 +34,9 @@ begin
   select
     p.user_id,
     'chat',
-    coalesce(new.sender_name, 'Someone') || ' sent a message',
+    left(coalesce(nullif(v_title, ''), 'Activity'), 60),
     left(
+      coalesce(new.sender_name, 'Someone') || ': ' ||
       case
         when new.type = 'audio' then
           'Voice note'
