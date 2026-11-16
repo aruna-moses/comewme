@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 import { markNotificationRead, type InAppNotification } from '../lib/notifications'
 import { supabase } from '../lib/supabase'
 import { playReceive } from '../lib/sounds'
@@ -20,11 +21,16 @@ function timeAgo(iso: string) {
 export default function InAppToast() {
   const { refresh } = useNotifications()
   const { session } = useAuth()
+  const { status: pushStatus } = usePushNotifications()
   const location = useLocation()
   const [queue, setQueue] = useState<InAppNotification[]>([])
   const [visible, setVisible] = useState(false)
   const timerRef = useRef<number | null>(null)
   const shownRef = useRef<Set<string>>(new Set())
+  const pushStatusRef = useRef(pushStatus)
+  useEffect(() => {
+    pushStatusRef.current = pushStatus
+  }, [pushStatus])
 
   // Live subscription — catches INSERT events, not refetched rows from a page load.
   useEffect(() => {
@@ -36,6 +42,11 @@ export default function InAppToast() {
         const row = payload.new as InAppNotification
         if (row.user_id !== uid) return
         if (shownRef.current.has(row.id)) return
+        // Push already reaches this device — skip the in-app duplicate banner
+        if ((row as { type?: string }).type === 'chat' && pushStatusRef.current === 'enabled') {
+          void refresh()
+          return
+        }
         shownRef.current.add(row.id)
         setQueue((q) => (q.length >= 3 ? q : [...q, row]))
         void refresh()
