@@ -222,7 +222,7 @@ export default function ChatList() {
             <button type="button" aria-hidden tabIndex={-1} className="fixed inset-0 z-10 cursor-default" onClick={() => setMenuFor(null)} />
             <div
               role="menu"
-              className="absolute left-1/2 top-full z-20 mt-1.5 min-w-[168px] -translate-x-1/2 overflow-hidden rounded-xl border border-line bg-white py-1 text-left shadow-lift"
+              className="absolute right-2 top-full z-20 mt-1.5 min-w-[172px] overflow-hidden rounded-xl border border-line bg-white py-1 text-left shadow-lift"
             >
               <button
                 type="button"
