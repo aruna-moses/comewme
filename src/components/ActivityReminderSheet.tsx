@@ -18,11 +18,11 @@ export default function ActivityReminderSheet({
   return (
     <Sheet open onClose={onClose} title={count === 1 ? 'Tomorrow, you have something to do' : `${count} things on tomorrow`}>
       <div className="px-1 pb-4 pt-1">
-        <p className="flex items-center gap-1.5 text-[13px] font-semibold text-amber">
+        <p className="flex items-center gap-1.5 text-[14px] font-semibold text-amber">
           <Sparkles size={14} aria-hidden />
           Friendly reminder
         </p>
-        <p className="mt-1 text-[14px] text-muted">
+        <p className="mt-1 text-[15px] text-muted">
           {count === 1 ? "Don't sleep on it — you promised to show up." : "You'd better charge your phone."}
         </p>
 
@@ -40,15 +40,15 @@ export default function ActivityReminderSheet({
                   {emoji}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14px] font-semibold text-ink">{task.title}</span>
-                  <span className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted">
+                  <span className="block truncate text-[15px] font-semibold text-ink">{task.title}</span>
+                  <span className="mt-0.5 flex items-center gap-1.5 text-[13px] text-muted">
                     <Clock3 size={12} aria-hidden />
                     <span className="truncate">{formatDateTime(task.date_time)}</span>
                     <span aria-hidden>·</span>
                     <MapPin size={12} aria-hidden />
                     <span className="truncate">{task.area}</span>
                   </span>
-                  <span className="mt-0.5 block text-[11px] font-semibold uppercase tracking-wide text-amber">
+                  <span className="mt-0.5 block text-[12px] font-semibold uppercase tracking-wide text-amber">
                     {categoryLabel(task.category)}
                   </span>
                 </span>

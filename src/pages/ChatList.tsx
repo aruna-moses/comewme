@@ -157,11 +157,11 @@ export default function ChatList() {
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               {pinned && <Pin size={12} className="shrink-0 text-muted" fill="currentColor" aria-hidden />}
-              <h2 className="line-clamp-2 font-display text-[16px] font-semibold leading-snug -tracking-[0.01em] text-ink">
+              <h2 className="line-clamp-2 font-display text-[17px] font-semibold leading-snug -tracking-[0.01em] text-ink">
                 {c.task.title}
               </h2>
             </div>
-            <p className={`-mt-0.5 line-clamp-1 text-[15px] leading-snug ${unread > 0 ? 'font-medium text-ink' : 'text-muted'}`}>
+            <p className={`-mt-0.5 line-clamp-1 text-[16px] leading-snug ${unread > 0 ? 'font-medium text-ink' : 'text-muted'}`}>
               {c.lastMessage
                 ? `${c.lastMessage.sender_id === profile?.id ? 'You' : c.lastMessage.sender_name}: ${
                     c.lastMessage.type === 'image'
@@ -172,13 +172,13 @@ export default function ChatList() {
                   }`
                 : 'No messages yet — say hello.'}
             </p>
-            <div className="mt-0 flex min-w-0 items-center gap-1.5 leading-none text-[12px] text-muted">
+            <div className="mt-0 flex min-w-0 items-center gap-1.5 leading-none text-[13px] text-muted">
               {doneChat ? (
                 <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] font-extrabold uppercase leading-none tracking-[0.14em] text-muted">
                   {c.task.status === 'completed' ? 'Completed' : 'Passed'}
                 </span>
               ) : happeningToday ? (
-                <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 px-2 py-0.5 text-[11px] font-extrabold uppercase leading-none tracking-[0.14em] text-amber">
+                <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 px-2 py-0.5 text-[12px] font-extrabold uppercase leading-none tracking-[0.14em] text-amber">
                   <span className="h-1.5 w-1.5 shrink-0 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full bg-amber" aria-hidden />
                   Happening today
                 </span>
@@ -192,13 +192,13 @@ export default function ChatList() {
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
-            <span className={`text-[13px] leading-none tabular-nums ${unread > 0 ? 'font-semibold text-[#F58220]' : 'text-muted'}`}>
+            <span className={`text-[14px] leading-none tabular-nums ${unread > 0 ? 'font-semibold text-[#F58220]' : 'text-muted'}`}>
               {c.lastMessage ? formatTime(c.lastMessage.created_at) : formatTime(c.task.date_time)}
             </span>
             {unread > 0 && (
               <span
                 aria-label={`${unread} unread ${unread === 1 ? 'message' : 'messages'}`}
-                className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold leading-none text-white"
+                className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[12px] font-bold leading-none text-white"
                 style={{ backgroundColor: '#F58220' }}
               >
                 {unread > 99 ? '99+' : unread}
@@ -231,7 +231,7 @@ export default function ChatList() {
                   togglePin(c.task.id)
                   setMenuFor(null)
                 }}
-                className="flex min-h-10 w-full items-center gap-2 px-3 text-[14px] font-medium text-ink hover:bg-canvas"
+                className="flex min-h-10 w-full items-center gap-2 px-3 text-[15px] font-medium text-ink hover:bg-canvas"
               >
                 <Pin size={15} aria-hidden fill={pinned ? 'currentColor' : 'none'} />
                 {pinned ? 'Unpin chat' : 'Pin chat'}
@@ -243,7 +243,7 @@ export default function ChatList() {
                   setMute(c.task.id, !muted)
                   setMenuFor(null)
                 }}
-                className="flex min-h-10 w-full items-center gap-2 px-3 text-[14px] font-medium text-ink hover:bg-canvas"
+                className="flex min-h-10 w-full items-center gap-2 px-3 text-[15px] font-medium text-ink hover:bg-canvas"
               >
                 <BellOff size={15} aria-hidden />
                 {muted ? 'Unmute notifications' : 'Mute notifications'}
@@ -259,12 +259,12 @@ export default function ChatList() {
     <div className="pb-8">
       <header className="px-5 pb-2 pt-8">
         <h1 className="font-display text-[24px] font-bold leading-tight">Chats</h1>
-        <p className="mt-1 text-[14px] text-muted">Coordinate with your activity group before you meet.</p>
+        <p className="mt-1 text-[15px] text-muted">Coordinate with your activity group before you meet.</p>
       </header>
 
       <div className="px-5 pt-4">
         {notificationError && (
-          <p role="status" className="mb-3 rounded-xl bg-[#fff4d1] p-3 text-[13px] leading-relaxed text-[#7a622f]">
+          <p role="status" className="mb-3 rounded-xl bg-[#fff4d1] p-3 text-[14px] leading-relaxed text-[#7a622f]">
             {notificationError}
           </p>
         )}
@@ -286,7 +286,7 @@ export default function ChatList() {
               </svg>
             </div>
             <h3 className="font-display text-lg font-bold text-ink">No chats yet</h3>
-            <p className="mt-1 text-[14px] text-muted">
+            <p className="mt-1 text-[15px] text-muted">
               Start a conversation in a group you're hosting or joined.
             </p>
           </div>
@@ -294,7 +294,7 @@ export default function ChatList() {
           <div className="space-y-5">
             {buckets.pinned.length > 0 && (
               <section aria-labelledby="pinned-heading">
-                <p id="pinned-heading" className="flex items-center gap-1.5 px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-amber">
+                <p id="pinned-heading" className="flex items-center gap-1.5 px-1 text-[13px] font-bold uppercase tracking-[0.16em] text-amber">
                   <Pin size={12} aria-hidden /> Pinned
                 </p>
                 <div className="mt-2 space-y-2">
@@ -304,7 +304,7 @@ export default function ChatList() {
             )}
             {buckets.attention.length > 0 && (
               <section aria-labelledby="attention-heading">
-                <p id="attention-heading" className="px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-muted">
+                <p id="attention-heading" className="px-1 text-[13px] font-bold uppercase tracking-[0.16em] text-muted">
                   Needs your attention
                 </p>
                 <div className="mt-2 space-y-2">
@@ -314,7 +314,7 @@ export default function ChatList() {
             )}
             {buckets.quiet.length > 0 && (
               <section aria-labelledby="quiet-heading">
-                <p id="quiet-heading" className="px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-muted">
+                <p id="quiet-heading" className="px-1 text-[13px] font-bold uppercase tracking-[0.16em] text-muted">
                   All caught up
                 </p>
                 <div className="mt-2 space-y-2">
@@ -324,7 +324,7 @@ export default function ChatList() {
             )}
             {buckets.newChats.length > 0 && (
               <section aria-labelledby="new-chats-heading">
-                <p id="new-chats-heading" className="px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-muted">
+                <p id="new-chats-heading" className="px-1 text-[13px] font-bold uppercase tracking-[0.16em] text-muted">
                   Just accepted — say hi
                 </p>
                 <div className="mt-2 space-y-2">
@@ -339,11 +339,11 @@ export default function ChatList() {
                   onClick={() => setDoneExpanded((v) => !v)}
                   aria-expanded={doneExpanded}
                   aria-controls="completed-chats-list"
-                  className="flex w-full items-center justify-between gap-2 px-1 py-1 text-left text-[12px] font-bold uppercase tracking-[0.16em] text-muted transition"
+                  className="flex w-full items-center justify-between gap-2 px-1 py-1 text-left text-[13px] font-bold uppercase tracking-[0.16em] text-muted transition"
                 >
                   <span className="flex items-center gap-1.5">
                     Completed chats
-                    <span className="rounded-full bg-line px-2 py-0.5 text-[10px] font-extrabold tabular-nums text-ink/60">
+                    <span className="rounded-full bg-line px-2 py-0.5 text-[11px] font-extrabold tabular-nums text-ink/60">
                       {buckets.done.length}
                     </span>
                   </span>
@@ -359,7 +359,7 @@ export default function ChatList() {
           </div>
         )}
         {chats.length > 0 && (
-          <p className="px-2 pt-5 text-center text-[13px] leading-relaxed text-muted">
+          <p className="px-2 pt-5 text-center text-[14px] leading-relaxed text-muted">
             Your activity groups appear here once you've joined. Say hello before you meet.
           </p>
         )}

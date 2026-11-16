@@ -118,7 +118,7 @@ export default function TaskCard({
       {typeof reviewBadge === 'number' && reviewBadge > 0 && (
         <span
           aria-label={`${reviewBadge} pending join ${reviewBadge === 1 ? 'request' : 'requests'} waiting for review`}
-          className="absolute -right-2 -top-2 z-[2] flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-canvas bg-[#e53935] px-1.5 text-[12px] font-bold leading-none text-white shadow-sm"
+          className="absolute -right-2 -top-2 z-[2] flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-canvas bg-[#e53935] px-1.5 text-[13px] font-bold leading-none text-white shadow-sm"
         >
           {reviewBadge > 99 ? '99+' : reviewBadge}
         </span>
@@ -130,31 +130,31 @@ export default function TaskCard({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="line-clamp-2 font-display text-[15px] font-bold leading-snug text-ink">
+              <h3 className="line-clamp-2 font-display text-[16px] font-bold leading-snug text-ink">
                 {task.title}
               </h3>
               <div className="flex shrink-0 flex-col items-end gap-1">
-                <span className={`text-[12px] font-semibold ${status.tone}`}>{status.label}</span>
+                <span className={`text-[13px] font-semibold ${status.tone}`}>{status.label}</span>
                 {happeningToday && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-amber">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber/50 bg-gradient-to-r from-sun/25 via-amber/15 to-sun/10 px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-amber">
                     <span className="flex h-1.5 w-1.5 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full bg-amber" aria-hidden />
                     Happening today
                   </span>
                 )}
                 {sponsored && (
-                  <span className="rounded-full bg-[#fff4d1] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#7a622f]">
+                  <span className="rounded-full bg-[#fff4d1] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7a622f]">
                     Sponsored
                   </span>
                 )}
               </div>
             </div>
-            <p className="mt-1 flex items-center gap-1.5 text-[12px] text-muted">
+            <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted">
               <Avatar src={task.host_avatar_url} name={task.host_name} size={18} />
               <span className="truncate max-w-[45%]">{isOwnTask ? 'You' : task.host_name}</span>
               {verified && (
                 <VerifiedBadge status="verified" size={13} />
               )}
-              <span className="shrink-0 text-[11px] text-line">|</span>
+              <span className="shrink-0 text-[12px] text-line">|</span>
               <span className={`pill shrink-0 ${categoryStyles[task.category]}`}>{categoryLabel(task.category)}</span>
             </p>
           </div>
@@ -162,7 +162,7 @@ export default function TaskCard({
 
         {applicationStatus && applicationStatus !== 'withdrawn' && (
           <p
-            className={`mt-2 w-fit rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+            className={`mt-2 w-fit rounded-full px-2.5 py-1 text-[12px] font-semibold ${
               applicationStatus === 'accepted'
                 ? 'bg-verified/10 text-verified'
                 : applicationStatus === 'pending'
@@ -182,7 +182,7 @@ export default function TaskCard({
           </p>
         )}
 
-        <div className="mt-2 flex items-center gap-3 text-[13px] text-muted">
+        <div className="mt-2 flex items-center gap-3 text-[14px] text-muted">
             <span className="flex min-w-0 items-center gap-1.5">
             <Clock3 size={14} className="shrink-0" aria-hidden />
             <span className="truncate font-bold text-ink">{formatDateTime(task.date_time)}{countdown ? ` · ${countdown}` : ''}</span>
@@ -194,7 +194,7 @@ export default function TaskCard({
         </div>
 
         {expanded && task.description && (
-          <p className="mt-2 rounded-[14px] bg-canvas p-2.5 text-[13px] leading-[1.45] text-ink/80">
+          <p className="mt-2 rounded-[14px] bg-canvas p-2.5 text-[14px] leading-[1.45] text-ink/80">
             {task.description}
           </p>
         )}
@@ -203,7 +203,7 @@ export default function TaskCard({
           <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[#f7e9d8]">
             <div className="h-full rounded-full bg-amber transition-all" style={{ width: `${pct}%` }} />
           </div>
-          <span className="flex shrink-0 items-center gap-1.5 text-[12px] text-muted">
+          <span className="flex shrink-0 items-center gap-1.5 text-[13px] text-muted">
             <UsersRound size={13} aria-hidden />
             {task.spots_filled}/{task.spots_needed} joined
           </span>
@@ -226,7 +226,7 @@ export default function TaskCard({
           ) : status.label === 'Full' ? (
             <Link
               to={`/task/${task.id}`}
-              className="inline-flex items-center gap-1 rounded-full border border-line bg-canvas px-3 py-1.5 text-[12px] font-semibold text-muted"
+              className="inline-flex items-center gap-1 rounded-full border border-line bg-canvas px-3 py-1.5 text-[13px] font-semibold text-muted"
             >
               View anyway
             </Link>

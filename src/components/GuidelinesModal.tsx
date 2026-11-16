@@ -29,12 +29,12 @@ export default function GuidelinesModal({
         aria-labelledby="guidelines-title"
         className="mx-auto my-auto max-h-[calc(100dvh-4rem)] w-full max-w-[520px] overflow-y-auto rounded-[24px] bg-white p-5 shadow-lift sm:p-7"
       >
-        <p className="text-[12px] font-bold uppercase tracking-[.14em] text-amber">Community guidelines · Version 1.0</p>
+        <p className="text-[13px] font-bold uppercase tracking-[.14em] text-amber">Community guidelines · Version 1.0</p>
         <h1 id="guidelines-title" className="mt-2 font-display text-[25px] font-bold">Make room for good company</h1>
-        <p className="mt-2 text-[14px] leading-relaxed text-muted">
+        <p className="mt-2 text-[15px] leading-relaxed text-muted">
           Come w&apos; me works best when everyone can meet, share plans and feel safe. Please keep these in mind:
         </p>
-        <div className="mt-5 space-y-4 text-[14px] leading-relaxed">
+        <div className="mt-5 space-y-4 text-[15px] leading-relaxed">
           <section>
             <h2 className="font-semibold">Treat people with respect</h2>
             <p className="mt-1 text-muted">No harassment, hate, threats, unwanted contact or discrimination. Respect boundaries and accept a no.</p>
@@ -52,7 +52,7 @@ export default function GuidelinesModal({
             <p className="mt-1 text-muted">Report concerning behaviour in the app. Reports are private and reviewed by the moderation team. Serious or repeated violations may lead to a warning, temporary suspension or permanent ban. You can appeal a moderation decision.</p>
           </section>
         </div>
-        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-line p-4 text-[14px] leading-relaxed">
+        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-line p-4 text-[15px] leading-relaxed">
           <input
             type="checkbox"
             className="mt-0.5 h-4 w-4 accent-[#ff9f1c]"
@@ -61,7 +61,7 @@ export default function GuidelinesModal({
           />
           <span>I have read and agree to the Community Guidelines.</span>
         </label>
-        {error && <p role="alert" className="mt-3 rounded-xl bg-alert/10 p-3 text-[14px] text-alert">{error}</p>}
+        {error && <p role="alert" className="mt-3 rounded-xl bg-alert/10 p-3 text-[15px] text-alert">{error}</p>}
         <button type="button" className="btn-primary mt-4 w-full" disabled={!checked || busy} onClick={() => void accept()}>
           {busy ? 'Saving…' : 'I Agree'}
         </button>

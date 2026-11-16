@@ -45,12 +45,12 @@ export default function NotificationRow({
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-muted">{config.label}</span>
+          <span className="text-[12px] font-bold uppercase tracking-wide text-muted">{config.label}</span>
           {unread && <span className="h-1.5 w-1.5 rounded-full bg-amber" aria-hidden />}
         </span>
-        <span className="mt-0.5 block text-[14px] font-semibold leading-snug text-ink">{item.title}</span>
-        <span className="mt-1 block text-[13px] leading-snug text-muted">{item.body}</span>
-        <span className="mt-1 block text-[11px] text-muted">{timeAgo(item.created_at)}</span>
+        <span className="mt-0.5 block text-[15px] font-semibold leading-snug text-ink">{item.title}</span>
+        <span className="mt-1 block text-[14px] leading-snug text-muted">{item.body}</span>
+        <span className="mt-1 block text-[12px] text-muted">{timeAgo(item.created_at)}</span>
       </span>
       {unread && (
         <button

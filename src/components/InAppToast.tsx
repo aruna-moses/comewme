@@ -104,15 +104,15 @@ export default function InAppToast() {
         <img src="/logo.png" alt="" aria-hidden className="h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm" />
         <span className="min-w-0 flex-1">
           <span className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+            <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
               Come w&apos; me
             </span>
-            <span className="text-[11px] text-muted">{timeAgo(active.created_at)}</span>
+            <span className="text-[12px] text-muted">{timeAgo(active.created_at)}</span>
           </span>
-          <span className="mt-0.5 block truncate text-[14px] font-semibold leading-tight text-ink">
+          <span className="mt-0.5 block truncate text-[15px] font-semibold leading-tight text-ink">
             {active.title}
           </span>
-          <span className="mt-0.5 block text-[13px] leading-snug text-muted line-clamp-2">
+          <span className="mt-0.5 block text-[14px] leading-snug text-muted line-clamp-2">
             {active.body}
           </span>
         </span>

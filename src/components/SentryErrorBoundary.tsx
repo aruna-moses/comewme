@@ -10,7 +10,7 @@ export default function SentryErrorBoundary({ children }: { children: ReactNode 
     <ErrorBoundary
       fallback={({ error, resetError }) => (
         <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
-          <div className="rounded-2xl bg-alert/10 px-6 py-5 text-[14px] leading-relaxed text-alert">
+          <div className="rounded-2xl bg-alert/10 px-6 py-5 text-[15px] leading-relaxed text-alert">
             <p className="font-bold">Something went wrong</p>
             <p className="mt-1 text-ink/80">{error instanceof Error ? error.message : 'Something went wrong.'}</p>
           </div>

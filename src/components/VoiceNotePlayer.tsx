@@ -81,12 +81,12 @@ export default function VoiceNotePlayer({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[12px] font-semibold text-ink">Voice note</p>
+          <p className="text-[13px] font-semibold text-ink">Voice note</p>
           <button
             type="button"
             onClick={() => setRate((current) => SPEEDS[(SPEEDS.indexOf(current) + 1) % SPEEDS.length])}
             aria-label={`Playback speed ${rate}x. Tap to change.`}
-            className="rounded-full bg-canvas px-2 py-0.5 text-[11px] font-bold text-ink transition active:scale-95"
+            className="rounded-full bg-canvas px-2 py-0.5 text-[12px] font-bold text-ink transition active:scale-95"
           >
             {rate}×
           </button>
@@ -123,7 +123,7 @@ export default function VoiceNotePlayer({
           />
         </div>
 
-        <div className="mt-0.5 flex justify-between text-[11px] tabular-nums text-muted">
+        <div className="mt-0.5 flex justify-between text-[12px] tabular-nums text-muted">
           <span>{formatDuration(currentTime)}</span>
           <span>{formatDuration(totalDuration)}</span>
         </div>

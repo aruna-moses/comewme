@@ -99,28 +99,28 @@ export default function TaskCompletionCelebration({
           <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-verified/10 text-verified">
             <Check size={30} strokeWidth={3} aria-hidden />
           </div>
-          <p className="mt-5 text-[12px] font-bold uppercase tracking-[.18em] text-amber">
+          <p className="mt-5 text-[13px] font-bold uppercase tracking-[.18em] text-amber">
             Activity complete
           </p>
           <h2 id="task-completion-title" className="mt-1 font-display text-[25px] font-bold leading-tight">
             You did it!
           </h2>
-          <p className="mt-2 text-[14px] font-semibold text-ink">{activityTitle}</p>
-          <p className="mt-2 text-[14px] leading-relaxed text-muted">
+          <p className="mt-2 text-[15px] font-semibold text-ink">{activityTitle}</p>
+          <p className="mt-2 text-[15px] leading-relaxed text-muted">
             Take a moment to celebrate showing up and making it happen.
           </p>
           {reachedTitle && (
-            <p className="mt-4 rounded-2xl bg-sun/15 px-4 py-3 text-[14px] font-bold text-amber">
+            <p className="mt-4 rounded-2xl bg-sun/15 px-4 py-3 text-[15px] font-bold text-amber">
               Milestone unlocked: {reachedTitle}!
             </p>
           )}
           {nextTitle ? (
-            <p className="mt-3 text-[14px] leading-relaxed text-muted">
+            <p className="mt-3 text-[15px] leading-relaxed text-muted">
               Keep the momentum going — {activitiesToNext} more {activitiesToNext === 1 ? 'activity' : 'activities'} to reach your next milestone,{' '}
               <span className="font-bold text-ink">{nextTitle}</span>.
             </p>
           ) : (
-            <p className="mt-3 text-[14px] leading-relaxed text-muted">
+            <p className="mt-3 text-[15px] leading-relaxed text-muted">
               You’ve reached every milestone. Here’s to the next great connection!
             </p>
           )}

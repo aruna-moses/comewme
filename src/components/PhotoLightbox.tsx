@@ -27,7 +27,7 @@ export default function PhotoLightbox({ url, caption, senderName, onClose }: Pro
       onClick={onClose}
     >
       <div className="flex shrink-0 items-center justify-between px-3 py-3 text-white">
-        <p className="truncate text-[14px] font-semibold text-white/80">{senderName ?? 'Photo'}</p>
+        <p className="truncate text-[15px] font-semibold text-white/80">{senderName ?? 'Photo'}</p>
         <button
           type="button"
           onClick={onClose}
@@ -50,9 +50,9 @@ export default function PhotoLightbox({ url, caption, senderName, onClose }: Pro
 
       <div className="shrink-0 px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-4 text-center">
         {caption && (
-          <p className="mx-auto max-w-[440px] whitespace-pre-wrap text-[14px] leading-snug text-white/90">{caption}</p>
+          <p className="mx-auto max-w-[440px] whitespace-pre-wrap text-[15px] leading-snug text-white/90">{caption}</p>
         )}
-        <p className="mt-2 text-[12px] text-white/40">Tap outside the photo to close</p>
+        <p className="mt-2 text-[13px] text-white/40">Tap outside the photo to close</p>
       </div>
     </div>
   )

@@ -132,7 +132,7 @@ export default function CommunityGuidelines() {
   return (
     <div className="min-h-screen pb-24">
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
-        <Link to="/" className="text-[14px] font-semibold text-amber" aria-label="Back">
+        <Link to="/" className="text-[15px] font-semibold text-amber" aria-label="Back">
           <ArrowLeft size={20} aria-hidden />
         </Link>
         <h1 className="font-display text-[18px] font-bold">Community Guidelines</h1>
@@ -142,25 +142,25 @@ export default function CommunityGuidelines() {
         <div className="rounded-2xl bg-white p-5 shadow-lift">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Come w&apos; me</p>
+              <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-muted">Come w&apos; me</p>
               <h2 className="font-display text-[22px] font-bold leading-tight">Community Guidelines</h2>
             </div>
-            <span className="rounded-full bg-verified/15 px-3 py-1 text-[11px] font-bold uppercase text-verified">
+            <span className="rounded-full bg-verified/15 px-3 py-1 text-[12px] font-bold uppercase text-verified">
               v1.1
             </span>
           </div>
-          <p className="mt-3 text-[14px] leading-relaxed text-ink/80">
+          <p className="mt-3 text-[15px] leading-relaxed text-ink/80">
             Plain rules for plain people. Follow them and Come w&apos; me stays the easiest way to find real-life company in Lagos without the internet horror stories.
           </p>
           {profile && (
-            <p className="mt-2 text-[12px] text-muted">
+            <p className="mt-2 text-[13px] text-muted">
               Signed in as <strong className="text-ink">{profile.display_name}</strong> — these rules apply to you.
             </p>
           )}
         </div>
 
         {/* Quick answer to the most common question */}
-        <div className="mt-4 rounded-2xl border border-alert/30 bg-alert/5 p-4 text-[14px]">
+        <div className="mt-4 rounded-2xl border border-alert/30 bg-alert/5 p-4 text-[15px]">
           <p className="font-bold text-alert">Most common question</p>
           <p className="mt-1 leading-relaxed text-ink/80">
             "Can I post a sexual activity?" → <strong>No.</strong> Sexual, romantic, or companionship-for-pay activities are a permanent ban on first post, no appeal. This one isn&apos;t flexible.
@@ -169,11 +169,11 @@ export default function CommunityGuidelines() {
 
         {/* Instant answer box — matches against the same document a moderator reads. */}
         <div className="mt-4 rounded-2xl border border-line bg-canvas p-4">
-          <label className="flex items-center gap-2 text-[14px] font-semibold text-ink" htmlFor="guideline-search">
+          <label className="flex items-center gap-2 text-[15px] font-semibold text-ink" htmlFor="guideline-search">
             <Search size={16} className="text-amber" aria-hidden />
             Ask something
           </label>
-          <p className="mt-1 text-[12px] leading-relaxed text-muted">
+          <p className="mt-1 text-[13px] leading-relaxed text-muted">
             Type your question — we match instantly against these guidelines. Not legal advice and not a reviewer Decision, but it'll point to the right rule.
           </p>
           <input
@@ -187,7 +187,7 @@ export default function CommunityGuidelines() {
           {question.trim().length > 0 && (
             <ul className="mt-2 space-y-2">
               {scoredSections.slice(0, 4).map(({ section }) => (
-                <li key={section.title} className="rounded-xl bg-white p-2.5 text-[13px] leading-relaxed text-ink ring-1 ring-line">
+                <li key={section.title} className="rounded-xl bg-white p-2.5 text-[14px] leading-relaxed text-ink ring-1 ring-line">
                   <p className="font-semibold text-ink">{section.title}</p>
                   <ul className="mt-1 list-disc space-y-1 pl-4 text-muted">
                     {(Array.isArray(section.body) ? (section.body as string[]).slice(0, 3) : [section.body as string]).map((item) => (
@@ -197,7 +197,7 @@ export default function CommunityGuidelines() {
                 </li>
               ))}
               {scoredSections.length === 0 && (
-                <li className="rounded-xl bg-white p-3 text-[13px] text-muted ring-1 ring-line">
+                <li className="rounded-xl bg-white p-3 text-[14px] text-muted ring-1 ring-line">
                   <p className="flex items-start gap-1.5">
                     <AlertCircle size={14} className="mt-0.5 shrink-0 text-amber" aria-hidden />
                     <span>Not in here. You can ask a moderator instead — they read every question.</span>
@@ -236,15 +236,15 @@ export default function CommunityGuidelines() {
                     <label htmlFor="ask-text" className="sr-only">What do you want to ask?</label>
                     <textarea
                       id="ask-text"
-                      className="field min-h-[72px] text-[14px]"
+                      className="field min-h-[72px] text-[15px]"
                       placeholder="Write your question — keep it short and specific…"
                       value={askText || question}
                       onChange={(event) => setAskText(event.target.value)}
                       required
                     />
-                    {askError && <p role="alert" className="text-[12px] font-medium text-alert">{askError}</p>}
+                    {askError && <p role="alert" className="text-[13px] font-medium text-alert">{askError}</p>}
                     {askDone && (
-                      <p role="status" className="flex items-center gap-1.5 rounded-lg bg-verified/10 p-2 text-[12px] font-medium text-verified">
+                      <p role="status" className="flex items-center gap-1.5 rounded-lg bg-verified/10 p-2 text-[13px] font-medium text-verified">
                         <Check size={13} aria-hidden /> Sent — a moderator will read it and reply in-app.
                       </p>
                     )}
@@ -264,12 +264,12 @@ export default function CommunityGuidelines() {
 
         {/* Category list */}
         <div className="mt-6">
-          <h3 className="px-1 text-[12px] font-bold uppercase tracking-[0.16em] text-muted">Violation Categories</h3>
+          <h3 className="px-1 text-[13px] font-bold uppercase tracking-[0.16em] text-muted">Violation Categories</h3>
           <div className="mt-2 grid grid-cols-2 gap-1.5">
             {VIOLATION_CATEGORIES.map((category) => (
               <span
                 key={category.value}
-                className="rounded-lg bg-white px-2 py-1.5 text-[13px] font-medium text-ink ring-1 ring-line"
+                className="rounded-lg bg-white px-2 py-1.5 text-[14px] font-medium text-ink ring-1 ring-line"
               >
                 {category.label}
               </span>
@@ -280,21 +280,21 @@ export default function CommunityGuidelines() {
         <div className="mt-6 space-y-4">
           {SECTIONS.map((section) => (
             <section key={section.title} className="rounded-2xl bg-white p-4 shadow-lift">
-              <h3 className="font-display text-[15px] font-bold text-ink">{section.title}</h3>
+              <h3 className="font-display text-[16px] font-bold text-ink">{section.title}</h3>
               {Array.isArray(section.body) ? (
-                <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[14px] leading-relaxed text-ink/80">
+                <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[15px] leading-relaxed text-ink/80">
                   {(section.body as string[]).map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 text-[14px] leading-relaxed text-ink/80">{section.body}</p>
+                <p className="mt-2 text-[15px] leading-relaxed text-ink/80">{section.body}</p>
               )}
             </section>
           ))}
         </div>
 
-        <p className="mt-6 text-center text-[12px] text-muted">
+        <p className="mt-6 text-center text-[13px] text-muted">
           Come w&apos; me is a community platform. These guidelines exist so everyone can feel safe showing up.
           <br />
           © {new Date().getFullYear()} Come w&apos; me ·{' '}

@@ -29,18 +29,18 @@ export default function Violations() {
   return (
     <div className="min-h-[100dvh] pb-24">
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
-        <Link to="/" className="text-[14px] font-semibold text-amber">Back</Link>
+        <Link to="/" className="text-[15px] font-semibold text-amber">Back</Link>
         <h1 className="font-display text-[18px] font-bold">Your reports &amp; decisions</h1>
       </header>
       <main className="mx-auto max-w-[640px] space-y-3 px-4 py-5">
-        <p className="text-[14px] leading-relaxed text-muted">
+        <p className="text-[15px] leading-relaxed text-muted">
           This history is private to you. You can appeal a moderation decision if you think we got it wrong.
         </p>
-        {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[14px] text-alert">{error}</p>}
+        {error && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[15px] text-alert">{error}</p>}
         {loading ? <Spinner /> : violations.length === 0 ? (
           <div className="card rounded-2xl p-5 text-center">
             <p className="font-semibold">You&apos;re all clear</p>
-            <p className="mt-1 text-[14px] text-muted">There are no reports or moderation decisions on your account.</p>
+            <p className="mt-1 text-[15px] text-muted">There are no reports or moderation decisions on your account.</p>
           </div>
         ) : violations.map((violation) => {
           const appeal = appeals.find((item) => item.violation_id === violation.id)
@@ -53,16 +53,16 @@ export default function Violations() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold">{category}</p>
-                  <p className="mt-1 text-[13px] text-muted">{new Date(violation.created_at).toLocaleDateString()} · <span className="capitalize">{violation.status}</span></p>
+                  <p className="mt-1 text-[14px] text-muted">{new Date(violation.created_at).toLocaleDateString()} · <span className="capitalize">{violation.status}</span></p>
                 </div>
                 <span className="pill bg-[#fff4d1] text-[#7a622f]">{violation.severity.replace(/_/g, ' ')}</span>
               </div>
               {violation.status === 'pending' ? (
-                <p className="mt-3 text-[14px] leading-relaxed text-muted">A report about your account is under review. Any moderation decision will appear here.</p>
+                <p className="mt-3 text-[15px] leading-relaxed text-muted">A report about your account is under review. Any moderation decision will appear here.</p>
               ) : (
-                <p className="mt-3 whitespace-pre-wrap text-[14px] leading-relaxed">{reason}</p>
+                <p className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed">{reason}</p>
               )}
-              {violation.banned_until && <p className="mt-2 text-[13px] text-muted">Access returns: {new Date(violation.banned_until).toLocaleString()}</p>}
+              {violation.banned_until && <p className="mt-2 text-[14px] text-muted">Access returns: {new Date(violation.banned_until).toLocaleString()}</p>}
               {mayAppeal && (
                 <AppealForm
                   violation={violation}

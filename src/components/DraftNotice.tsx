@@ -36,8 +36,8 @@ export default function DraftNotice({
     <div className="mb-4 flex items-start gap-2 rounded-xl border border-[#edd996] bg-[#fff4d1] p-3 text-[#7a622f]">
       <History size={15} className="mt-0.5 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold">Your {what} was saved</p>
-        <p className="text-[12px] leading-snug">
+        <p className="text-[14px] font-semibold">Your {what} was saved</p>
+        <p className="text-[13px] leading-snug">
           Picked up where you left off — last edit {savedAt ? timeAgo(savedAt) : ''}.
         </p>
       </div>
@@ -48,7 +48,7 @@ export default function DraftNotice({
           setSavedAt(null)
           onDiscard()
         }}
-        className="-mr-1 flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-0.5 text-[12px] font-semibold underline"
+        className="-mr-1 flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-0.5 text-[13px] font-semibold underline"
       >
         <X size={11} />
         Start over

@@ -53,7 +53,7 @@ export default function ShareTaskButton({ task }: { task: Task }) {
     <button
       type="button"
       onClick={() => void shareTask()}
-      className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-[13px] font-semibold text-muted transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+      className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-[14px] font-semibold text-muted transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
       aria-label={`Share ${task.title}`}
     >
       {done ? <Check size={14} aria-hidden /> : <Send size={13} aria-hidden />}

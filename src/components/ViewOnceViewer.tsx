@@ -46,7 +46,7 @@ export default function ViewOnceViewer({ url, caption, viewerName, onClose }: Pr
       onContextMenu={(event) => event.preventDefault()}
     >
       <div className="flex shrink-0 items-center justify-between px-3 py-3 text-white">
-        <span className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-white/60">
+        <span className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.14em] text-white/60">
           <Eye size={14} aria-hidden /> View once
         </span>
         <button
@@ -73,7 +73,7 @@ export default function ViewOnceViewer({ url, caption, viewerName, onClose }: Pr
           {[0, 1, 2, 3, 4].map((row) => (
             <p
               key={row}
-              className="-rotate-[22deg] whitespace-nowrap text-[13px] font-bold uppercase tracking-[0.28em] text-white/[0.14]"
+              className="-rotate-[22deg] whitespace-nowrap text-[14px] font-bold uppercase tracking-[0.28em] text-white/[0.14]"
             >
               Come w&apos; me · {viewerName} · view once
             </p>
@@ -82,12 +82,12 @@ export default function ViewOnceViewer({ url, caption, viewerName, onClose }: Pr
       </div>
 
       <div className="shrink-0 px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-4 text-center">
-        {caption && <p className="mx-auto max-w-[420px] whitespace-pre-wrap text-[14px] leading-snug text-white/90">{caption}</p>}
-        <p className="mt-2 text-[12px] text-white/45">This photo closes for good when you leave.</p>
+        {caption && <p className="mx-auto max-w-[420px] whitespace-pre-wrap text-[15px] leading-snug text-white/90">{caption}</p>}
+        <p className="mt-2 text-[13px] text-white/45">This photo closes for good when you leave.</p>
         <button
           type="button"
           onClick={onClose}
-          className="mt-4 h-11 w-full rounded-xl bg-white/10 text-[14px] font-semibold text-white"
+          className="mt-4 h-11 w-full rounded-xl bg-white/10 text-[15px] font-semibold text-white"
         >
           Close
         </button>

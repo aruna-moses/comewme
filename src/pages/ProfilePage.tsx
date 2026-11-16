@@ -54,7 +54,7 @@ function PostsHistory({ userId }: { userId: string }) {
     return (
       <section className="mt-6">
         <h2 className="font-display text-[17px] font-bold">Posts history</h2>
-        <p className="mt-2 rounded-2xl border border-line bg-white p-5 text-center text-[13px] leading-relaxed text-muted">
+        <p className="mt-2 rounded-2xl border border-line bg-white p-5 text-center text-[14px] leading-relaxed text-muted">
           Completed activities will collect here once you wrap them.
         </p>
       </section>
@@ -67,7 +67,7 @@ function PostsHistory({ userId }: { userId: string }) {
     <section className="mt-6">
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-display text-[17px] font-bold">Posts history</h2>
-        <Link to="/activities" className="text-[13px] font-semibold text-amber">
+        <Link to="/activities" className="text-[14px] font-semibold text-amber">
           View all
         </Link>
       </div>
@@ -85,8 +85,8 @@ function PostsHistory({ userId }: { userId: string }) {
                 {taskEmoji(task.category)}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14px] font-semibold text-ink">{task.title}</span>
-                <span className="mt-0.5 block text-[12px] text-muted">
+                <span className="block truncate text-[15px] font-semibold text-ink">{task.title}</span>
+                <span className="mt-0.5 block text-[13px] text-muted">
                   {new Date(task.date_time).toLocaleDateString(undefined, {
                     day: 'numeric',
                     month: 'short',
@@ -94,7 +94,7 @@ function PostsHistory({ userId }: { userId: string }) {
                   })}
                 </span>
               </span>
-              <span className="shrink-0 rounded-full bg-line/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted">
+              <span className="shrink-0 rounded-full bg-line/60 px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted">
                 {task.status === 'completed' ? 'Completed' : 'Passed'}
               </span>
             </Link>
@@ -105,7 +105,7 @@ function PostsHistory({ userId }: { userId: string }) {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-2 text-[13px] font-semibold text-amber"
+          className="mt-2 text-[14px] font-semibold text-amber"
         >
           {expanded ? 'Show less' : `Show all ${items.length} activities`}
         </button>
@@ -238,7 +238,7 @@ export default function ProfilePage() {
               {moderation.is_moderator && moderationPending > 0 && (
                 <span
                   aria-hidden="true"
-                  className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-canvas bg-[#e53935] px-1 text-[10px] font-bold leading-none text-white shadow-sm"
+                  className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-canvas bg-[#e53935] px-1 text-[11px] font-bold leading-none text-white shadow-sm"
                 >
                   {moderationPending > 99 ? '99+' : moderationPending}
                 </span>
@@ -256,9 +256,9 @@ export default function ProfilePage() {
               {profile.display_name}
               {profile.verification_status === 'verified' && <VerifiedBadge status="verified" size={18} />}
             </h1>
-            <p className="text-[14px] text-muted">@{profile.username}</p>
+            <p className="text-[15px] text-muted">@{profile.username}</p>
             {(profile.area || (profile.interests && profile.interests.length > 0)) && (
-              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-semibold">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[13px] font-semibold">
                 {profile.area && AREAS.includes(profile.area) && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-line/60 px-2 py-0.5 text-muted">
                     <MapPin size={11} aria-hidden />
@@ -278,7 +278,7 @@ export default function ProfilePage() {
           </div>
         </div>
         {profile.bio && (
-          <p className="mt-3 text-[14px] leading-relaxed text-ink">{profile.bio}</p>
+          <p className="mt-3 text-[15px] leading-relaxed text-ink">{profile.bio}</p>
         )}
 
         <div className="mt-5 grid grid-cols-3 gap-2">
@@ -294,10 +294,10 @@ export default function ProfilePage() {
               style={s.label === 'Trust score' ? { cursor: 'pointer' } : undefined}
             >
               <p className="font-display text-lg font-bold leading-none">{s.value}</p>
-              <p className="mt-1 text-[12px] text-muted">{s.label}</p>
+              <p className="mt-1 text-[13px] text-muted">{s.label}</p>
               {s.label === 'Trust score' && (
                 <div className="mt-2 flex items-center justify-center gap-1">
-                  <span className="text-[11px] text-muted">Details</span>
+                  <span className="text-[12px] text-muted">Details</span>
                   <svg
                     width="14"
                     height="14"
@@ -327,8 +327,8 @@ export default function ProfilePage() {
               aria-controls="growth-panel"
             >
               <div>
-                <p className="text-[14px] font-semibold">Your growth journey</p>
-                <p className="mt-0.5 text-[12px] text-muted">Personality &amp; chapters — tap to {growthOpen ? 'hide' : 'show'}</p>
+                <p className="text-[15px] font-semibold">Your growth journey</p>
+                <p className="mt-0.5 text-[13px] text-muted">Personality &amp; chapters — tap to {growthOpen ? 'hide' : 'show'}</p>
               </div>
               <ChevronDown size={18} className={`shrink-0 transition-transform duration-200 ${growthOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -365,7 +365,7 @@ export default function ProfilePage() {
             <ReportButton
               reportedUserId={profile.id}
               label="Report this account"
-              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line text-[13px] font-semibold text-muted transition hover:border-alert/40 hover:text-alert"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line text-[14px] font-semibold text-muted transition hover:border-alert/40 hover:text-alert"
             />
           </div>
         )}

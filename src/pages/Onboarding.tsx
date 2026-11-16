@@ -163,7 +163,7 @@ export default function Onboarding() {
             <h1 className="font-display text-[26px] font-bold leading-tight">
               What should people call you?
             </h1>
-            <p className="mt-1.5 text-[14px] text-muted">
+            <p className="mt-1.5 text-[15px] text-muted">
               Your real name builds trust. Your username keeps it human.
             </p>
 
@@ -173,7 +173,7 @@ export default function Onboarding() {
                   ? <img src={avatarPreview} alt="Profile preview" className="h-full w-full object-cover" />
                   : <UserRound size={44} aria-hidden />}
               </span>
-              <label className="mt-3 inline-flex cursor-pointer items-center gap-1.5 text-[14px] font-semibold text-amber">
+              <label className="mt-3 inline-flex cursor-pointer items-center gap-1.5 text-[15px] font-semibold text-amber">
                 <Camera size={17} aria-hidden />
                 {avatarPreview ? 'Change photo' : 'Add a profile photo'}
                 <input
@@ -218,7 +218,7 @@ export default function Onboarding() {
                   Username
                 </label>
                 <div className="flex items-center gap-2">
-                  <span className="text-[15px] font-semibold text-muted">@</span>
+                  <span className="text-[16px] font-semibold text-muted">@</span>
                   <input
                     id="handle"
                     className="field"
@@ -233,7 +233,7 @@ export default function Onboarding() {
                     aria-describedby="handle-status"
                   />
                 </div>
-                <div id="handle-status" className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px]" aria-live="polite">
+                <div id="handle-status" className="mt-1.5 flex flex-wrap items-center gap-2 text-[13px]" aria-live="polite">
                   {usernameStatus === 'idle' && !username.trim() && (
                     <>
                       <span className="text-muted">3–24 letters, numbers and underscores.</span>
@@ -288,7 +288,7 @@ export default function Onboarding() {
         {step === 1 && (
           <>
             <h1 className="font-display text-[26px] font-bold leading-tight">Where are you based?</h1>
-            <p className="mt-1.5 text-[14px] text-muted">
+            <p className="mt-1.5 text-[15px] text-muted">
               We use this to show you things nearby. You can change it later.
             </p>
 
@@ -331,7 +331,7 @@ export default function Onboarding() {
             <h1 className="font-display text-[26px] font-bold leading-tight">
               What are you into?
             </h1>
-            <p className="mt-1.5 text-[14px] text-muted">
+            <p className="mt-1.5 text-[15px] text-muted">
               Pick a few. This is what the "For you" filter runs on.
             </p>
 
@@ -354,7 +354,7 @@ export default function Onboarding() {
             <h1 className="font-display text-[26px] font-bold leading-tight">
               Four rules, that's it
             </h1>
-            <p className="mt-1.5 text-[14px] text-muted">
+            <p className="mt-1.5 text-[15px] text-muted">
               These are not decoration. Break them and you get removed.
             </p>
 
@@ -383,14 +383,14 @@ export default function Onboarding() {
               ].map((r) => (
                 <div key={r.n} className="card flex gap-3 p-4">
                   <span
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[14px] font-bold"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[15px] font-bold"
                     style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)' }}
                   >
                     {r.n}
                   </span>
                   <div>
-                    <p className="text-[14px] font-bold">{r.t}</p>
-                    <p className="mt-0.5 text-[14px] leading-relaxed text-muted">{r.d}</p>
+                    <p className="text-[15px] font-bold">{r.t}</p>
+                    <p className="mt-0.5 text-[15px] leading-relaxed text-muted">{r.d}</p>
                   </div>
                 </div>
               ))}
@@ -399,7 +399,7 @@ export default function Onboarding() {
         )}
 
         {error && (
-          <p className="mt-4 rounded-xl bg-alert/10 p-3 text-[14px] font-medium text-alert">{error}</p>
+          <p className="mt-4 rounded-xl bg-alert/10 p-3 text-[15px] font-medium text-alert">{error}</p>
         )}
 
         <div className="mt-7 flex gap-3">

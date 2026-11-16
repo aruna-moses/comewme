@@ -98,7 +98,7 @@ export default function App() {
     return (
       <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-canvas p-6 text-center">
         <h1 className="font-display text-xl font-bold">We couldn&apos;t verify your account</h1>
-        <p role="alert" className="mt-2 max-w-sm text-[14px] leading-relaxed text-muted">{complianceError}</p>
+        <p role="alert" className="mt-2 max-w-sm text-[15px] leading-relaxed text-muted">{complianceError}</p>
         <button className="btn-primary mt-5" onClick={() => void refreshCompliance()}>Try again</button>
         <button
           className="btn-ghost mt-2"
@@ -111,7 +111,7 @@ export default function App() {
         >
           Sign out
         </button>
-        {signOutError && <p role="alert" className="mt-2 text-[13px] text-alert">{signOutError}</p>}
+        {signOutError && <p role="alert" className="mt-2 text-[14px] text-alert">{signOutError}</p>}
       </div>
     )
   }

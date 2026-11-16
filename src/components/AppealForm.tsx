@@ -32,7 +32,7 @@ export default function AppealForm({
 
   if (existingAppeal) {
     return (
-      <p className="mt-3 rounded-xl bg-canvas p-3 text-[13px] leading-relaxed">
+      <p className="mt-3 rounded-xl bg-canvas p-3 text-[14px] leading-relaxed">
         Appeal status: <strong className="capitalize">{existingAppeal.status}</strong>
         {existingAppeal.admin_response && <span className="mt-1 block text-muted">{existingAppeal.admin_response}</span>}
       </p>
@@ -51,7 +51,7 @@ export default function AppealForm({
         minLength={3}
         required
       />
-      {error && <p role="alert" className="text-[13px] text-alert">{error}</p>}
+      {error && <p role="alert" className="text-[14px] text-alert">{error}</p>}
       <button className="btn-ghost btn-sm" disabled={busy || reason.trim().length < 3}>
         {busy ? 'Sending…' : 'Submit appeal'}
       </button>

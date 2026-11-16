@@ -150,7 +150,7 @@ export default function ProfileDetailsSheet({
   return (
     <Sheet open={open} onClose={onClose} title="Edit your profile">
       <div className="space-y-4 pb-4">
-        <p className="text-[13px] text-muted">
+        <p className="text-[14px] text-muted">
           These details are shown on your profile to other members.
         </p>
         {/* Selfie verification */}
@@ -159,8 +159,8 @@ export default function ProfileDetailsSheet({
             <div className="flex items-center gap-2">
               <ShieldCheck size={19} className="shrink-0 text-verified" aria-hidden />
               <div>
-                <p id="selfie-heading" className="text-[14px] font-semibold text-ink">Selfie verification</p>
-                <p className="text-[11px] text-muted">Green check everywhere once approved</p>
+                <p id="selfie-heading" className="text-[15px] font-semibold text-ink">Selfie verification</p>
+                <p className="text-[12px] text-muted">Green check everywhere once approved</p>
               </div>
             </div>
             {profile?.verification_status === 'verified' ? (
@@ -173,7 +173,7 @@ export default function ProfileDetailsSheet({
           </div>
           {profile?.verification_status !== 'verified' && (
             <div className="mt-3">
-              <div className="rounded-xl border border-amber/25 bg-sun/15 p-3 text-[12px] leading-relaxed text-ink/85">
+              <div className="rounded-xl border border-amber/25 bg-sun/15 p-3 text-[13px] leading-relaxed text-ink/85">
                 <p className="font-bold text-ink">Before you tap — three quick rules</p>
                 <ul className="mt-1.5 list-disc space-y-1 pl-4">
                   <li>Your selfie and your public avatar must be <strong>the same person</strong> — clear face, no sunglasses or hat.</li>
@@ -185,7 +185,7 @@ export default function ProfileDetailsSheet({
                 <div className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-canvas p-2">
                   <img src={profile.avatar_url} alt="Current profile photo" className="h-14 w-14 rounded-xl object-cover" loading="lazy" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] leading-snug text-muted">
+                    <p className="text-[13px] leading-snug text-muted">
                       This is what moderators will compare your selfie to.
                     </p>
                     <label className="btn-ghost btn-sm mt-1.5 cursor-pointer">
@@ -209,8 +209,8 @@ export default function ProfileDetailsSheet({
                     <Camera size={20} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-ink">No avatar yet</p>
-                    <p className="text-[12px] leading-relaxed text-muted">Upload a clear face photo — this plays the role of your ID for selfie verification.</p>
+                    <p className="text-[14px] font-semibold text-ink">No avatar yet</p>
+                    <p className="text-[13px] leading-relaxed text-muted">Upload a clear face photo — this plays the role of your ID for selfie verification.</p>
                   </div>
                   {avatarBusy ? <Loader2 size={16} className="shrink-0 animate-spin text-muted" aria-hidden /> : null}
                   <input
@@ -239,7 +239,7 @@ export default function ProfileDetailsSheet({
                   }}
                 />
               </label>
-              {verifyError && <p className="mt-2 text-[12px] font-medium text-alert">{verifyError}</p>}
+              {verifyError && <p className="mt-2 text-[13px] font-medium text-alert">{verifyError}</p>}
             </div>
           )}
         </section>
@@ -247,7 +247,7 @@ export default function ProfileDetailsSheet({
         <div>
           <label className="label" htmlFor="handle">Username</label>
           <div className="flex items-center gap-2">
-            <span className="text-[15px] font-semibold text-muted">@</span>
+            <span className="text-[16px] font-semibold text-muted">@</span>
             <input
               id="handle"
               className="field"
@@ -261,7 +261,7 @@ export default function ProfileDetailsSheet({
               aria-describedby="handle-status"
             />
           </div>
-          <div id="handle-status" className="mt-1 text-[12px]" role="status" aria-live="polite">
+          <div id="handle-status" className="mt-1 text-[13px]" role="status" aria-live="polite">
             {handleStatus === 'checking' && (
               <span className="text-muted">Checking availability…</span>
             )}
@@ -275,7 +275,7 @@ export default function ProfileDetailsSheet({
               <span className="flex items-center gap-1 text-alert"><AlertCircle size={11} aria-hidden /> 3 to 24 letters, numbers and underscores.</span>
             )}
           </div>
-          <p className="mt-1 text-[11px] leading-snug text-muted">
+          <p className="mt-1 text-[12px] leading-snug text-muted">
             Your display name and how friends reach you won&apos;t change — this is just your public handle.
           </p>
         </div>

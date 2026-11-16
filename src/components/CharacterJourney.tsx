@@ -100,24 +100,24 @@ export default function CharacterJourney({
                 className="h-full w-full object-contain object-bottom"
               />
               {level > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-7 min-w-7 items-center justify-center rounded-full border-2 border-white bg-amber px-1 text-[11px] font-extrabold text-[#0B0B0F] shadow">
+                <span className="absolute -right-1 -top-1 flex h-7 min-w-7 items-center justify-center rounded-full border-2 border-white bg-amber px-1 text-[12px] font-extrabold text-[#0B0B0F] shadow">
                   {level}
                 </span>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-[.15em] text-amber">
+              <p className="flex items-center gap-1 text-[12px] font-bold uppercase tracking-[.15em] text-amber">
                 <Sparkles size={13} aria-hidden /> Your social journey
               </p>
               <h2 id="journey-title" className="mt-1 font-display text-[20px] font-bold leading-tight text-ink">
                 {currentTitle}
               </h2>
-              <p className="mt-1 text-[13px] leading-relaxed text-muted">
+              <p className="mt-1 text-[14px] leading-relaxed text-muted">
                 {level === 0
                   ? 'Every great connection starts with one hello.'
                   : `You’ve unlocked the ${currentTitle} chapter. Keep making room for new connections.`}
               </p>
-              <p className="mt-3 text-[12px] font-semibold text-ink/75">
+              <p className="mt-3 text-[13px] font-semibold text-ink/75">
                 {completed} {completed === 1 ? 'activity' : 'activities'} completed
               </p>
             </div>
@@ -127,14 +127,14 @@ export default function CharacterJourney({
         <div className="px-4 pb-4 pt-3">
           <div className="flex items-end justify-between gap-2">
             <div>
-              <p className="text-[13px] font-bold text-ink">Next up: {nextTitle}</p>
-              <p className="mt-0.5 text-[12px] text-muted">
+              <p className="text-[14px] font-bold text-ink">Next up: {nextTitle}</p>
+              <p className="mt-0.5 text-[13px] text-muted">
                 {level === 10
                   ? 'You’ve reached the final milestone!'
                   : `${remainder} of 10 activities · ${10 - remainder} to go`}
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-sun/20 px-2.5 py-1 text-[11px] font-bold text-amber">
+            <span className="shrink-0 rounded-full bg-sun/20 px-2.5 py-1 text-[12px] font-bold text-amber">
               {level}/10 levels
             </span>
           </div>
@@ -172,7 +172,7 @@ export default function CharacterJourney({
               />
             </div>
           </div>
-          <div className="mt-2 flex justify-between text-[10px] font-medium text-muted">
+          <div className="mt-2 flex justify-between text-[11px] font-medium text-muted">
             <span>Start</span>
             <span>10 milestones</span>
             <span>100</span>
@@ -191,8 +191,8 @@ export default function CharacterJourney({
                     next || final ? 'border-amber bg-sun/10' : 'border-line bg-canvas'
                   }`}
                 >
-                  <p className="text-[10px] font-semibold text-muted">{checkpoint} activities</p>
-                  <p className={`mt-0.5 text-[11px] font-bold leading-tight ${reached ? 'text-ink' : 'text-muted'}`}>
+                  <p className="text-[11px] font-semibold text-muted">{checkpoint} activities</p>
+                  <p className={`mt-0.5 text-[12px] font-bold leading-tight ${reached ? 'text-ink' : 'text-muted'}`}>
                     {title}
                   </p>
                 </li>
@@ -203,7 +203,7 @@ export default function CharacterJourney({
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
               <Sparkles size={14} aria-hidden />
             </span>
-            <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-muted">
+            <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-muted">
               Each 10 completed activities unlocks a new chapter in your journey.
             </p>
             <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden />
@@ -251,13 +251,13 @@ export default function CharacterJourney({
                 {level}
               </span>
             </div>
-            <p className="mt-5 text-[12px] font-bold uppercase tracking-[.18em] text-amber">
+            <p className="mt-5 text-[13px] font-bold uppercase tracking-[.18em] text-amber">
               Milestone unlocked
             </p>
             <h2 id="milestone-celebration-title" className="mt-1 font-display text-[25px] font-bold leading-tight">
               {currentTitle}
             </h2>
-            <p className="mt-2 text-[14px] leading-relaxed text-muted">
+            <p className="mt-2 text-[15px] leading-relaxed text-muted">
               You’ve completed {level * 10} activities together. Keep showing up, making memories, and see where your journey goes next.
             </p>
             <button

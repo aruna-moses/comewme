@@ -117,14 +117,14 @@ export default function CommunityCheck() {
             <ShieldCheck size={54} strokeWidth={1.5} aria-hidden />
           </span>
           <h1 className="mt-7 font-display text-[24px] font-bold">You&apos;re one of us 🎉</h1>
-          <p className="mt-3 text-[14px] leading-relaxed text-muted">
+          <p className="mt-3 text-[15px] leading-relaxed text-muted">
             3 out of 3. Thanks for looking out for the community. You can now post activities and join people nearby.
           </p>
-          <p role="status" className="mt-6 flex w-full items-center gap-2 rounded-[12px] border border-[#cce4d4] bg-[#eaf6ee] p-3 text-left text-[13px] text-[#26815d]">
+          <p role="status" className="mt-6 flex w-full items-center gap-2 rounded-[12px] border border-[#cce4d4] bg-[#eaf6ee] p-3 text-left text-[14px] text-[#26815d]">
             <CheckCircle2 size={20} className="shrink-0" aria-hidden />
             {session?.user.phone ? 'Phone verified · Community check passed' : 'Community check passed'}
           </p>
-          <p className="mt-6 text-[13px] text-muted">Meet in public. Be kind. Keep your details safe.</p>
+          <p className="mt-6 text-[14px] text-muted">Meet in public. Be kind. Keep your details safe.</p>
         </main>
         <button
           type="button"
@@ -152,7 +152,7 @@ export default function CommunityCheck() {
           </button>
           <h1 className="font-display text-[23px] font-bold">A little care goes far</h1>
         </div>
-        <p className="mt-2 text-[14px] text-muted">Our community check takes less than a minute.</p>
+        <p className="mt-2 text-[15px] text-muted">Our community check takes less than a minute.</p>
         <div className="mt-5 flex gap-1.5" aria-label={`Question ${step + 1} of 3`}>
           {QUESTIONS.map((item, index) => (
             <span
@@ -164,7 +164,7 @@ export default function CommunityCheck() {
       </header>
 
       <main className="mt-6 flex-1">
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-amber">
+        <p className="text-[13px] font-semibold uppercase tracking-wide text-amber">
           Question {step + 1} of {QUESTIONS.length}
         </p>
         <h2 className="mt-3 font-display text-[21px] font-bold leading-snug">{question.prompt}</h2>
@@ -177,7 +177,7 @@ export default function CommunityCheck() {
                 type="button"
                 onClick={() => choose(index)}
                 aria-pressed={active}
-                className={`flex min-h-[52px] w-full items-center gap-3 rounded-[16px] border px-4 py-3 text-left text-[14px] ${
+                className={`flex min-h-[52px] w-full items-center gap-3 rounded-[16px] border px-4 py-3 text-left text-[15px] ${
                   active && index === question.correct
                     ? 'border-amber bg-[#fff4d1] font-semibold text-ink'
                     : 'border-line bg-white text-ink'
@@ -193,12 +193,12 @@ export default function CommunityCheck() {
         </div>
 
         {isCorrect && (
-          <p role="status" className="mt-5 flex items-start gap-2 rounded-[12px] border border-[#cce4d4] bg-[#eaf6ee] p-3 text-[13px] leading-relaxed text-[#26815d]">
+          <p role="status" className="mt-5 flex items-start gap-2 rounded-[12px] border border-[#cce4d4] bg-[#eaf6ee] p-3 text-[14px] leading-relaxed text-[#26815d]">
             <CheckCircle2 size={19} className="shrink-0" aria-hidden />
             {question.reassurance}
           </p>
         )}
-        {error && <p role="alert" className="mt-4 rounded-xl bg-alert/10 p-3 text-[14px] font-medium text-alert">{error}</p>}
+        {error && <p role="alert" className="mt-4 rounded-xl bg-alert/10 p-3 text-[15px] font-medium text-alert">{error}</p>}
       </main>
 
       <footer className="pt-6">
@@ -211,7 +211,7 @@ export default function CommunityCheck() {
           <ArrowRight size={18} aria-hidden />
           {busy ? 'Saving…' : step === QUESTIONS.length - 1 ? 'Complete community check' : 'Next question'}
         </button>
-        <p className="mt-3 text-center text-[13px] text-muted">Complete all 3 questions before posting or joining.</p>
+        <p className="mt-3 text-center text-[14px] text-muted">Complete all 3 questions before posting or joining.</p>
       </footer>
     </div>
   )

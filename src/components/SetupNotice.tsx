@@ -39,7 +39,7 @@ export default function SetupNotice() {
         <h1 className="font-display text-[26px] font-bold leading-tight">
           Almost there
         </h1>
-        <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
+        <p className="mt-1.5 text-[15px] leading-relaxed text-muted">
           The app is built and running. It just has no database to talk to yet.
         </p>
 
@@ -47,28 +47,28 @@ export default function SetupNotice() {
           {STEPS.map((s) => (
             <div key={s.n} className="card flex gap-3 p-4">
               <span
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[14px] font-bold text-[#0B0B0F]"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[15px] font-bold text-[#0B0B0F]"
                 style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)' }}
               >
                 {s.n}
               </span>
               <div>
-                <p className="text-[14px] font-bold">{s.title}</p>
-                <p className="mt-0.5 text-[14px] leading-relaxed text-muted">{s.body}</p>
+                <p className="text-[15px] font-bold">{s.title}</p>
+                <p className="mt-0.5 text-[15px] leading-relaxed text-muted">{s.body}</p>
               </div>
             </div>
           ))}
         </div>
 
         <div className="card mt-4 border-alert/20 bg-alert/5 p-4">
-          <p className="text-[14px] font-semibold text-alert">One warning</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-ink/75">
+          <p className="text-[15px] font-semibold text-alert">One warning</p>
+          <p className="mt-1 text-[14px] leading-relaxed text-ink/75">
             Use the <span className="font-semibold">anon</span> key here, never the service role
             key. The service role key ignores every security rule in the database.
           </p>
         </div>
 
-        <p className="mt-6 text-center text-[12px] text-muted">
+        <p className="mt-6 text-center text-[13px] text-muted">
           Details in README.md · schema in supabase/schema.sql
         </p>
       </div>

@@ -231,7 +231,7 @@ export default function Discover() {
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[12px] font-bold tracking-[0.18em] text-amber">COME W' ME</p>
+            <p className="text-[13px] font-bold tracking-[0.18em] text-amber">COME W' ME</p>
               <h1 className="mt-1 font-display text-[24px] font-bold leading-tight tracking-tight">
                 Find your people.
               </h1>
@@ -244,7 +244,7 @@ export default function Discover() {
               </Link>
             </div>
           ) : (
-            <Link to="/login" className="text-[14px] font-semibold text-amber">Sign in</Link>
+            <Link to="/login" className="text-[15px] font-semibold text-amber">Sign in</Link>
           )}
         </div>
 
@@ -256,7 +256,7 @@ export default function Discover() {
               placeholder="Search activities, areas..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="min-h-[48px] w-full border-0 bg-transparent text-[14px] text-ink outline-none placeholder:text-[#98a0ae]"
+              className="min-h-[48px] w-full border-0 bg-transparent text-[15px] text-ink outline-none placeholder:text-[#98a0ae]"
               aria-label="Search activities and areas"
             />
           </div>
@@ -278,7 +278,7 @@ export default function Discover() {
               id="discover-area"
               value={area}
               onChange={(e) => setArea(e.target.value)}
-              className="field py-2.5 text-[14px]"
+              className="field py-2.5 text-[15px]"
             >
               <option value="all">All areas in Lagos</option>
               {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -290,7 +290,7 @@ export default function Discover() {
       {!hideSafetyTip && (
         <div className="mx-5 mt-3 flex items-start gap-2.5 rounded-[13px] border border-[#edd996] bg-[#fff4d1] p-3 text-[#7a622f]">
           <ShieldCheck size={20} className="mt-0.5 shrink-0 text-amber" aria-hidden />
-          <p className="flex-1 text-[13px] leading-[1.45]">
+          <p className="flex-1 text-[14px] leading-[1.45]">
             Meet in public, keep personal details private, and check each poster&apos;s reputation before you join.
           </p>
           <button
@@ -316,12 +316,12 @@ export default function Discover() {
           <div className="flex items-start gap-2.5">
             <Bell size={20} className="mt-0.5 shrink-0 text-amber" aria-hidden />
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-bold leading-snug text-ink">
+              <p className="text-[14px] font-bold leading-snug text-ink">
                 {pushStatus === 'needs-install'
                   ? 'Install Come w\' me to your home screen to get pop-ups'
                   : 'Never miss a ping'}
               </p>
-              <p className="mt-0.5 text-[13px] leading-[1.45] text-ink/75">
+              <p className="mt-0.5 text-[14px] leading-[1.45] text-ink/75">
                 {pushStatus === 'needs-install'
                   ? 'On your iPhone or iPad, tap the Share icon → Add to Home Screen → open it from there.'
                   : 'Turn on push notifications — chat messages, join requests and activity reminders reach you even when the app is closed.'}
@@ -332,14 +332,14 @@ export default function Discover() {
                     type="button"
                     onClick={() => void enablePush()}
                     disabled={pushBusy}
-                    className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full bg-sun px-4 text-[13px] font-bold text-[#0B0B0F] transition enabled:hover:brightness-105 disabled:opacity-60"
+                    className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full bg-sun px-4 text-[14px] font-bold text-[#0B0B0F] transition enabled:hover:brightness-105 disabled:opacity-60"
                   >
                     {pushBusy ? 'Enabling…' : 'Enable push'}
                   </button>
                 )}
                 <button
                   type="button"
-                  className="inline-flex min-h-9 items-center justify-center rounded-full px-3 text-[13px] font-semibold text-muted transition hover:text-ink"
+                  className="inline-flex min-h-9 items-center justify-center rounded-full px-3 text-[14px] font-semibold text-muted transition hover:text-ink"
                   onClick={() => {
                     setHidePushPrompt(true)
                     try {
@@ -386,13 +386,13 @@ export default function Discover() {
       </div>
 
       <div className="mb-3 mt-4 flex items-center justify-between px-5">
-        <h2 className="text-[14px] font-bold">Around Lagos</h2>
-        <span className="text-[13px] text-muted">Newest first</span>
+        <h2 className="text-[15px] font-bold">Around Lagos</h2>
+        <span className="text-[14px] text-muted">Newest first</span>
       </div>
 
       {/* Day-before reminders stay visible for every activity happening tomorrow. */}
       {session && upcomingError && (
-        <p role="status" className="mx-4 mt-4 rounded-xl border border-[#edd996] bg-[#fff4d1] p-3 text-[13px] leading-relaxed text-[#7a622f]">
+        <p role="status" className="mx-4 mt-4 rounded-xl border border-[#edd996] bg-[#fff4d1] p-3 text-[14px] leading-relaxed text-[#7a622f]">
           Tomorrow&apos;s activity reminders could not be refreshed. {upcomingError}
         </p>
       )}
@@ -400,7 +400,7 @@ export default function Discover() {
         <section className="activity-reminder mx-4 mt-4 rounded-card border border-amber/30 bg-sun/15 p-4" aria-label="Activities happening tomorrow">
           <div className="mb-2 flex items-center gap-2">
             <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber motion-reduce:animate-none" />
-            <h2 className="text-[14px] font-bold text-ink">
+            <h2 className="text-[15px] font-bold text-ink">
               {upcoming.length === 1 ? 'A reminder for tomorrow' : `${upcoming.length} activities tomorrow`}
             </h2>
           </div>
@@ -413,8 +413,8 @@ export default function Discover() {
                 aria-label={`View upcoming activity ${task.title} in Activities`}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-semibold text-ink">{task.title}</p>
-                  <p className="mt-0.5 truncate text-[13px] text-muted">
+                  <p className="truncate text-[15px] font-semibold text-ink">{task.title}</p>
+                  <p className="mt-0.5 truncate text-[14px] text-muted">
                     {formatDateTime(task.date_time)}
                   </p>
                 </div>
@@ -438,7 +438,7 @@ export default function Discover() {
         {!loading && error && (
           <div className="card p-5 text-center">
             <p className="text-sm font-semibold text-alert">Something went wrong</p>
-            <p className="mt-1 text-[14px] text-muted">{error}</p>
+            <p className="mt-1 text-[15px] text-muted">{error}</p>
             <button className="btn-ghost btn-sm mt-4" onClick={() => load(0)}>
               Try again
             </button>
@@ -470,7 +470,7 @@ export default function Discover() {
         )}
 
         {!loading && !error && tasks.length > 0 && !hasMore && (
-          <p className="py-4 text-center text-[13px] text-muted">That's everything for now.</p>
+          <p className="py-4 text-center text-[14px] text-muted">That's everything for now.</p>
         )}
       </div>
 

@@ -369,17 +369,17 @@ export default function TaskDetail() {
         {happeningToday && (
           <div className="mb-3 flex items-center gap-2 rounded-2xl border border-amber/40 bg-amber/15 px-3 py-2 shadow-[0_8px_22px_rgba(247,162,51,0.25)]">
             <span className="flex h-3 w-3 shrink-0 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full bg-amber" aria-hidden />
-            <span className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-amber">Happening today</span>
-            <span className="ml-auto text-[12px] font-bold text-ink/80">{formatDateTime(task.date_time)}</span>
+            <span className="text-[13px] font-extrabold uppercase tracking-[0.16em] text-amber">Happening today</span>
+            <span className="ml-auto text-[13px] font-bold text-ink/80">{formatDateTime(task.date_time)}</span>
           </div>
         )}
         <h1 className="font-display text-[23px] font-bold leading-tight">{task.title}</h1>
-        <p className="mt-1.5 text-[14px] font-bold text-ink">
+        <p className="mt-1.5 text-[15px] font-bold text-ink">
           {task.area} · {formatDateTime(task.date_time)}
         </p>
 
         {task.description && (
-          <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-ink/85">{task.description}</p>
+          <p className="mt-4 whitespace-pre-line text-[16px] leading-relaxed text-ink/85">{task.description}</p>
         )}
 
         {/* host */}
@@ -387,13 +387,13 @@ export default function TaskDetail() {
           <Avatar src={task.host_avatar_url} name={hostDisplayName} size={48} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-muted">Posted by</p>
+              <p className="text-[13px] font-semibold uppercase tracking-wide text-muted">Posted by</p>
               <p className="truncate font-semibold">{hostDisplayName}</p>
               <VerifiedBadge status={hostProfile?.verification_status} />
             </div>
             <div className="mt-1 flex items-center gap-2">
               <TrustPill level={trustLevel(hostProfile?.tasks_completed ?? 0)} />
-              <span className="text-[13px] font-semibold text-ink/80">{hostProfile?.tasks_completed ?? 0} completed</span>
+              <span className="text-[14px] font-semibold text-ink/80">{hostProfile?.tasks_completed ?? 0} completed</span>
             </div>
           </div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden className="text-muted">
@@ -403,9 +403,9 @@ export default function TaskDetail() {
 
         {/* meeting point */}
         <div className="card mt-3 p-4">
-          <p className="text-[12px] font-bold uppercase tracking-wide text-muted">Meeting point</p>
-          <p className="mt-1 text-[15px] font-semibold">{task.meeting_point}</p>
-          <p className="mt-2 text-[13px] leading-relaxed text-muted">
+          <p className="text-[13px] font-bold uppercase tracking-wide text-muted">Meeting point</p>
+          <p className="mt-1 text-[16px] font-semibold">{task.meeting_point}</p>
+          <p className="mt-2 text-[14px] leading-relaxed text-muted">
             Only share personal details with people you've met. Keep the first meet in a public place.
           </p>
         </div>
@@ -413,8 +413,8 @@ export default function TaskDetail() {
         {/* spots */}
         <div className="card mt-3 p-4">
           <div className="flex items-center justify-between">
-            <p className="text-[14px] font-bold text-ink">{isFull ? 'This one is full' : `${spotsLeft} spot${spotsLeft === 1 ? '' : 's'} left`}</p>
-            <p className="text-[13px] font-bold text-ink/80">{task.spots_filled} of {task.spots_needed}</p>
+            <p className="text-[15px] font-bold text-ink">{isFull ? 'This one is full' : `${spotsLeft} spot${spotsLeft === 1 ? '' : 's'} left`}</p>
+            <p className="text-[14px] font-bold text-ink/80">{task.spots_filled} of {task.spots_needed}</p>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-line">
             <div className="h-full rounded-full transition-all bg-amber" style={{ width: `${Math.min(100, (task.spots_filled / task.spots_needed) * 100)}%` }} />
@@ -434,12 +434,12 @@ export default function TaskDetail() {
                     <Avatar key={p.id} src={p.requester_avatar_url} name={p.requester_name} size={30} className="ring-2 ring-white" />
                   ))}
                   {participants.length > 5 && (
-                    <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-line text-[11px] font-bold text-ink ring-2 ring-white">
+                    <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-line text-[12px] font-bold text-ink ring-2 ring-white">
                       +{participants.length - 5}
                     </span>
                   )}
                 </div>
-                <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-ink/80">
+                <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink/80">
                   {participants.length} going{' '}
                   <span aria-hidden>·</span>{' '}
                   <span className="text-amber">{membersOpen ? 'Hide member profiles' : 'View all member profiles'}</span>
@@ -452,10 +452,10 @@ export default function TaskDetail() {
                     <Link to={`/profile/${task.host_id}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition hover:bg-canvas">
                       <Avatar src={task.host_avatar_url} name={hostDisplayName} size={34} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] font-semibold text-ink">
+                        <span className="block truncate text-[14px] font-semibold text-ink">
                           {hostDisplayName}{task.host_id === profile?.id ? ' (You)' : ''}
                         </span>
-                        <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-amber">
+                        <span className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-amber">
                           Host
                           {hostProfile?.verification_status === 'verified' && <VerifiedBadge status="verified" size={11} />}
                         </span>
@@ -468,10 +468,10 @@ export default function TaskDetail() {
                       <Link to={`/profile/${p.requester_id}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition hover:bg-canvas">
                         <Avatar src={p.requester_avatar_url} name={p.requester_name} size={34} />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-semibold text-ink">
+                          <span className="block truncate text-[14px] font-semibold text-ink">
                             {p.requester_id === profile?.id ? 'You' : p.requester_name}
                           </span>
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Going</span>
+                          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Going</span>
                         </span>
                         <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden />
                       </Link>
@@ -516,14 +516,14 @@ export default function TaskDetail() {
           {session && !isHost && myRequest?.status === 'pending' && <button className="btn-ghost w-full" disabled>Request sent — waiting for the host</button>}
           {session && !isHost && myRequest?.status === 'waitlisted' && (
             <div className="rounded-card border border-[#4273a8]/20 bg-[#eef4fb] p-4 text-center">
-              <p className="text-[14px] font-bold text-[#4273a8]">You're on the waitlist</p>
-              <p className="mt-0.5 text-[14px] text-ink/70">The host will review your request if a spot opens.</p>
+              <p className="text-[15px] font-bold text-[#4273a8]">You're on the waitlist</p>
+              <p className="mt-0.5 text-[15px] text-ink/70">The host will review your request if a spot opens.</p>
             </div>
           )}
           {session && !isHost && isAccepted && (
             <div className="rounded-card border border-verified/25 bg-verified/10 p-4 text-center">
-              <p className="text-[15px] font-bold text-verified">You're in</p>
-              <p className="mt-0.5 text-[14px] text-ink/70">Meet at {task.meeting_point}</p>
+              <p className="text-[16px] font-bold text-verified">You're in</p>
+              <p className="mt-0.5 text-[15px] text-ink/70">Meet at {task.meeting_point}</p>
               <button
                 type="button"
                 className="btn-ghost btn-sm mt-3"
@@ -536,8 +536,8 @@ export default function TaskDetail() {
           )}
           {session && !isHost && myRequest?.status === 'declined' && (
             <div className="rounded-card border border-line bg-white p-4 text-center">
-              <p className="text-[14px] font-semibold">This one didn't work out</p>
-              <p className="mt-0.5 text-[14px] text-muted">The host chose another applicant. You can try again if the activity is still open.</p>
+              <p className="text-[15px] font-semibold">This one didn't work out</p>
+              <p className="mt-0.5 text-[15px] text-muted">The host chose another applicant. You can try again if the activity is still open.</p>
             </div>
           )}
         </div>
@@ -545,15 +545,15 @@ export default function TaskDetail() {
         {isHost && requests.some((r) => r.status === 'pending' || r.status === 'waitlisted') && (
           <section className="mt-6">
             <h2 className="mb-1 font-display text-base font-bold">Applicants</h2>
-            <p className="mb-3 text-[13px] text-muted">Review each person, then accept, waitlist, or kindly decline.</p>
+            <p className="mb-3 text-[14px] text-muted">Review each person, then accept, waitlist, or kindly decline.</p>
             {decisionError && (
-              <p role="alert" className="mb-3 flex items-start justify-between gap-3 rounded-xl border border-alert/30 bg-alert/10 p-3 text-[13px] leading-relaxed text-alert">
+              <p role="alert" className="mb-3 flex items-start justify-between gap-3 rounded-xl border border-alert/30 bg-alert/10 p-3 text-[14px] leading-relaxed text-alert">
                 <span>{decisionError}</span>
                 <button type="button" onClick={() => setDecisionError(null)} aria-label="Dismiss" className="shrink-0 font-bold">×</button>
               </p>
             )}
             {spotsLeft === 0 && (
-              <p className="mb-3 rounded-xl border border-[#edd996] bg-[#fff4d1] p-3 text-[13px] leading-relaxed text-[#7a622f]">
+              <p className="mb-3 rounded-xl border border-[#edd996] bg-[#fff4d1] p-3 text-[14px] leading-relaxed text-[#7a622f]">
                 All spots are taken. You can waitlist extra applicants now and move them in later if a spot opens up.
               </p>
             )}
@@ -564,7 +564,7 @@ export default function TaskDetail() {
                     <Avatar src={r.requester_avatar_url} name={r.requester_name} size={38} />
                     <Link to={`/profile/${r.requester_id}`} className="min-w-0 flex-1 truncate font-semibold">{r.requester_name}</Link>
                   </div>
-                  {r.message && <p className="mt-2 rounded-xl bg-canvas p-3 text-[14px] text-ink/80">{r.message}</p>}
+                  {r.message && <p className="mt-2 rounded-xl bg-canvas p-3 text-[15px] text-ink/80">{r.message}</p>}
                   <div className="mt-3 flex gap-2">
                     <button
                       className="btn-primary btn-sm flex-1"
@@ -626,7 +626,7 @@ export default function TaskDetail() {
                 <Avatar src={task.host_avatar_url} name={hostDisplayName} size={34} />
                 <div className="min-w-0">
                   <h2 className="truncate font-display text-base font-bold text-ink">{task.title}</h2>
-                  <p className="text-[12px] font-semibold text-ink/75">{task.spots_filled} of {task.spots_needed} members</p>
+                  <p className="text-[13px] font-semibold text-ink/75">{task.spots_filled} of {task.spots_needed} members</p>
                 </div>
               </div>
               <button
@@ -670,9 +670,9 @@ export default function TaskDetail() {
             <div className="flex items-center gap-3 p-4 rounded-xl bg-canvas border border-line">
               <Avatar src={task.host_avatar_url} name={hostDisplayName} size={40} />
               <div className="min-w-0 flex-1">
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-muted">Posted by</p>
-                <p className="text-[14px] font-semibold text-ink">{hostDisplayName}</p>
-                <p className="text-[12px] text-muted">{categoryLabel(task.category)} · {task.area}</p>
+                <p className="text-[13px] font-semibold uppercase tracking-wide text-muted">Posted by</p>
+                <p className="text-[15px] font-semibold text-ink">{hostDisplayName}</p>
+                <p className="text-[13px] text-muted">{categoryLabel(task.category)} · {task.area}</p>
               </div>
               <button
                 type="button"
@@ -690,7 +690,7 @@ export default function TaskDetail() {
             {/* Host controls — tuck host actions away from the page body */}
             {isHost && (
               <div className="rounded-xl border border-line bg-white p-2">
-                <p className="px-2 pb-1 pt-1 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+                <p className="px-2 pb-1 pt-1 text-[12px] font-bold uppercase tracking-[0.14em] text-muted">
                   Host controls
                 </p>
                 {['open', 'full'].includes(task.status) && (
@@ -702,7 +702,7 @@ export default function TaskDetail() {
                         setDoneConfirmOpen(true)
                       }}
                       disabled={busy}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[14px] font-semibold transition hover:bg-canvas disabled:opacity-50"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[15px] font-semibold transition hover:bg-canvas disabled:opacity-50"
                     >
                       <CheckCircle2 size={17} className="shrink-0 text-verified" aria-hidden />
                       Mark as done
@@ -714,7 +714,7 @@ export default function TaskDetail() {
                         setCancelConfirmOpen(true)
                       }}
                       disabled={busy}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[14px] font-semibold text-alert transition hover:bg-alert/5 disabled:opacity-50"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[15px] font-semibold text-alert transition hover:bg-alert/5 disabled:opacity-50"
                     >
                       <Ban size={17} className="shrink-0" aria-hidden />
                       Cancel activity
@@ -729,7 +729,7 @@ export default function TaskDetail() {
                       void handleReopen()
                     }}
                     disabled={busy}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[14px] font-semibold transition hover:bg-canvas disabled:opacity-50"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[15px] font-semibold transition hover:bg-canvas disabled:opacity-50"
                   >
                     <RotateCcw size={17} className="shrink-0 text-amber" aria-hidden />
                     Reopen activity
@@ -757,7 +757,7 @@ export default function TaskDetail() {
                   setGroupInfoOpen(false)
                   setReportOpen(true)
                 }}
-                className="w-full py-3 text-[13px] font-semibold text-muted underline underline-offset-4 text-left"
+                className="w-full py-3 text-[14px] font-semibold text-muted underline underline-offset-4 text-left"
               >
                 Report this activity
               </button>
@@ -768,7 +768,7 @@ export default function TaskDetail() {
         {/* Cancel confirm dialog */}
         {cancelConfirmOpen && (
           <Sheet open={cancelConfirmOpen} onClose={() => setCancelConfirmOpen(false)} title="Cancel activity?">
-            <p className="text-[14px] text-muted">
+            <p className="text-[15px] text-muted">
               Cancelling will remove this activity from the feed. People who already joined will be notified.
             </p>
             <div className="mt-4 flex gap-3">
@@ -800,11 +800,11 @@ export default function TaskDetail() {
           </Sheet>
         )}
         {/* report */}
-        <button onClick={() => setReportOpen(true)} className="mt-6 w-full py-3 text-[13px] font-semibold text-muted underline underline-offset-4">Report this activity</button>
+        <button onClick={() => setReportOpen(true)} className="mt-6 w-full py-3 text-[14px] font-semibold text-muted underline underline-offset-4">Report this activity</button>
 
         {/* join sheet */}
         <Sheet open={joinOpen} onClose={() => setJoinOpen(false)} title="Ready to join?">
-          <p className="text-[14px] leading-relaxed text-muted">
+          <p className="text-[15px] leading-relaxed text-muted">
             Please only apply if you're sure you can make it. Your spot is confirmed only after the host accepts your request.
           </p>
           <textarea className="field mt-3 min-h-[96px] resize-none" placeholder="I'm free that morning and I live close by…" value={joinMessage} onChange={(e) => setJoinMessage(e.target.value)} maxLength={400} />
@@ -816,14 +816,14 @@ export default function TaskDetail() {
           {reportDone ? (
             <div className="py-4 text-center">
               <p role="status" className="font-display text-lg font-bold">Your report has been sent.</p>
-              <p className="mt-2 text-[14px] leading-relaxed text-muted">It won&apos;t be shared with the person you reported. If you feel unsafe, leave the situation and contact someone you trust.</p>
+              <p className="mt-2 text-[15px] leading-relaxed text-muted">It won&apos;t be shared with the person you reported. If you feel unsafe, leave the situation and contact someone you trust.</p>
             </div>
           ) : (
             <>
               <div className="card rounded-[16px] p-4">
-                <p className="text-[13px] text-muted">Activity</p>
-                <p className="mt-1 text-[14px] font-semibold">{task.title}</p>
-                <p className="mt-2 text-[13px] text-amber">Reporting host: {hostDisplayName}</p>
+                <p className="text-[14px] text-muted">Activity</p>
+                <p className="mt-1 text-[15px] font-semibold">{task.title}</p>
+                <p className="mt-2 text-[14px] text-amber">Reporting host: {hostDisplayName}</p>
               </div>
               <select className="field" value={reportCategory} onChange={(e) => setReportCategory(e.target.value as ReportCategory)}>
                 {REPORT_CATEGORIES.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
@@ -832,7 +832,7 @@ export default function TaskDetail() {
               <input id="report-subject" className="field" placeholder="Meeting details seem unsafe" value={reportSubject} onChange={(e) => setReportSubject(e.target.value)} maxLength={120} />
               <label className="label mt-3" htmlFor="report-details">What happened?</label>
               <textarea id="report-details" className="field min-h-[112px] resize-y" placeholder="Share only what helps us understand the problem." value={reportDetails} onChange={(e) => setReportDetails(e.target.value)} maxLength={3800} />
-              <p className="mt-2 text-[13px] leading-relaxed text-muted">Reports are private. Never include verification codes or private account details.</p>
+              <p className="mt-2 text-[14px] leading-relaxed text-muted">Reports are private. Never include verification codes or private account details.</p>
               <button className="btn-primary mt-3 w-full" disabled={busy || reportSubject.trim().length < 3 || reportDetails.trim().length < 3} onClick={handleReport}>{busy ? 'Sending…' : 'Send report'}</button>
             </>
           )}
@@ -849,9 +849,9 @@ export default function TaskDetail() {
             {rateTargets.map((t) => (
               <div key={t.id} className="flex items-center gap-3 rounded-2xl bg-canvas p-3">
                 <Avatar src={t.avatar} name={t.name} size={34} />
-                <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{t.name}</span>
+                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{t.name}</span>
                 {rated[t.id] ? (
-                  <span className="text-[13px] font-semibold text-verified">Rated</span>
+                  <span className="text-[14px] font-semibold text-verified">Rated</span>
                 ) : (
                   <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((n) => (

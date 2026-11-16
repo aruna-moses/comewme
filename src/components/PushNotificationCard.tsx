@@ -24,19 +24,19 @@ export default function PushNotificationCard() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <p id="push-heading" className="text-[14px] font-semibold">Push notifications</p>
+            <p id="push-heading" className="text-[15px] font-semibold">Push notifications</p>
             {meta && (
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${meta.tone}`}>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${meta.tone}`}>
                 {meta.badge}
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
+          <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
             {meta?.blurb ?? ''}
           </p>
 
           {needsInstall ? (
-            <div className="mt-2 rounded-2xl border border-line bg-canvas p-3 text-[12px] leading-relaxed text-muted">
+            <div className="mt-2 rounded-2xl border border-line bg-canvas p-3 text-[13px] leading-relaxed text-muted">
               <p className="flex items-center gap-1.5 font-bold text-ink">
                 <Smartphone size={13} aria-hidden />
                 On your iPhone or iPad:
@@ -50,7 +50,7 @@ export default function PushNotificationCard() {
             </div>
           ) : null}
 
-          {error && <p role="alert" className="mt-2 text-[12px] font-medium text-alert">{error}</p>}
+          {error && <p role="alert" className="mt-2 text-[13px] font-medium text-alert">{error}</p>}
 
           <div className="mt-2">
             {enabled ? (
@@ -58,7 +58,7 @@ export default function PushNotificationCard() {
                 type="button"
                 onClick={() => void removePush()}
                 disabled={busy}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-[12px] font-semibold text-ink transition hover:border-alert/40 hover:text-alert disabled:opacity-50"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-[13px] font-semibold text-ink transition hover:border-alert/40 hover:text-alert disabled:opacity-50"
                 aria-pressed={true}
               >
                 {busy ? (
@@ -75,7 +75,7 @@ export default function PushNotificationCard() {
                 type="button"
                 onClick={() => void requestPermissionAndRegister()}
                 disabled={busy || needsInstall}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-sun px-3 text-[12px] font-bold text-[#0B0B0F] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-sun px-3 text-[13px] font-bold text-[#0B0B0F] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                 aria-pressed={false}
               >
                 {busy ? (

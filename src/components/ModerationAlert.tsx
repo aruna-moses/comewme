@@ -47,10 +47,10 @@ export default function ModerationAlert() {
       <div className="flex items-start gap-2 rounded-xl bg-[#DC2626] px-3 py-2 text-white shadow-lg">
         <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden />
         <Link to="/admin/moderation" className="min-w-0 flex-1">
-          <p className="text-[13px] font-bold leading-tight">
+          <p className="text-[14px] font-bold leading-tight">
             SOS alert{moderation.sos > 1 ? ` · ${moderation.sos} waiting` : ''}
           </p>
-          <p className="truncate text-[12px] leading-tight text-white/90">
+          <p className="truncate text-[13px] leading-tight text-white/90">
             {who} · {where} · {timeAgo(latest.created_at)}
           </p>
         </Link>

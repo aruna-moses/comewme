@@ -69,7 +69,7 @@ export default function Feedback() {
             {sent ? 'Thanks for your feedback' : 'Feedback & complaints'}
           </h1>
         </div>
-        <p className="mt-2 text-[14px] leading-relaxed text-muted">
+        <p className="mt-2 text-[15px] leading-relaxed text-muted">
           Tell us how we can improve or report a problem. We&apos;re listening.
         </p>
       </header>
@@ -78,14 +78,14 @@ export default function Feedback() {
         <div className="mx-5 mt-5 flex-1">
           <div className="flex items-start gap-2.5 rounded-[13px] border border-[#cce4d4] bg-[#eaf6ee] p-3 text-[#26815d]">
             <CheckCircle2 size={20} className="mt-0.5 shrink-0" aria-hidden />
-            <p className="text-[13px] leading-relaxed">
+            <p className="text-[14px] leading-relaxed">
               Your feedback is sent. Thank you for helping make Come w&apos; me better.
             </p>
           </div>
           <div className="card mt-5 rounded-[18px] p-4">
-            <p className="text-[13px] text-muted">Your subject</p>
-            <p className="mt-2 text-[14px] font-semibold">{subject}</p>
-            <p className="mt-3 text-[14px] text-muted">Our team will review your message.</p>
+            <p className="text-[14px] text-muted">Your subject</p>
+            <p className="mt-2 text-[15px] font-semibold">{subject}</p>
+            <p className="mt-3 text-[15px] text-muted">Our team will review your message.</p>
           </div>
         </div>
       ) : (
@@ -137,7 +137,7 @@ export default function Feedback() {
                 required
               />
             </div>
-            <p className="text-[13px] leading-relaxed text-muted">
+            <p className="text-[14px] leading-relaxed text-muted">
               Please don&apos;t include passwords, verification codes or anyone else&apos;s private details.
             </p>
           </div>

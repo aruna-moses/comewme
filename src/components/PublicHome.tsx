@@ -40,7 +40,7 @@ export default function PublicHome() {
         <div className="mx-auto flex h-14 max-w-[480px] items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <img src="/logo.png" alt="Come w' me logo" className="h-8 w-8 rounded-[10px] object-cover" />
-            <span className="font-display text-[16px] font-bold leading-none tracking-tight text-ink">COME W&apos; ME</span>
+            <span className="font-display text-[17px] font-bold leading-none tracking-tight text-ink">COME W&apos; ME</span>
           </Link>
           <div className="flex items-center gap-2">
             <Link to="/login" className="btn-primary btn-sm">
@@ -58,23 +58,23 @@ export default function PublicHome() {
         <h1 className="font-display text-[38px] font-bold leading-[1.02] tracking-tight text-ink">
           Find your people.
         </h1>
-        <p className="mt-2 text-[14px] leading-relaxed text-muted">
+        <p className="mt-2 text-[15px] leading-relaxed text-muted">
           Browse what&apos;s happening around Lagos right now — runs, brunches, jam sessions, pickup games.
           When you&apos;re ready, join free in under a minute.
         </p>
         <div className="mt-4 space-y-2">
           {VALUE_PROPS.map(({ icon: Icon, text }) => (
-            <p key={text} className="flex items-center gap-2 text-[13px] text-ink/80">
+            <p key={text} className="flex items-center gap-2 text-[14px] text-ink/80">
               <Icon size={15} className="text-amber" aria-hidden />
               {text}
             </p>
           ))}
         </div>
-        <Link to="/login" className="btn-primary mt-5 flex w-full items-center justify-center gap-1.5 rounded-[16px] py-3.5 text-[15px]">
+        <Link to="/login" className="btn-primary mt-5 flex w-full items-center justify-center gap-1.5 rounded-[16px] py-3.5 text-[16px]">
           Sign up free
           <ArrowRight size={17} aria-hidden />
         </Link>
-        <p className="mt-2 text-center text-[12px] text-muted">
+        <p className="mt-2 text-center text-[13px] text-muted">
           Already on board? Just <Link to="/login" className="font-semibold text-ink underline underline-offset-2">log in</Link>.
         </p>
       </section>
@@ -82,8 +82,8 @@ export default function PublicHome() {
       {/* Live feed preview */}
       <section className="mx-auto max-w-[480px] px-4 pb-10">
         <div className="mb-2 flex items-center justify-between px-1">
-          <h2 className="text-[14px] font-bold">Around Lagos</h2>
-          <span className="text-[12px] text-muted">A preview — log in to see everything</span>
+          <h2 className="text-[15px] font-bold">Around Lagos</h2>
+          <span className="text-[13px] text-muted">A preview — log in to see everything</span>
         </div>
 
         {loading ? (
@@ -96,7 +96,7 @@ export default function PublicHome() {
               <TaskCard key={task.id} task={task} verified={verifiedMap[task.host_id] === 'verified'} />
             ))}
             {tasks.length === 0 && (
-              <p className="py-6 text-center text-[14px] text-muted">
+              <p className="py-6 text-center text-[15px] text-muted">
                 Nothing in the feed right now — it fills up fast. Log in to catch the next one.
               </p>
             )}
@@ -112,11 +112,11 @@ export default function PublicHome() {
       {/* Footer trust line */}
       <footer className="border-t border-line bg-white px-5 py-5">
         <div className="mx-auto flex max-w-[480px] items-center justify-between gap-3">
-          <p className="text-[12px] leading-relaxed text-muted">
+          <p className="text-[13px] leading-relaxed text-muted">
             COME W&apos; ME · Lagos<br />
             Meet in public. Check each poster&apos;s reputation. Stay safe.
           </p>
-          <Link to="/login" className="shrink-0 rounded-full bg-sun/20 px-3 py-1.5 text-[12px] font-bold text-amber">
+          <Link to="/login" className="shrink-0 rounded-full bg-sun/20 px-3 py-1.5 text-[13px] font-bold text-amber">
             Lagosians onboard now
           </Link>
         </div>
