@@ -3,13 +3,11 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Camera, UserRound, Check, AlertCircle, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { isUsernameTaken } from '../lib/api'
+import { isUsernameTaken, updateProfile } from '../lib/api'
 import { AREAS, CATEGORIES } from '../types'
-import { PERSONAS } from '../components/PersonalitySelector'
-import { personaImageSrc } from '../lib/personas'
 import type { Category, Profile } from '../types'
 
-const STEPS = ['Name', 'Area', 'Interests', 'Vibe', 'Rules'] as const
+const STEPS = ['Name', 'Area', 'Interests', 'Gender', 'Rules'] as const
 const VIBE_STEP_INDEX = 3
 
 export default function Onboarding() {
@@ -356,38 +354,37 @@ export default function Onboarding() {
 
         {step === VIBE_STEP_INDEX && (
           <>
-            <h1 className="font-display text-[26px] font-bold leading-tight">Who is your character?</h1>
+            <h1 className="font-display text-[26px] font-bold leading-tight">Are you a man or a woman?</h1>
             <p className="mt-1.5 text-[15px] text-muted">
-              No pressure - everyone starts with a default character that fits how they show up. You can always change characters later from your profile.
+              We use this to set your first character. Everyone starts with a default — Maya for women, Burna for
+              men — and you can switch any time later from your profile.
             </p>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
               {(['female', 'male'] as const).map((option) => {
-                const persona = PERSONAS.find((candidate) => candidate.gender === option)
-                if (!persona) return null
                 const selected = characterGender === option
+                const isFemale = option === 'female'
                 return (
                   <button
                     key={option}
                     type="button"
                     onClick={() => setCharacterGender(option)}
                     aria-pressed={selected}
-                    className={`overflow-hidden rounded-[18px] border text-left transition ${
-                      selected ? 'border-amber ring-2 ring-sun/30' : 'border-line bg-white hover:border-amber/60'
+                    className={`flex min-h-[132px] flex-col items-center justify-center gap-2 rounded-[20px] border p-4 text-center transition ${
+                      selected ? 'border-amber bg-sun/15 ring-2 ring-sun/30' : 'border-line bg-white hover:border-amber/60'
                     }`}
                   >
-                    <span className="relative block h-[110px] items-end justify-center overflow-hidden bg-canvas">
-                      <img
-                        src={personaImageSrc(persona.id)}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className="h-full w-full object-contain object-bottom"
-                      />
+                    <span
+                      aria-hidden
+                      className={`flex h-14 w-14 items-center justify-center rounded-full text-[32px] font-bold leading-none ${
+                        selected ? 'bg-sun/25 text-amber' : 'bg-canvas text-muted'
+                      }`}
+                    >
+                      {isFemale ? '\u2640' : '\u2642'}
                     </span>
-                    <span className="block p-2.5">
-                      <span className="block text-[15px] font-bold text-ink">{persona.name}</span>
-                      <span className="mt-0.5 block text-[12px] leading-relaxed text-muted">{persona.personality}</span>
+                    <span className="text-[17px] font-bold capitalize text-ink">{option}</span>
+                    <span className="text-[13px] text-muted">
+                      Starts as <span className="font-semibold text-amber">{isFemale ? 'Maya' : 'Burna'}</span>
                     </span>
                   </button>
                 )

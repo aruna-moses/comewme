@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { ChevronRight, Sparkles, X } from 'lucide-react'
+import { ChevronRight, Sparkles, Users, X } from 'lucide-react'
 import { MILESTONES } from '../lib/journey'
 import { personaDisplayName, personaImageSrc } from '../lib/personas'
 import type { Profile } from '../types'
@@ -8,9 +8,11 @@ import type { Profile } from '../types'
 export default function CharacterJourney({
   profile,
   isOwner,
+  onBrowseCharacters,
 }: {
   profile: Profile
   isOwner: boolean
+  onBrowseCharacters?: () => void
 }) {
   const persona = profile.character_persona
   const completed = Math.max(0, profile.tasks_completed)
@@ -208,6 +210,25 @@ export default function CharacterJourney({
             </p>
             <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden />
           </div>
+
+          {isOwner && onBrowseCharacters && (
+            <button
+              type="button"
+              onClick={onBrowseCharacters}
+              className="mt-2 flex w-full items-center gap-2.5 rounded-[13px] border border-line bg-white px-3 py-2.5 text-left transition hover:border-amber/60 active:scale-[0.99]"
+            >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-canvas">
+                <Users size={14} aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-semibold text-ink">Browse characters</span>
+                <span className="mt-0.5 block text-[12px] text-muted">
+                  You are <span className="font-semibold text-ink">{personaName}</span> — pick someone else if you like
+                </span>
+              </span>
+              <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden />
+            </button>
+          )}
         </div>
       </section>
 

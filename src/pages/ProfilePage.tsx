@@ -129,6 +129,15 @@ export default function ProfilePage() {
   const [growthOpen, setGrowthOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
 
+  // People with no character yet land straight on the chooser — one tap to start.
+  // Deliberately keyed on the persona itself, not the profile object, so it only
+  // fires when it is null (fresh sign-up / never chose) rather than every edit.
+  useEffect(() => {
+    if (profile === null) return
+    if (profile.character_persona == null) setGrowthOpen(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.character_persona])
+
   useEffect(() => {
     let alive = true
     let receivedRealtimeProfile = false
@@ -318,36 +327,47 @@ export default function ProfilePage() {
         </div>
 
         {isMe ? (
-          <div className="card mt-3 overflow-hidden">
-            <button
-              type="button"
-              className="flex w-full items-center justify-between gap-3 p-4 text-left"
-              onClick={() => setGrowthOpen((v) => !v)}
-              aria-expanded={growthOpen}
-              aria-controls="growth-panel"
-            >
-              <div>
-                <p className="text-[15px] font-semibold">Your growth journey</p>
-                <p className="mt-0.5 text-[13px] text-muted">Personality &amp; chapters — tap to {growthOpen ? 'hide' : 'show'}</p>
-              </div>
-              <ChevronDown size={18} className={`shrink-0 transition-transform duration-200 ${growthOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {growthOpen && (
-              <div id="growth-panel" className="border-t border-line p-3">
-                <PersonalitySelector
-                  profile={profile}
-                  isOwner
-                  onProfileChange={setProfile}
-                />
-                {profile.character_persona && (
-                  <CharacterJourney
+          <>
+            {profile.character_persona && (
+              <CharacterJourney
+                profile={profile}
+                isOwner
+                onBrowseCharacters={() => {
+                  setGrowthOpen(true)
+                  window.setTimeout(
+                    () => document.getElementById('growth-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+                    80,
+                  )
+                }}
+              />
+            )}
+            <div className="card mt-3 overflow-hidden">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-3 p-4 text-left"
+                onClick={() => setGrowthOpen((v) => !v)}
+                aria-expanded={growthOpen}
+                aria-controls="growth-panel"
+              >
+                <div>
+                  <p className="text-[15px] font-semibold">Your character</p>
+                  <p className="mt-0.5 text-[13px] text-muted">
+                    Switch to a character that feels more like you — tap to {growthOpen ? 'hide' : 'show'}
+                  </p>
+                </div>
+                <ChevronDown size={18} className={`shrink-0 transition-transform duration-200 ${growthOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {growthOpen && (
+                <div id="growth-panel" className="scroll-mt-16 border-t border-line p-3">
+                  <PersonalitySelector
                     profile={profile}
                     isOwner
+                    onProfileChange={setProfile}
                   />
-                )}
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
+          </>
         ) : (
           <PersonalitySelector
             profile={profile}
