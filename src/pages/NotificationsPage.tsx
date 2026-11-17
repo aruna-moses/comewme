@@ -14,7 +14,7 @@ function dayGroup(iso: string): string {
   const diffDays = Math.round((startOfToday - startOfLocalDay) / 86_400_000)
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
-  return date.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+  return date.toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export default function NotificationsPage() {
@@ -45,39 +45,50 @@ export default function NotificationsPage() {
   }, [notifications])
 
   return (
-    <div className="page-slide-in min-h-screen bg-canvas pb-10">
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
-        <Link to="/" className="-ml-1 inline-flex items-center gap-1.5 text-amber" aria-label="Back to Discover">
-          <ArrowLeft size={20} aria-hidden />
-          <span className="text-[15px] font-semibold">Back</span>
-        </Link>
-        <h1 className="font-display text-[18px] font-bold">Notifications</h1>
-        {unreadNotifications > 0 && (
-          <button
-            type="button"
-            onClick={() => void markAllNotificationsRead()}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-amber/40 bg-sun/20 px-3 py-1.5 text-[13px] font-semibold text-amber"
-          >
-            <CheckCheck size={13} aria-hidden />
-            Mark all read
-          </button>
-        )}
+    <div className="page-slide-in min-h-screen bg-canvas pb-28">
+      {/* Sticky glass header — matches the bottom nav treatment. */}
+      <header className="sticky top-0 z-30 border-b border-line/60 bg-canvas/70 backdrop-blur-2xl saturate-150">
+        <div className="mx-auto flex w-full max-w-[640px] items-center justify-between gap-3 px-5 pt-3">
+          <Link to="/" className="-ml-2 inline-flex items-center p-2" aria-label="Back to Discover">
+            <ArrowLeft size={21} aria-hidden className="text-ink" />
+          </Link>
+          {unreadNotifications > 0 && (
+            <button
+              type="button"
+              onClick={() => void markAllNotificationsRead()}
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-semibold text-amber transition hover:bg-sun/15"
+            >
+              <CheckCheck size={14} aria-hidden />
+              Mark all read
+            </button>
+          )}
+        </div>
+        <h1 className="mx-auto w-full max-w-[640px] px-5 pb-4 pt-1 font-display text-[28px] font-bold leading-tight">
+          Notifications
+        </h1>
       </header>
 
-      <main className="mx-auto max-w-[640px] px-4 pt-4">
+      <main className="mx-auto w-full max-w-[640px] px-5 pt-7">
         {notifications.length === 0 ? (
-          <div className="py-12 text-center">
-            <Sparkles size={32} className="mx-auto text-amber" aria-hidden />
-            <p className="mt-4 font-display text-[18px] font-bold">All caught up</p>
-            <p className="mt-1 text-[15px] text-muted">
-              Nothing new here yet. When someone accepts your request, or we review something you sent, it lands on this page.
+          <div className="flex flex-col items-center py-16 text-center">
+            <span className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-sun/25 text-amber">
+              <Sparkles size={34} aria-hidden />
+            </span>
+            <h2 className="mt-5 font-display text-[22px] font-bold text-ink">All caught up</h2>
+            <p className="mt-2 max-w-xs text-[15px] leading-relaxed text-muted">
+              Nothing new here yet. When someone accepts your request, or we review something you submitted, it lands on this page.
             </p>
+            <Link to="/" className="btn-primary mt-6">
+              Back to Discover
+            </Link>
           </div>
         ) : (
           grouped.map(([day, items]) => (
-            <section key={day} className="mb-5">
-              <p className="mb-2 px-1 text-[13px] font-bold uppercase tracking-[0.14em] text-muted">{day}</p>
-              <div className="space-y-2">
+            <section key={day} className="mb-8">
+              <p className="mb-3 px-2 text-[12px] font-bold uppercase leading-none tracking-[0.18em] text-muted">
+                {day}
+              </p>
+              <div className="space-y-3">
                 {items.map((item) => (
                   <NotificationRow key={item.id} item={item} onMarkRead={(id) => void markNotificationRead(id)} />
                 ))}
@@ -86,6 +97,14 @@ export default function NotificationsPage() {
           ))
         )}
       </main>
+
+      {notifications.length > 0 && (
+        <footer className="mx-auto max-w-[640px] px-5 pb-10 pt-2 text-center">
+          <p className="text-[13px] leading-relaxed text-muted">
+            That&apos;s everything — nothing newer than this.
+          </p>
+        </footer>
+      )}
     </div>
   )
 }
