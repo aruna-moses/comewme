@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { submitAppeal } from '../lib/api'
 import type { Violation, ViolationAppeal } from '../types'
+import { friendlyError } from '../lib/errors'
 
 export default function AppealForm({
   violation,
@@ -24,7 +25,7 @@ export default function AppealForm({
       setReason('')
       onSubmitted()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not submit your appeal.')
+      setError(friendlyError(e, 'Could not submit your appeal.'))
     } finally {
       setBusy(false)
     }

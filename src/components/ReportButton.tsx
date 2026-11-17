@@ -6,6 +6,7 @@ import { reportViolation } from '../lib/api'
 import type { ViolationCategory } from '../types'
 import { VIOLATION_CATEGORIES } from '../types'
 import Sheet from './Sheet'
+import { friendlyError } from '../lib/errors'
 
 export default function ReportButton({
   reportedUserId,
@@ -44,7 +45,7 @@ export default function ReportButton({
       await reportViolation({ reportedUserId, taskId, category, description })
       setSent(true)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not send this report.')
+      setError(friendlyError(e, 'Could not send this report.'))
     } finally {
       setBusy(false)
     }

@@ -3,6 +3,7 @@ import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
 import { Check, Loader2, RotateCcw, X } from 'lucide-react'
 import { AD_SLOT_ASPECT } from '../lib/adSlot'
+import { friendlyError } from '../lib/errors'
 
 type Props = {
   src: string
@@ -62,7 +63,7 @@ export default function AdImageCropper({ src, onCancel, onDone }: Props) {
       const file = await cropToFile(src, area)
       onDone(file)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not crop this picture.')
+      setError(friendlyError(e, 'Could not crop this picture.'))
       setBusy(false)
     }
   }

@@ -6,6 +6,7 @@ import Sheet from '../components/Sheet'
 import { readSavedGoogleEmails, saveGoogleEmail } from '../lib/googleAccounts'
 import { hideGoogleOneTap, showGoogleOneTap } from '../lib/googleOneTap'
 import { supabase } from '../lib/supabase'
+import { friendlyError } from '../lib/errors'
 
 /**
  * Phone verification was pulled until the number flows are re-enabled in
@@ -107,7 +108,7 @@ export default function Login() {
         if (resetError) throw resetError
         setNotice('If an account exists for that email, a reset link is on its way. Check your inbox and spam folder.')
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Could not send the reset link. Try again in a minute.')
+        setError(friendlyError(err, 'Could not send the reset link. Try again in a minute.'))
       } finally {
         setBusy(false)
       }
@@ -133,7 +134,7 @@ export default function Login() {
         }
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong')
+      setError(friendlyError(e, 'Something went wrong'))
     } finally {
       setBusy(false)
     }
@@ -151,7 +152,7 @@ export default function Login() {
     try {
       await signInWithGoogle(returnTo, googleEmail)
     } catch (e) {
-      setGoogleError(e instanceof Error ? e.message : 'Could not sign in with Google.')
+      setGoogleError(friendlyError(e, 'Could not sign in with Google.'))
       setBusy(false)
     }
   }
@@ -185,7 +186,7 @@ export default function Login() {
       await signInWithGoogleCredential(credential)
       navigate(returnTo, { replace: true })
     } catch (e) {
-      setGoogleError(e instanceof Error ? e.message : 'Could not sign in with Google.')
+      setGoogleError(friendlyError(e, 'Could not sign in with Google.'))
       setBusy(false)
     }
   }

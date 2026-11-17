@@ -8,6 +8,7 @@ import { AdFace } from '../components/AdCarousel'
 import { AD_SLOT_ASPECT } from '../lib/adSlot'
 import ConfirmDialog from '../components/ConfirmDialog'
 import Spinner from '../components/Spinner'
+import { friendlyError } from '../lib/errors'
 
 const STATUS_STYLE: Record<Ad['status'], string> = {
   pending: 'bg-sun/20 text-amber',
@@ -41,7 +42,7 @@ export default function AdminAds() {
         return weight(a) - weight(b) || b.created_at.localeCompare(a.created_at)
       }))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load ads.')
+      setError(friendlyError(e, 'Could not load ads.'))
     } finally {
       setLoading(false)
     }
@@ -58,7 +59,7 @@ export default function AdminAds() {
       await reviewAd(ad.id, status, notes[ad.id]?.trim() || null)
       await load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not update this ad.')
+      setError(friendlyError(e, 'Could not update this ad.'))
     } finally {
       setBusy(null)
     }

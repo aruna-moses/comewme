@@ -12,6 +12,7 @@ import InAppToast from './components/InAppToast'
 import WelcomeCelebration from './components/WelcomeCelebration'
 import { unlockAudio } from './lib/sounds'
 import { useForegroundPush } from './hooks/useForegroundPush'
+import { friendlyError } from './lib/errors'
 
 import TaskDetail from './pages/TaskDetail'
 import ChatRoom from './pages/ChatRoom'
@@ -110,7 +111,7 @@ export default function App() {
           onClick={() => {
             setSignOutError(null)
             void signOut().catch((error: unknown) => {
-              setSignOutError(error instanceof Error ? error.message : 'Could not sign out.')
+              setSignOutError(friendlyError(error, 'Could not sign out.'))
             })
           }}
         >

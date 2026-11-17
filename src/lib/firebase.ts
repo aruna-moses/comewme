@@ -1,6 +1,7 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app'
 import { getMessaging, getToken, isSupported, type Messaging } from 'firebase/messaging'
 import { FIREBASE_CONFIG, isFirebaseConfigured } from './firebaseConfig'
+import { friendlyError } from './errors'
 
 export { isFirebaseConfigured }
 
@@ -74,7 +75,7 @@ export async function registerForPush(
       return {
         token: null,
         step: 'permission',
-        error: error instanceof Error ? error.message : 'Permission request timed out',
+        error: friendlyError(error, 'Permission request timed out'),
       }
     }
   }
@@ -98,7 +99,7 @@ export async function registerForPush(
     return {
       token: null,
       step: 'sw-register',
-      error: error instanceof Error ? error.message : 'Service worker registration timed out',
+      error: friendlyError(error, 'Service worker registration timed out'),
     }
   }
 
@@ -110,7 +111,7 @@ export async function registerForPush(
     return {
       token: null,
       step: 'sw-register',
-      error: error instanceof Error ? error.message : 'Service worker did not activate in time',
+      error: friendlyError(error, 'Service worker did not activate in time'),
     }
   }
 
@@ -125,7 +126,7 @@ export async function registerForPush(
     return {
       token: null,
       step: 'token',
-      error: error instanceof Error ? error.message : 'Could not get the push token',
+      error: friendlyError(error, 'Could not get the push token'),
     }
   }
 }

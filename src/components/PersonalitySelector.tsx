@@ -3,6 +3,7 @@ import { Check, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import { updateProfile } from '../lib/api'
 import { personaImageSrc } from '../lib/personas'
 import type { CharacterPersona, Profile } from '../types'
+import { friendlyError } from '../lib/errors'
 
 export type Gender = 'female' | 'male'
 
@@ -148,7 +149,7 @@ export default function PersonalitySelector({
       setSaved(true)
       setChooserOpen(false)
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Could not save your personality.')
+      setSaveError(friendlyError(error, 'Could not save your personality.'))
     } finally {
       setSaving(false)
     }

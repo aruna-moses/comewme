@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, CheckCircle2, Circle, ArrowRight, Footprints, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import { friendlyError } from '../lib/errors'
 
 const QUESTIONS = [
   {
@@ -97,7 +98,7 @@ export default function CommunityCheck() {
       setCompleted(true)
       await refreshProfile()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save your community check.')
+      setError(friendlyError(e, 'Could not save your community check.'))
     } finally {
       setBusy(false)
     }

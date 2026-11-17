@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ImagePlus, LoaderCircle, LockKeyhole, Play, Trash2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import ConfirmDialog from './ConfirmDialog'
+import { friendlyError } from '../lib/errors'
 
 const BUCKET = 'profile-media'
 const MAX_MEDIA = 6
@@ -27,7 +28,7 @@ const ALLOWED_MEDIA_TYPES: Record<string, ProfileMedia['media_type']> = {
 }
 
 function mediaError(error: unknown) {
-  const message = error instanceof Error ? error.message : 'Something went wrong.'
+  const message = friendlyError(error, 'Something went wrong.')
   if (/profile_media|profile-media|schema cache|does not exist/i.test(message)) {
     return 'Public profile media is not set up yet. Run the new profile media migration in Supabase, then refresh.'
   }

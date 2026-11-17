@@ -32,3 +32,18 @@ export function errorMessage(error: unknown, fallback = 'Something went wrong'):
   }
   return fallback
 }
+
+/**
+ * Anything a user sees on screen. Raw engine errors ("Type error: Load failed",
+ * "Failed to fetch", …) are never allowed through — only a network hint or the
+ * caller's own fallback copy. Every user stays shielded from engine noise.
+ */
+export function friendlyError(error: unknown, fallback: string): string {
+  const raw = error instanceof Error ? error.message : String(error ?? '')
+  const lower = raw.toLowerCase()
+  // Network / connectivity problems (Safari "Load failed", Chrome "Failed to fetch", …)
+  if (/load failed|failed to fetch|network|fetch|socket|connection|timeout|err_/.test(lower)) {
+    return 'Connection looks weak. Check your internet and try again.'
+  }
+  return fallback
+}

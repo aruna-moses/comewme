@@ -14,6 +14,7 @@ import { AD_SLOT_ASPECT } from '../lib/adSlot'
 import { AdFace } from '../components/AdCarousel'
 import ConfirmDialog from '../components/ConfirmDialog'
 import Spinner from '../components/Spinner'
+import { friendlyError } from '../lib/errors'
 
 const STATE_STYLE: Record<AdRunState, string> = {
   live: 'bg-verified/15 text-verified',
@@ -38,7 +39,7 @@ export default function MyAds() {
     try {
       setAds(await fetchMyAds(profile.id))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load your ads.')
+      setError(friendlyError(e, 'Could not load your ads.'))
     } finally {
       setLoading(false)
     }
@@ -199,7 +200,7 @@ export default function MyAds() {
             void withdrawAd(target)
               .then(() => load())
               .catch((e: unknown) =>
-                setError(e instanceof Error ? e.message : 'Could not withdraw that ad.'),
+                setError(friendlyError(e, 'Could not withdraw that ad.')),
               )
               .finally(() => setBusy(false))
           }}

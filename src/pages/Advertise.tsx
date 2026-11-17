@@ -20,6 +20,7 @@ import { clearDraftGroup, usePersistedState } from '../lib/drafts'
 import { AdFace } from '../components/AdCarousel'
 import AdImageCropper from '../components/AdImageCropper'
 import DraftNotice from '../components/DraftNotice'
+import { friendlyError } from '../lib/errors'
 
 const BRAND_COLORS = [
   '#FF9F1C', '#FFD93D', '#DC2626', '#16A34A', '#0B0B0F', '#3B82F6',
@@ -190,7 +191,7 @@ export default function AdvertisePage() {
       )
       setDone(true)
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Could not submit your ad. Please try again.')
+      setSubmitError(friendlyError(e, 'Could not submit your ad. Please try again.'))
     } finally {
       setSubmitting(false)
     }

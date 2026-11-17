@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { submitSOS } from '../lib/sos'
+import { friendlyError } from '../lib/errors'
 
 interface Props {
   taskId: string
@@ -59,7 +60,7 @@ export default function SOSConfirmationSheet({
       await submitSOS(taskId, profile, location, mediaFile)
       onSent()
     } catch (e) {
-      setLocationError(e instanceof Error ? e.message : 'Could not send SOS alert.')
+      setLocationError(friendlyError(e, 'Could not send SOS alert.'))
     } finally {
       setSubmitting(false)
     }

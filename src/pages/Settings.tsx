@@ -10,7 +10,7 @@ import Sheet from '../components/Sheet'
 import { updateProfile, deleteOwnAccount } from '../lib/api'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
-import { toError } from '../lib/errors'
+import { toError, friendlyError } from '../lib/errors'
 
 const SUPPORT_LINKS: Array<{ to: string; icon: typeof BookOpen; title: string; note: string }> = [
   { to: '/violations', icon: ShieldCheck, title: 'Your reports & decisions', note: 'Warnings, suspensions, appeals — everything moderation ever did to your account, and the appeal button.' },
@@ -47,7 +47,7 @@ export default function Settings() {
       await updateProfile(profile.id, { avatar_url: data.publicUrl })
       await refreshProfile()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not upload photo')
+      alert(friendlyError(e, 'Could not upload photo'))
     } finally {
       setAvatarBusy(false)
     }
@@ -67,7 +67,7 @@ export default function Settings() {
       }
       window.location.replace('/')
     } catch (e) {
-      setDeleteError(e instanceof Error ? e.message : 'Could not delete your account. Please try again or email comewme.app@gmail.com.')
+      setDeleteError(friendlyError(e, 'Could not delete your account. Please try again or email comewme.app@gmail.com.'))
       setDeleting(false)
     }
   }
@@ -78,7 +78,7 @@ export default function Settings() {
       await signOut()
       window.location.href = '/'
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Could not sign out. Please try again.')
+      alert(friendlyError(error, 'Could not sign out. Please try again.'))
       setSigningOut(false)
       setSignOutOpen(false)
     }

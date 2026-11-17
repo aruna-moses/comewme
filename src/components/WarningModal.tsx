@@ -4,6 +4,7 @@ import type { Violation } from '../types'
 import type { ViolationAppeal } from '../types'
 import { VIOLATION_CATEGORIES } from '../types'
 import AppealForm from './AppealForm'
+import { friendlyError } from '../lib/errors'
 
 export function activeRestriction(violations: Violation[]): Violation | null {
   const active = violations.filter((violation) => {
@@ -59,7 +60,7 @@ export default function WarningModal({
         if (active) setAppeal(appeals.find((item) => item.violation_id === violation.id))
       })
       .catch((e: unknown) => {
-        if (active) setAppealLoadError(e instanceof Error ? e.message : 'Could not load your appeal status.')
+        if (active) setAppealLoadError(friendlyError(e, 'Could not load your appeal status.'))
       })
       .finally(() => {
         if (active) setAppealsLoading(false)
@@ -73,7 +74,7 @@ export default function WarningModal({
     try {
       await onAcknowledge()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save your acknowledgment. Please try again.')
+      setError(friendlyError(e, 'Could not save your acknowledgment. Please try again.'))
     } finally {
       setBusy(false)
     }
@@ -120,7 +121,7 @@ export default function WarningModal({
                 onSubmitted={() => {
                   void getMyViolationAppeals()
                     .then((appeals) => setAppeal(appeals.find((item) => item.violation_id === violation.id)))
-                    .catch((e: unknown) => setAppealLoadError(e instanceof Error ? e.message : 'Could not refresh your appeal status.'))
+                    .catch((e: unknown) => setAppealLoadError(friendlyError(e, 'Could not refresh your appeal status.')))
                 }}
               />
             )}

@@ -8,6 +8,7 @@ import SkeletonCard from '../components/SkeletonCard'
 import TaskCard from '../components/TaskCard'
 import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
 import { loadMyTasksForUser, type MyTasksBundle } from '../lib/myTasksData'
+import { friendlyError } from '../lib/errors'
 
 export default function MyTasks() {
   const { profile } = useAuth()
@@ -56,7 +57,7 @@ export default function MyTasks() {
         setLoadError(null)
       })
       .catch((error: unknown) => {
-        if (alive) setLoadError(error instanceof Error ? error.message : 'Could not load your activities.')
+        if (alive) setLoadError(friendlyError(error, 'Could not load your activities.'))
       })
       .finally(() => {
         if (alive) setLoading(false)

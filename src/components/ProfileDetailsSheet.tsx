@@ -6,7 +6,7 @@ import { AREAS, CATEGORIES } from '../types'
 import type { Category } from '../types'
 import { fetchMyVerification, submitVerification, updateProfile, isUsernameTaken, changeUsername } from '../lib/api'
 import { supabase } from '../lib/supabase'
-import { toError } from '../lib/errors'
+import { toError, friendlyError } from '../lib/errors'
 
 export default function ProfileDetailsSheet({
   open,
@@ -76,7 +76,7 @@ export default function ProfileDetailsSheet({
       await submitVerification(profile.id, file)
       setSubmitted(true)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not submit.'
+      const message = friendlyError(err, 'Could not submit.')
       setVerifyError(/duplicate|unique/i.test(message) ? 'We have one already — we are looking at it.' : message)
     } finally {
       setVerifyBusy(false)
@@ -96,7 +96,7 @@ export default function ProfileDetailsSheet({
       await updateProfile(profile.id, { avatar_url: data.publicUrl })
       await refreshProfile()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not upload photo.'
+      const message = friendlyError(err, 'Could not upload photo.')
       alert(message)
     } finally {
       setAvatarBusy(false)

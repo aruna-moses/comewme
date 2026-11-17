@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { friendlyError } from '../lib/errors'
 
 export default function GuidelinesModal({
   onAccept,
@@ -15,7 +16,7 @@ export default function GuidelinesModal({
     try {
       await onAccept()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save your acceptance. Please try again.')
+      setError(friendlyError(e, 'Could not save your acceptance. Please try again.'))
     } finally {
       setBusy(false)
     }

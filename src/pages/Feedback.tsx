@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { submitReport } from '../lib/api'
 import { clearDraftGroup, usePersistedState } from '../lib/drafts'
 import DraftNotice from '../components/DraftNotice'
+import { friendlyError } from '../lib/errors'
 
 type FeedbackType = 'bug' | 'complaint' | 'suggestion' | 'other'
 
@@ -52,7 +53,7 @@ export default function Feedback() {
       })
       setSent(true)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not send feedback')
+      alert(friendlyError(e, 'Could not send feedback'))
     } finally {
       setBusy(false)
     }

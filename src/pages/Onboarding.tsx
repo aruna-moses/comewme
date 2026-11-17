@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { isUsernameTaken, updateProfile } from '../lib/api'
 import { AREAS, CATEGORIES } from '../types'
 import type { Category, Profile } from '../types'
+import { friendlyError } from '../lib/errors'
 
 const STEPS = ['Name', 'Area', 'Interests', 'Gender', 'Rules'] as const
 const VIBE_STEP_INDEX = 3
@@ -137,7 +138,7 @@ export default function Onboarding() {
       completeOnboarding(data as Profile)
       navigate(`/community-check?returnTo=${encodeURIComponent(returnTo)}`, { replace: true })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save your profile')
+      setError(friendlyError(e, 'Could not save your profile'))
     } finally {
       setBusy(false)
     }

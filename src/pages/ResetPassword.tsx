@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Check, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { friendlyError } from '../lib/errors'
 
 export default function ResetPassword() {
   const navigate = useNavigate()
@@ -47,7 +48,7 @@ export default function ResetPassword() {
       setDone(true)
       window.setTimeout(() => navigate('/', { replace: true }), 1200)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not update your password.')
+      setError(friendlyError(err, 'Could not update your password.'))
     } finally {
       setBusy(false)
     }

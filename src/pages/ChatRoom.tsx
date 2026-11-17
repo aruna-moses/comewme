@@ -44,6 +44,7 @@ import ChatPhotoEditor from '../components/ChatPhotoEditor'
 import ViewOnceCard from '../components/ViewOnceCard'
 import ViewOnceViewer from '../components/ViewOnceViewer'
 import PhotoLightbox from '../components/PhotoLightbox'
+import { friendlyError } from '../lib/errors'
 
 const REACTIONS = ['👍', '❤️', '😂', '😎']
 
@@ -135,7 +136,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
         const groupMembers = await fetchParticipants(currentTask.id)
         if (active) setParticipants(groupMembers)
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : 'Could not open this group chat.')
+        if (active) setError(friendlyError(e, 'Could not open this group chat.'))
       } finally {
         if (active) setLoading(false)
       }
@@ -249,11 +250,11 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             await markChatRead(task.id)
             await refreshNotifications()
           } catch (e) {
-            if (active) setError(e instanceof Error ? e.message : 'Could not update chat read status.')
+            if (active) setError(friendlyError(e, 'Could not update chat read status.'))
           }
         }
       })
-      .catch((e) => { if (active) setError(e instanceof Error ? e.message : 'Could not load messages.') })
+      .catch((e) => { if (active) setError(friendlyError(e, 'Could not load messages.')) })
 
     const unsubscribe = subscribeToMessages(task.id, (message) => {
       if (joinGateRef.current && Date.parse(message.created_at) < joinGateRef.current) return
@@ -280,11 +281,11 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             void markChatRead(task.id)
               .then(refreshNotifications)
               .catch((e: unknown) => {
-                if (active) setError(e instanceof Error ? e.message : 'Could not update chat read status.')
+                if (active) setError(friendlyError(e, 'Could not update chat read status.'))
               })
           }
         })
-        .catch((e) => { if (active) setError(e instanceof Error ? e.message : 'Could not load a chat attachment.') })
+        .catch((e) => { if (active) setError(friendlyError(e, 'Could not load a chat attachment.')) })
     }, (message) => {
       if (!active) return
       setMessages((current) => current.map((item) => item.id === message.id ? message : item))
@@ -304,7 +305,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       void markChatRead(task.id)
         .then(refreshNotifications)
         .catch((e: unknown) => {
-          if (active) setError(e instanceof Error ? e.message : 'Could not update chat read status.')
+          if (active) setError(friendlyError(e, 'Could not update chat read status.'))
         })
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
@@ -397,7 +398,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
         setPinnedMessage(await fetchPinnedMessage(task.id).catch(() => message))
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not update the pin.')
+      setError(friendlyError(err, 'Could not update the pin.'))
     }
   }
   const typingLabel = typingOthers.length === 0
@@ -426,7 +427,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       setReplyTarget(null)
       return true
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not send message.')
+      setError(friendlyError(e, 'Could not send message.'))
       return false
     }
   }, [task, profile, replyTarget])
@@ -457,7 +458,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
         }
       })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not update reaction.')
+      setError(friendlyError(e, 'Could not update reaction.'))
     }
   }, [reactions])
 
@@ -532,7 +533,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       setReplyTarget(null)
     } catch (e) {
       setMessages((current) => current.filter((item) => item.id !== tempId))
-      let message = e instanceof Error ? e.message : 'Could not attach the file.'
+      let message = friendlyError(e, 'Could not attach the file.')
       if (uploadedPath) {
         try {
           await deleteChatMedia(uploadedPath)
@@ -636,8 +637,16 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       setRecordingPaused(false)
       setRecording(true)
       startRecordingTicker()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Microphone access was denied.')
+    } catch (err) {
+      // Show a friendly nudge, never the raw DOMException reason string.
+      const name = err instanceof DOMException ? err.name : ''
+      if (name === 'NotAllowedError' || name === 'SecurityError') {
+        setError('Please allow microphone access to record voice notes.')
+      } else if (name === 'NotFoundError' || name === 'NotReadableError' || name === 'OverconstrainedError') {
+        setError('No microphone available. Check your device and try again.')
+      } else {
+        setError('Voice recording is not available right now. Please try again.')
+      }
     }
   }
 
@@ -920,7 +929,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
         }
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not delete this message.')
+      setError(friendlyError(e, 'Could not delete this message.'))
     }
   }
 
@@ -1437,7 +1446,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                   setRecapPosted(true)
                   setRecapText('')
                 } catch (err) {
-                  setError(err instanceof Error ? err.message : 'Could not save recap.')
+                  setError(friendlyError(err, 'Could not save recap.'))
                 }
               }}
             >
@@ -1466,7 +1475,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
               <p className="text-[12px] font-semibold text-muted">{typingLabel}</p>
             </div>
           )}
-          {error && <p role="alert" className="px-2 pb-2 text-[14px] font-medium text-alert">{error}</p>}
+          {error && <p role="alert" className="px-2 pb-2 text-[13px] font-medium leading-relaxed text-muted">{error}</p>}
           {replyTarget && (
             <div
               className="mb-2 flex items-center gap-2 rounded-xl border-l-2 px-3 py-2"

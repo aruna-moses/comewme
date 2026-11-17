@@ -174,7 +174,7 @@ export default function WelcomeCelebration() {
                 <ArrowRight size={17} aria-hidden />
               </button>
               <button type="button" className="btn-ghost" onClick={handlePickCharacter}>
-                Pick a character that vibes with you
+                Pick your character
               </button>
             </div>
           )}

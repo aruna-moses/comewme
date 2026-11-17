@@ -133,15 +133,11 @@ export default function PostTask() {
       clearDraftGroup(DRAFT)
       navigate(`/task/${task.id}`, { replace: true })
     } catch (e) {
-      const message = e instanceof Error
-        ? e.message
-        : typeof e === 'object' && e !== null && 'message' in e && typeof e.message === 'string'
-          ? e.message
-          : null
+      const raw = e instanceof Error ? e.message : ''
       setError(
-        message?.includes('fill_mode')
+        raw.includes('fill_mode')
           ? 'Activity posting needs a database update. Please apply supabase/migrations/003_fill_mode.sql in your Supabase SQL Editor, then try again.'
-          : message ?? 'Could not post this activity.',
+          : 'Could not post this activity. Check your internet and try again.',
       )
     } finally {
       setBusy(false)

@@ -18,6 +18,7 @@ import ActivityReminderSheet from '../components/ActivityReminderSheet'
 import NotificationBell from '../components/NotificationBell'
 import PublicHome from '../components/PublicHome'
 import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
+import { friendlyError } from '../lib/errors'
 
 const PAGE = 20
 
@@ -110,7 +111,7 @@ export default function Discover() {
         }
         setHasMore(rows.length === PAGE)
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not load activities')
+        setError(friendlyError(e, 'Could not load activities'))
       } finally {
         if (!quiet) {
           setLoading(false)
@@ -188,7 +189,7 @@ export default function Discover() {
           setUpcomingError(null)
         }
       } catch (e) {
-        if (active) setUpcomingError(e instanceof Error ? e.message : 'Could not load tomorrow’s activity reminders.')
+        if (active) setUpcomingError(friendlyError(e, 'Could not load tomorrow’s activity reminders.'))
       }
     }
 

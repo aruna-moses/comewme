@@ -27,6 +27,7 @@ import { TrustPill, VerifiedBadge } from '../components/Badges'
 import TaskCompletionCelebration from '../components/TaskCompletionCelebration'
 import ShareTaskButton from '../components/ShareTaskButton'
 import SOSConfirmationSheet from '../components/SOSConfirmationSheet'
+import { friendlyError } from '../lib/errors'
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>()
@@ -130,7 +131,7 @@ export default function TaskDetail() {
         if (t.host_id === profile.id) setRequests(await fetchJoinRequests(t.id))
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load this activity')
+      setError(friendlyError(e, 'Could not load this activity'))
     } finally {
       if (!quiet) setLoading(false)
     }
@@ -182,7 +183,7 @@ export default function TaskDetail() {
       setJoinMessage('')
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not send request')
+      alert(friendlyError(e, 'Could not send request'))
     } finally {
       setBusy(false)
     }
@@ -198,7 +199,7 @@ export default function TaskDetail() {
       await setJoinStatus(requestId, status)
       await load()
     } catch (e) {
-      setDecisionError(e instanceof Error ? e.message : 'Could not update request')
+      setDecisionError(friendlyError(e, 'Could not update request'))
       void load(true)
     } finally {
       setBusy(false)
@@ -213,7 +214,7 @@ export default function TaskDetail() {
       await withdrawJoin(myRequest.id)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not leave this activity')
+      alert(friendlyError(e, 'Could not leave this activity'))
     } finally {
       setBusy(false)
     }
@@ -236,7 +237,7 @@ export default function TaskDetail() {
       )
       setCompletionOpen(true)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not update')
+      alert(friendlyError(e, 'Could not update'))
     } finally {
       setBusy(false)
     }
@@ -249,7 +250,7 @@ export default function TaskDetail() {
       await reopenTask(task.id, participants.length, task.spots_needed)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not reopen this activity')
+      alert(friendlyError(e, 'Could not reopen this activity'))
     } finally {
       setBusy(false)
     }
@@ -263,7 +264,7 @@ export default function TaskDetail() {
       await cancelTask(task.id)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not cancel')
+      alert(friendlyError(e, 'Could not cancel'))
     } finally {
       setBusy(false)
     }
@@ -282,7 +283,7 @@ export default function TaskDetail() {
       })
       setReportDone(true)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not send report')
+      alert(friendlyError(e, 'Could not send report'))
     } finally {
       setBusy(false)
     }
@@ -302,7 +303,7 @@ export default function TaskDetail() {
       })
       setRated((r) => ({ ...r, [targetId]: true }))
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Could not save rating')
+      alert(friendlyError(e, 'Could not save rating'))
     }
   }
 
@@ -789,7 +790,7 @@ export default function TaskDetail() {
                     await cancelTask(task.id)
                     setBusy(false)
                   } catch (e) {
-                    alert(e instanceof Error ? e.message : 'Could not cancel')
+                    alert(friendlyError(e, 'Could not cancel'))
                     setBusy(false)
                   }
                 }}

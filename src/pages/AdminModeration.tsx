@@ -34,6 +34,7 @@ import { useNotifications } from '../context/NotificationContext'
 import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ReviewDetailSheet from '../components/ReviewDetailSheet'
+import { friendlyError } from '../lib/errors'
 
 const SEVERITY_LABELS: Record<string, string> = {
   warning: 'a warning',
@@ -226,7 +227,7 @@ export default function AdminModeration() {
       // Selection is anchored to the pending list — after a refresh, drop ids that are no longer pending
       setSelectedReports((prev) => new Set(pendingReports.filter((r) => prev.has(r.id)).map((r) => r.id)))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load the moderation queue.')
+      setError(friendlyError(e, 'Could not load the moderation queue.'))
     } finally {
       setLoading(false)
     }
@@ -244,7 +245,7 @@ export default function AdminModeration() {
       await load()
       void refreshBadges()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not review this report.')
+      setError(friendlyError(e, 'Could not review this report.'))
     } finally {
       setBusy(null)
     }
@@ -258,7 +259,7 @@ export default function AdminModeration() {
       await load()
       void refreshBadges()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not dismiss this report.')
+      setError(friendlyError(e, 'Could not dismiss this report.'))
     } finally {
       setBusy(null)
     }
@@ -272,7 +273,7 @@ export default function AdminModeration() {
       await load()
       void refreshBadges()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not review this appeal.')
+      setError(friendlyError(e, 'Could not review this appeal.'))
     } finally {
       setBusy(null)
     }
@@ -306,7 +307,7 @@ export default function AdminModeration() {
       await load()
       void refreshBadges()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not dismiss the selected reports.')
+      setError(friendlyError(e, 'Could not dismiss the selected reports.'))
     } finally {
       setBulkBusy(false)
     }
@@ -340,7 +341,7 @@ export default function AdminModeration() {
       await load()
       void refreshBadges()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not update this SOS alert.')
+      setError(friendlyError(e, 'Could not update this SOS alert.'))
     } finally {
       setBusy(null)
     }
@@ -354,7 +355,7 @@ export default function AdminModeration() {
       await load()
       void refreshBadges()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not update this verification.')
+      setError(friendlyError(e, 'Could not update this verification.'))
     } finally {
       setBusy(null)
     }
@@ -368,7 +369,7 @@ export default function AdminModeration() {
       await load()
       void refreshBadges()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not update this feedback item.')
+      setError(friendlyError(e, 'Could not update this feedback item.'))
     } finally {
       setBusy(null)
     }

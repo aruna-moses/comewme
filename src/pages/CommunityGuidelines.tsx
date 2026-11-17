@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronRight, Search, AlertCircle, Send, Loader2, Check } fr
 import { useAuth } from '../context/AuthContext'
 import { VIOLATION_CATEGORIES } from '../types'
 import { submitReport } from '../lib/api'
+import { friendlyError } from '../lib/errors'
 
 const SECTIONS: Array<{ title: string; body: string | string[] }> = [
   {
@@ -227,7 +228,7 @@ export default function CommunityGuidelines() {
                         setAskDone(true)
                         setAskText('')
                       } catch (err) {
-                        setAskError(err instanceof Error ? err.message : 'Could not send your question.')
+                        setAskError(friendlyError(err, 'Could not send your question.'))
                       } finally {
                         setAskBusy(false)
                       }

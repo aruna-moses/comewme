@@ -410,15 +410,11 @@ export default function ChatList() {
               className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
               style={{ backgroundImage: 'linear-gradient(180deg,#F7A233,#EE7B1E)' }}
             >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" className="text-[#0B0B0F]" aria-hidden>
                 <path
-                  d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"
-                  stroke="#1F2430"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  fillRule="evenodd"
+                  d="M8.8 4h6.4A4.8 4.8 0 0 1 20 8.8v2.4a4.8 4.8 0 0 1-4.8 4.8h-3.4L8.4 19.4v-3.6A4.8 4.8 0 0 1 4 11V8.8A4.8 4.8 0 0 1 8.8 4Z M8.5 11.5a1.15 1.15 0 1 0 2.3 0 1.15 1.15 0 0 0-2.3 0Zm2.65 0a1.15 1.15 0 1 0 2.3 0 1.15 1.15 0 0 0-2.3 0Zm2.65 0a1.15 1.15 0 1 0 2.3 0 1.15 1.15 0 0 0-2.3 0Z"
                 />
-                <polyline points="16 17 21 12 16 7" stroke="#1F2430" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             <h3 className="font-display text-lg font-bold text-ink">No chats yet</h3>

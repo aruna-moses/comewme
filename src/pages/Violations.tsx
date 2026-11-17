@@ -6,6 +6,7 @@ import type { ViolationAppeal } from '../types'
 import { VIOLATION_CATEGORIES } from '../types'
 import AppealForm from '../components/AppealForm'
 import Spinner from '../components/Spinner'
+import { friendlyError } from '../lib/errors'
 
 export default function Violations() {
   const { violations, refreshCompliance } = useAuth()
@@ -18,7 +19,7 @@ export default function Violations() {
     try {
       setAppeals(await getMyViolationAppeals())
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load your appeals.')
+      setError(friendlyError(e, 'Could not load your appeals.'))
     } finally {
       setLoading(false)
     }

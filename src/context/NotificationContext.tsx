@@ -8,6 +8,7 @@ import type { ModerationCounts } from '../lib/moderation'
 import { fetchNotifications, fetchUnreadCount } from '../lib/notifications'
 import type { InAppNotification } from '../lib/notifications'
 import { supabase } from '../lib/supabase'
+import { friendlyError } from '../lib/errors'
 
 interface NotificationState extends NotificationBadgeCounts {
   unreadByTask: Record<string, number>
@@ -74,7 +75,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       setLoadError(null)
     } catch (e) {
       if (requestId === requestSequence.current) {
-        setLoadError(e instanceof Error ? e.message : 'Could not refresh notification counts.')
+        setLoadError(friendlyError(e, 'Could not refresh notification counts.'))
       }
     }
   }, [session?.user.id])
