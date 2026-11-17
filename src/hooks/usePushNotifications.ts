@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { registerForPush, isFirebaseConfigured } from '../lib/firebase'
+import { isFirebaseConfigured } from '../lib/firebaseConfig'
 import { supabase } from '../lib/supabase'
 import { toError } from '../lib/errors'
 
@@ -124,6 +124,7 @@ export function usePushNotifications(): PushNotificationsState {
       // so we ask synchronously here before any awaits.
       const preRequestedPermission =
         'Notification' in window ? await Notification.requestPermission() : undefined
+      const { registerForPush } = await import('../lib/firebase')
       const result = await registerForPush(
         import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined,
         preRequestedPermission,

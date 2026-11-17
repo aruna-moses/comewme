@@ -1,17 +1,13 @@
 import { useEffect } from 'react'
-import { isSupported, onMessage } from 'firebase/messaging'
-import { isFirebaseConfigured, messagingOrNullSafe } from '../lib/firebase'
 
 /**
  * iOS routes foreground web pushes through the page instead of the service
  * worker, so without an onMessage handler they never appear on screen.
- * This mirrors the service-worker banner — same title, body, icon, the same
- * per-chat tag with renotify — so foreground and background behave alike.
- * Muted groups never reach this (send-push suppresses them server-side).
+ * Firebase is code-split — most people never run this block, so the SDK
+ * loads only when push is actually switched on for this device.
  */
 export function useForegroundPush() {
   useEffect(() => {
-    if (!isFirebaseConfigured()) return
     if (typeof window === 'undefined') return
     if (!('Notification' in window) || Notification.permission !== 'granted') return
     try {
@@ -19,13 +15,17 @@ export function useForegroundPush() {
     } catch {
       return // no token stored — nothing to react to
     }
-    const messaging = messagingOrNullSafe()
-    if (!messaging) return
 
     let cancelled = false
     let unsubscribe: (() => void) | undefined
 
     void (async () => {
+      const [{ isSupported, onMessage }, { isFirebaseConfigured, messagingOrNullSafe }] =
+        await Promise.all([import('firebase/messaging'), import('../lib/firebase')])
+      if (!isFirebaseConfigured() || cancelled) return
+      const messaging = messagingOrNullSafe()
+      if (!messaging || cancelled) return
+
       let supported = false
       try {
         supported = await Promise.race([

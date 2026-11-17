@@ -23,7 +23,7 @@ function loadImage(src: string) {
 /** Cut the chosen band out of the original image and hand back a ready-to-upload file. */
 async function cropToFile(src: string, area: Area): Promise<File> {
   const img = await loadImage(src)
-  const scale = Math.min(1, 1600 / area.width)
+  const scale = Math.min(1, 1200 / area.width)
   const width = Math.max(1, Math.round(area.width * scale))
   const height = Math.max(1, Math.round(area.height * scale))
 
@@ -37,7 +37,7 @@ async function cropToFile(src: string, area: Area): Promise<File> {
   ctx.drawImage(img, area.x, area.y, area.width, area.height, 0, 0, width, height)
 
   const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, 'image/jpeg', 0.92),
+    canvas.toBlob(resolve, 'image/jpeg', 0.85),
   )
   if (!blob) throw new Error('Your browser could not crop this picture.')
   return new File([blob], 'ad-picture.jpg', { type: 'image/jpeg' })
