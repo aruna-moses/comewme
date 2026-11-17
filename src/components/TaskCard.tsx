@@ -114,7 +114,7 @@ export default function TaskCard({
   const emoji = categoryEmoji(task.category)
 
   return (
-    <article className={`card relative rounded-[22px] p-3 transition hover:shadow-lift ${happeningToday ? 'ring-2 ring-amber/70 shadow-[0_12px_36px_rgba(247,162,51,0.25)]' : ''}`}>
+    <article className={`card relative rounded-[22px] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift ${happeningToday ? 'ring-2 ring-amber/70 shadow-[0_12px_36px_rgba(247,162,51,0.25)]' : ''}`}>
       {typeof reviewBadge === 'number' && reviewBadge > 0 && (
         <span
           aria-label={`${reviewBadge} pending join ${reviewBadge === 1 ? 'request' : 'requests'} waiting for review`}

@@ -847,7 +847,7 @@ export default function AdminModeration() {
                 ))}
               </div>
               {selectedCount > 0 && (
-                <div className="sticky bottom-[76px] z-20 mt-3 flex items-center justify-between gap-2 rounded-xl border border-alert/30 bg-white/80 p-2 shadow-sm backdrop-blur-xl">
+                <div className="sticky bottom-[92px] z-20 mt-3 flex items-center justify-between gap-2 rounded-xl border border-alert/30 bg-white/80 p-2 shadow-sm backdrop-blur-xl">
                   <p className="pl-1 text-[14px] font-semibold text-ink">{selectedCount} selected</p>
                   <button
                     className="btn-ghost btn-sm text-alert"
