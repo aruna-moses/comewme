@@ -54,7 +54,7 @@ export default function Discover() {
       return false
     }
   })
-  const { status: pushStatus, requestPermissionAndRegister: enablePush, busy: pushBusy } = usePushNotifications()
+  const { status: pushStatus, requestPermissionAndRegister: enablePush, busy: pushBusy, error: pushError } = usePushNotifications()
   const [hidePushPrompt, setHidePushPrompt] = useState(() => {
     try {
       return window.localStorage.getItem('comewme:push-prompt-dismissed') === '1'
@@ -353,6 +353,12 @@ export default function Discover() {
                   Not now
                 </button>
               </div>
+              {pushError && (
+                <p role="status" className="mt-2 flex items-start gap-1.5 rounded-xl border border-[#edd996] bg-[#fff4d1] px-3 py-2 text-[13px] leading-relaxed text-[#7a622f]">
+                  <Bell size={14} className="mt-0.5 shrink-0" aria-hidden />
+                  <span>{pushError}</span>
+                </p>
+              )}
             </div>
           </div>
         </div>

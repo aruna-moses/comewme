@@ -1,7 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { isFirebaseConfigured } from '../lib/firebaseConfig'
 import { supabase } from '../lib/supabase'
-import { toError } from '../lib/errors'
+
+/** The one calm message shown on any failure to turn push on — never raw engine noise. */
+const PUSH_ERROR_COPY =
+  "That didn't work. Check your internet, tap Enable again — and if this keeps happening, close the app and reopen it."
+
+const PUSH_OFF_ERROR_COPY = 'Could not turn off notifications. Please check your connection and try again.'
 
 export type PushStatus =
   /** No Notification API, no service worker, or browser blocks it entirely. */
@@ -134,7 +139,7 @@ export function usePushNotifications(): PushNotificationsState {
         if (result.step === 'unsupported') setStatus('unsupported')
         else if (result.step === 'not-configured') setStatus('not-configured')
         else if (result.error === 'Permission was not granted') setStatus('denied')
-        else setError(result.error ?? 'Could not set up push notifications.')
+        else setError(PUSH_ERROR_COPY)
         setPhase('idle')
         setBusy(false)
         return false
@@ -158,9 +163,9 @@ export function usePushNotifications(): PushNotificationsState {
       setStatus('enabled')
       setBusy(false)
       return true
-    } catch (e) {
+    } catch {
       setPhase('idle')
-      setError(toError(e, 'Could not register for push.').message)
+      setError(PUSH_ERROR_COPY)
       setBusy(false)
       return false
     }
@@ -189,8 +194,8 @@ export function usePushNotifications(): PushNotificationsState {
       setStatus('default')
       setBusy(false)
       return true
-    } catch (e) {
-      setError(toError(e, 'Could not turn off notifications.').message)
+    } catch {
+      setError(PUSH_OFF_ERROR_COPY)
       setBusy(false)
       return false
     }

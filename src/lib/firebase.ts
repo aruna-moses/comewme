@@ -1,7 +1,6 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app'
 import { getMessaging, getToken, isSupported, type Messaging } from 'firebase/messaging'
 import { FIREBASE_CONFIG, isFirebaseConfigured } from './firebaseConfig'
-import { friendlyError } from './errors'
 
 export { isFirebaseConfigured }
 
@@ -31,6 +30,9 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, step: string): Pr
   ])
 }
 
+/** The exact script path push relies on — used to drop stale copies before reinstalling. */
+const PUSH_SW = '/firebase-messaging-sw.js'
+
 export type PushRegisterStep =
   | 'idle'
   | 'not-configured'
@@ -38,6 +40,9 @@ export type PushRegisterStep =
   | 'permission'
   | 'sw-register'
   | 'token'
+
+const FRIENDLY_PUSH_ERROR =
+  'The push service could not reach this phone right now. Please check your connection and try again in a minute.'
 
 /** Full iOS-safe registration flow. Never hangs forever; always settles. */
 export async function registerForPush(
@@ -71,11 +76,11 @@ export async function registerForPush(
   if (preRequestedPermission !== 'granted') {
     try {
       permission = await withTimeout(Notification.requestPermission(), 10000, 'waiting for permission')
-    } catch (error) {
+    } catch {
       return {
         token: null,
         step: 'permission',
-        error: friendlyError(error, 'Permission request timed out'),
+        error: 'Permission was not granted',
       }
     }
   }
@@ -85,48 +90,56 @@ export async function registerForPush(
 
   const messaging = messagingOrNullSafe()
   if (!messaging) {
-    return { token: null, step: 'token', error: 'Firebase messaging could not start' }
+    return { token: null, step: 'token', error: FRIENDLY_PUSH_ERROR }
   }
 
-  let registration: ServiceWorkerRegistration
-  try {
-    registration = await withTimeout(
-      navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' }),
+  const registerFreshWorker = async () => {
+    const registration = await withTimeout(
+      navigator.serviceWorker.register(PUSH_SW, { scope: '/' }),
       15000,
       'registering the push service worker',
     )
-  } catch (error) {
-    return {
-      token: null,
-      step: 'sw-register',
-      error: friendlyError(error, 'Service worker registration timed out'),
-    }
+    // FCM refuses to subscribe until a service worker controls the page.
+    await withTimeout(navigator.serviceWorker.ready, 10000, 'waiting for the service worker to activate')
+    return registration
   }
 
-  // FCM refuses to subscribe until a service worker controls the page —
-  // wait for activation rather than firing getToken() immediately.
+  let registration: ServiceWorkerRegistration | null = null
   try {
-    registration = await withTimeout(navigator.serviceWorker.ready, 10000, 'waiting for the service worker to activate')
-  } catch (error) {
-    return {
-      token: null,
-      step: 'sw-register',
-      error: friendlyError(error, 'Service worker did not activate in time'),
-    }
+    registration = await registerFreshWorker()
+  } catch {
+    return { token: null, step: 'sw-register', error: 'The push service could not start on this phone. Please close the app and try again.' }
   }
 
   try {
     const token = await withTimeout(
       getToken(messaging, { vapidKey, serviceWorkerRegistration: registration }),
       15000,
-      'getting the FCM registration token',
+      'getting the push token',
     )
-    return { token: token || null, step: token ? 'idle' : 'token', error: token ? undefined : 'FCM returned an empty token' }
-  } catch (error) {
-    return {
-      token: null,
-      step: 'token',
-      error: friendlyError(error, 'Could not get the push token'),
+    return token
+      ? { token, step: 'idle' }
+      : { token: null, step: 'token', error: 'The push service could not register this phone. Please close the app and try again.' }
+  } catch {
+    // One silent healing retry: a stale worker pinned in this browser can keep
+    // serving old code — uninstall it, install a fresh one, try once more.
+    try {
+      const existing = await navigator.serviceWorker.getRegistrations()
+      await Promise.all(
+        existing
+          .filter((worker) => worker.active?.scriptURL?.endsWith(PUSH_SW) || worker.installing?.scriptURL?.endsWith(PUSH_SW) || worker.waiting?.scriptURL?.endsWith(PUSH_SW))
+          .map((worker) => worker.unregister().catch(() => undefined)),
+      )
+      registration = await registerFreshWorker()
+      const token = await withTimeout(
+        getToken(messaging, { vapidKey, serviceWorkerRegistration: registration }),
+        15000,
+        'getting the push token',
+      )
+      if (token) return { token, step: 'idle' }
+      return { token: null, step: 'token', error: 'The push service could not register this phone. Please close the app and try again.' }
+    } catch {
+      return { token: null, step: 'token', error: FRIENDLY_PUSH_ERROR }
     }
   }
 }

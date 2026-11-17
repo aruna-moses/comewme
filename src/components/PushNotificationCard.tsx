@@ -4,10 +4,10 @@ import { usePushNotifications } from '../hooks/usePushNotifications'
 const STATUS_META: Record<string, { badge: string; tone: string; blurb: string } | null> = {
   enabled: { badge: 'Enabled', tone: 'bg-verified/15 text-verified', blurb: "You'll get a heads-up even when Come w' me is closed." },
   default: { badge: 'Off', tone: 'bg-line text-muted', blurb: 'Enable pop-ups outside the app — chat messages, join requests, reminders.' },
-  denied: { badge: 'Blocked', tone: 'bg-alert/10 text-alert', blurb: 'Allow notifications in your browser settings, then come back and try again.' },
-  unsupported: { badge: 'Unavailable', tone: 'bg-line text-muted', blurb: "This browser can't push notifications now — in-app alerts still work." },
+  denied: { badge: 'Blocked', tone: 'bg-sun/15 text-amber', blurb: 'In your phone’s Settings go to Notifications → Come w’ me → Allow Notifications. Then come back here and tap Enable.' },
+  unsupported: { badge: 'Unavailable', tone: 'bg-line text-muted', blurb: "This browser can't push notifications right now — but you'll always get in-app alerts here." },
   'needs-install': { badge: 'Install first', tone: 'bg-sun/20 text-amber', blurb: 'iPhone and iPad need the app on your home screen first.' },
-  'not-configured': { badge: 'In setup', tone: 'bg-sun/20 text-amber', blurb: 'The team is wiring up Firebase now — in-app alerts keep working meanwhile.' },
+  'not-configured': { badge: 'In setup', tone: 'bg-sun/20 text-amber', blurb: 'The team is wiring up push now — in-app alerts keep working meanwhile.' },
 }
 
 export default function PushNotificationCard() {
@@ -50,7 +50,12 @@ export default function PushNotificationCard() {
             </div>
           ) : null}
 
-          {error && <p role="alert" className="mt-2 text-[13px] font-medium text-alert">{error}</p>}
+          {error && (
+            <p role="status" className="mt-2 flex items-start gap-1.5 rounded-xl border border-[#edd996] bg-[#fff4d1] px-3 py-2 text-[13px] leading-relaxed text-[#7a622f]">
+              <Bell size={14} className="mt-0.5 shrink-0" aria-hidden />
+              <span>{error}</span>
+            </p>
+          )}
 
           <div className="mt-2">
             {enabled ? (
