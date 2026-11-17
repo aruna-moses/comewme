@@ -309,7 +309,7 @@ export default function TaskDetail() {
   if (loading) {
     return (
       <div className="pb-10" aria-hidden>
-        <div className="sticky top-0 z-30 flex h-[56px] items-center justify-between border-b border-line bg-canvas/95 px-4 backdrop-blur">
+        <div className="sticky top-0 z-30 flex h-[56px] items-center justify-between border-b border-line bg-canvas/60 px-4 backdrop-blur-2xl saturate-150">
           <div className="skeleton h-6 w-6 rounded-full" />
           <div className="skeleton h-5 w-28 rounded-full" />
         </div>
@@ -351,7 +351,7 @@ export default function TaskDetail() {
   return (
     <div className="pb-8">
       {/* top bar */}
-      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
+      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/60 px-4 py-3 backdrop-blur-2xl saturate-150">
         <button onClick={() => navigate(-1)} className="p-1" aria-label="Back">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />

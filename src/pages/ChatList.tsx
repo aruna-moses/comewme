@@ -265,7 +265,7 @@ export default function ChatList() {
     const happeningToday = !doneChat && days === 0
     const menuOpen = menuFor === c.task.id
     return (
-      <div key={c.task.id} className={`relative flex items-center gap-1.5 border-b border-line py-2 pl-4 pr-2 transition-colors hover:bg-canvas ${happeningToday ? 'bg-gradient-to-r from-sun/20 via-amber/10 to-transparent ring-1 ring-inset ring-amber/40' : ''} ${doneChat ? 'opacity-70' : ''}`}>
+      <div key={c.task.id} className={`relative flex items-center gap-1.5 border-b border-line/60 py-2 pl-4 pr-2 transition-colors hover:bg-canvas active:bg-canvas ${happeningToday ? 'bg-gradient-to-r from-sun/20 via-amber/10 to-transparent ring-1 ring-inset ring-amber/40' : ''} ${doneChat ? 'opacity-70' : ''}`}>
         <Link
           to={`/task/${c.task.id}/chat`}
           className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 flex-1 min-w-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"

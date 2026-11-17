@@ -210,7 +210,7 @@ export default function TaskCard({
         </div>
       </Link>
 
-      <div className="mt-2 flex items-center justify-between border-t border-line pt-2">
+      <div className="mt-2 flex items-center justify-between border-t border-line/70 pt-2">
         <ShareTaskButton task={task} />
         <div className="flex items-center gap-2">
           {isOwnTask || applicationStatus === 'accepted' ? (
@@ -246,7 +246,7 @@ export default function TaskCard({
             onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
             aria-label={expanded ? 'Collapse details' : 'See details'}
-            className="rounded-full p-1.5 text-muted transition hover:bg-line"
+            className="rounded-full p-1.5 text-muted transition hover:bg-line active:scale-90"
           >
             <ChevronDown size={17} className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
           </button>
