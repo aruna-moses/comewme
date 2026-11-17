@@ -146,42 +146,26 @@ export default function MyTasks() {
       </header>
 
       <div className="px-5 pt-4">
-        <div className="flex rounded-[16px] bg-[#ece9e2] p-1">
-          <button
-            onClick={() => setTab('hosting')}
-            className={`flex-1 rounded-[12px] py-3 text-[14px] font-semibold transition ${
-              tab === 'hosting'
-                ? 'bg-white text-amber shadow-sm'
-                : 'text-muted'
-            }`}
-          >
-            Posted ({hostedActive.length})
-            {pendingApplications > 0 && (
-              <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#e53935] px-1.5 align-middle text-[12px] font-bold leading-none text-white">
-                {pendingApplications > 99 ? '99+' : pendingApplications}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setTab('going')}
-            className={`flex-1 rounded-[12px] py-3 text-[14px] font-semibold transition ${
-              tab === 'going'
-                ? 'bg-white text-amber shadow-sm'
-                : 'text-muted'
-            }`}
-          >
-            Applied ({joinedActive.length})
-          </button>
-          <button
-            onClick={() => setTab('done')}
-            className={`flex-1 rounded-[12px] py-3 text-[14px] font-semibold transition ${
-              tab === 'done'
-                ? 'bg-white text-amber shadow-sm'
-                : 'text-muted'
-            }`}
-          >
-            Done ({done.length})
-          </button>
+        <div className="segmented mt-4">
+          {[
+            { id: 'hosting', label: `Posted (${hostedActive.length})`, badge: pendingApplications },
+            { id: 'going', label: `Applied (${joinedActive.length})`, badge: 0 },
+            { id: 'done', label: `Done (${done.length})`, badge: 0 },
+          ].map(({ id, label, badge }) => (
+            <button
+              key={id}
+              onClick={() => setTab(id as typeof tab)}
+              aria-pressed={tab === id}
+              className="segmented-item flex min-h-12 items-center justify-center gap-1.5 text-[14px]"
+            >
+              {label}
+              {badge > 0 && (
+                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#FF3B30] px-1.5 text-[12px] font-bold leading-none text-white">
+                  {badge > 99 ? '99+' : badge}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
         {loadError && (

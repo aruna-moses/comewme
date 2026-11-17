@@ -381,7 +381,7 @@ export default function AdminModeration() {
 
   return (
     <div className="min-h-[100dvh] pb-24">
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/70 px-4 py-3 backdrop-blur-2xl saturate-150">
         <Link to="/" className="text-[15px] font-semibold text-amber">Back</Link>
         <h1 className="font-display text-[18px] font-bold">Moderation inbox</h1>
       </header>
@@ -847,7 +847,7 @@ export default function AdminModeration() {
                 ))}
               </div>
               {selectedCount > 0 && (
-                <div className="sticky bottom-[76px] z-20 mt-3 flex items-center justify-between gap-2 rounded-xl border border-alert/30 bg-white p-2 shadow-sm">
+                <div className="sticky bottom-[76px] z-20 mt-3 flex items-center justify-between gap-2 rounded-xl border border-alert/30 bg-white/80 p-2 shadow-sm backdrop-blur-xl">
                   <p className="pl-1 text-[14px] font-semibold text-ink">{selectedCount} selected</p>
                   <button
                     className="btn-ghost btn-sm text-alert"

@@ -138,6 +138,58 @@
     @apply min-h-[38px] px-4 text-sm;
   }
 
+  /* ---- iOS 26 phase A kit ------------------------------------- */
+
+  /* Frosted chrome: sticky headers, floating bars, toast, nav caps.
+     Content stays opaque; only floating chrome is glass. */
+  .glass {
+    background-color: rgb(255 255 255 / 0.72);
+    border: 1px solid rgb(var(--color-line) / 0.6);
+    box-shadow:
+      0 12px 32px -12px rgb(11 11 15 / 0.28),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.65);
+    backdrop-filter: blur(28px) saturate(1.6);
+    -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  }
+
+  [data-theme='dark'] .glass {
+    background-color: rgb(var(--color-surface) / 0.6);
+    border-color: rgb(var(--color-line) / 0.7);
+    box-shadow:
+      0 14px 36px -12px rgb(0 0 0 / 0.55),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.08);
+  }
+
+  /* Segmented control: inset track, floating active pill with specular edge. */
+  .segmented {
+    @apply flex rounded-[14px] border border-line/60 p-[3px];
+    background-color: rgb(var(--color-ink) / 0.055);
+    box-shadow: inset 0 1px 2px rgb(11 11 15 / 0.07);
+  }
+
+  .segmented-item {
+    @apply min-w-0 flex-1 rounded-[11px] py-2 text-center font-semibold transition-all duration-150;
+    color: rgb(var(--color-muted));
+  }
+
+  .segmented-item[aria-pressed='true'],
+  .segmented-item.segment-active {
+    background-color: rgb(var(--color-surface));
+    color: rgb(var(--color-ink));
+    box-shadow:
+      0 1px 4px rgb(11 11 15 / 0.1),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.55);
+  }
+
+  /* Press feedback for any tappable card/tile. */
+  .pressable {
+    transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .pressable:active {
+    transform: scale(0.97);
+  }
+
   .chip {
     @apply shrink-0 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink
            transition whitespace-nowrap;
@@ -479,6 +531,21 @@
 
 [data-theme='dark'] .bg-white\/65 {
   background-color: rgb(var(--color-surface) / 0.55) !important;
+}
+
+[data-theme='dark'] .segmented-item[aria-pressed='true'],
+[data-theme='dark'] .segmented-item.segment-active {
+  box-shadow:
+    0 1px 4px rgb(0 0 0 / 0.35),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+}
+
+/* iOS 26 card depth: soft lift in dark mode, specular inner edge instead of flat. */
+[data-theme='dark'] .card {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.4),
+    0 12px 30px -14px rgb(0 0 0 / 0.55),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.055);
 }
 
 [data-theme='dark'] .bg-white\/80 {

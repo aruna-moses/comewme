@@ -158,14 +158,12 @@ export default function Settings() {
           <div className="min-w-0 flex-1">
             <h2 id="theme-heading" className="text-[15px] font-semibold">Appearance</h2>
             <p className="mt-0.5 text-[14px] text-muted">Choose the look that feels right. Saved on this device.</p>
-            <div className="mt-3 grid grid-cols-2 gap-2 rounded-[14px] bg-canvas p-1" role="group" aria-label="App theme">
+            <div className="segmented mt-3" role="group" aria-label="App theme">
               <button
                 type="button"
                 onClick={() => setTheme('light')}
                 aria-pressed={theme === 'light'}
-                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[15px] font-semibold transition ${
-                  theme === 'light' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
-                }`}
+                className="segmented-item flex min-h-10 items-center justify-center gap-2 px-3 text-[15px]"
               >
                 <Sun size={16} aria-hidden />
                 Light
@@ -174,9 +172,7 @@ export default function Settings() {
                 type="button"
                 onClick={() => setTheme('dark')}
                 aria-pressed={theme === 'dark'}
-                className={`flex min-h-10 items-center justify-center gap-2 rounded-[11px] px-3 text-[15px] font-semibold transition ${
-                  theme === 'dark' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
-                }`}
+                className="segmented-item flex min-h-10 items-center justify-center gap-2 px-3 text-[15px]"
               >
                 <Moon size={16} aria-hidden />
                 Dark
@@ -225,7 +221,7 @@ export default function Settings() {
               </p>
             </div>
             {moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications + moderation.feedback > 0 && (
-              <span className="shrink-0 rounded-full bg-[#e53935] px-2 py-0.5 text-[12px] font-bold text-white">
+              <span className="shrink-0 rounded-full bg-[#FF3B30] px-2 py-0.5 text-[12px] font-bold text-white">
                 {moderation.sos + moderation.reports + moderation.appeals + moderation.ads + moderation.verifications + moderation.feedback}
               </span>
             )}

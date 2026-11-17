@@ -118,7 +118,7 @@ export default function TaskCard({
       {typeof reviewBadge === 'number' && reviewBadge > 0 && (
         <span
           aria-label={`${reviewBadge} pending join ${reviewBadge === 1 ? 'request' : 'requests'} waiting for review`}
-          className="absolute -right-2 -top-2 z-[2] flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-canvas bg-[#e53935] px-1.5 text-[13px] font-bold leading-none text-white shadow-sm"
+          className="absolute -right-2 -top-2 z-[2] flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-canvas bg-[#FF3B30] px-1.5 text-[13px] font-bold leading-none text-white shadow-sm"
         >
           {reviewBadge > 99 ? '99+' : reviewBadge}
         </span>

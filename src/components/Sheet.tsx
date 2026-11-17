@@ -82,7 +82,7 @@ export default function Sheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-[480px] rounded-t-[24px] bg-white shadow-lift animate-[slideUp_.18s_ease-out]"
+        className="relative w-full max-w-[480px] rounded-t-[26px] border-t border-line/70 bg-white shadow-lift animate-[slideUp_.18s_ease-out]"
         style={{
           transform: `translateY(${dragY}px)`,
           transition: dragging ? 'none' : fading ? 'transform 220ms cubic-bezier(.2,.8,.2,1)' : undefined,
@@ -99,7 +99,7 @@ export default function Sheet({
           onPointerUp={endGesture}
           onPointerCancel={endGesture}
         >
-          <div className="mx-auto mb-3 h-1.5 w-11 rounded-full bg-line transition-colors" aria-hidden />
+          <div className="mx-auto mb-3 h-[5px] w-10 rounded-full bg-ink/15 transition-colors" aria-hidden />
           {title && <h2 className="px-5 pb-3 font-display text-lg font-bold">{title}</h2>}
         </div>
         <div className="max-h-[82dvh] overflow-y-auto px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">

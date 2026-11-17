@@ -977,7 +977,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
 
   return (
     <main className="-mb-24 flex h-[100dvh] flex-col overflow-hidden bg-canvas">
-      <header className={`sticky top-0 z-30 flex items-center gap-3 border-b border-line px-4 py-3 backdrop-blur ${happeningToday ? 'border-amber/40 bg-gradient-to-r from-sun/30 via-amber/15 to-canvas' : 'bg-white/95'}`}>
+      <header className={`sticky top-0 z-30 flex items-center gap-3 border-b border-line px-4 py-3 backdrop-blur-2xl saturate-150 ${happeningToday ? 'border-amber/40 bg-gradient-to-r from-sun/30 via-amber/15 to-canvas' : 'bg-white/65'}`}>
         <button type="button" onClick={() => navigate('/chats')} className="rounded-full p-2 hover:bg-canvas" aria-label="Back to chats">
           <ArrowLeft size={21} aria-hidden />
         </button>
@@ -1450,7 +1450,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
         )}
 
         {isArchived ? (
-          <div className="shrink-0 -mx-3 border-t border-line bg-white/95 px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-4 text-center backdrop-blur">
+          <div className="shrink-0 -mx-3 border-t border-line bg-white/70 px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-4 text-center backdrop-blur-2xl saturate-150">
             <p className="text-[15px] font-bold text-ink">This activity is complete — the group is archived.</p>
             <p className="mt-1 text-[12px] text-muted">You can still read the whole chat history. The host can reopen it from the group info sheet.</p>
           </div>
