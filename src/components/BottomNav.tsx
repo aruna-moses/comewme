@@ -110,8 +110,8 @@ export default function BottomNav() {
         <>
           {/* Soft translucent selection pill wraps icon + label, like iOS 26. */}
           <span
-            className={`flex w-full flex-col items-center gap-[3px] whitespace-nowrap rounded-[18px] px-1 py-1.5 transition-all duration-200 ease-out active:scale-[0.94] ${
-              isActive ? 'bg-amber/[0.15]' : 'bg-transparent group-hover:bg-ink/[0.045]'
+            className={`flex h-full w-full flex-col items-center justify-center gap-[2px] whitespace-nowrap rounded-[22px] px-2 py-[7px] transition-all duration-200 ease-out active:scale-[0.94] ${
+              isActive ? 'bg-amber/[0.18] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.35)]' : 'bg-transparent group-hover:bg-ink/[0.045]'
             }`}
           >
             {/* Badge sits on the icon itself, like an iOS tab item. */}
@@ -152,7 +152,7 @@ export default function BottomNav() {
         <div className="mx-auto flex w-full max-w-[480px] justify-center px-4 pb-[max(env(safe-area-inset-bottom),12px)]">
           <nav
             aria-label="Main navigation"
-            className="pointer-events-auto flex w-full items-stretch rounded-[26px] border border-line bg-white/90 px-1.5 shadow-[0_16px_40px_-18px_rgba(11,11,15,0.5)] backdrop-blur-2xl saturate-150"
+            className="pointer-events-auto flex w-full items-stretch rounded-[28px] border border-line/80 bg-white/65 px-1.5 shadow-[0_14px_34px_-16px_rgba(11,11,15,0.45),inset_0_1px_0_0_rgba(255,255,255,0.65)] backdrop-blur-2xl saturate-[1.8]"
           >
             <div className="flex min-h-[56px] min-w-0 flex-1 items-stretch">
               {item('/', 'Discover', (a) => <IconDiscover active={a} />, 0, 'unread', () => { void prefetchDiscoverFeed() })}

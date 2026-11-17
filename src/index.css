@@ -477,6 +477,10 @@
   background-color: rgb(var(--color-surface) / 0.82) !important;
 }
 
+[data-theme='dark'] .bg-white\/65 {
+  background-color: rgb(var(--color-surface) / 0.55) !important;
+}
+
 [data-theme='dark'] .bg-white\/80 {
   background-color: rgb(var(--color-surface) / 0.85) !important;
 }
