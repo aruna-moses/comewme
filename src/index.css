@@ -190,6 +190,19 @@
     transform: scale(0.97);
   }
 
+  /* iOS grouped list — inset section with hairline-separated rows. */
+  .grouped-list {
+    @apply divide-y divide-line/60 overflow-hidden rounded-[20px] border border-line/70 bg-white shadow-card;
+  }
+
+  .grouped-row {
+    @apply flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-canvas active:bg-canvas;
+  }
+
+  .squircle-icon {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px];
+  }
+
   .chip {
     @apply shrink-0 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink
            transition whitespace-nowrap;

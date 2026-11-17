@@ -71,7 +71,7 @@ function PostsHistory({ userId }: { userId: string }) {
           View all
         </Link>
       </div>
-      <ul className="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
+      <ul className="mt-3 divide-y divide-line/60 overflow-hidden rounded-[20px] border border-line/70 bg-white shadow-card">
         {visible.map((task) => (
           <li key={task.id}>
             <Link

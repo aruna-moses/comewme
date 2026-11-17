@@ -86,15 +86,12 @@ export default function Settings() {
 
   return (
     <div className="px-4 pb-10 pt-4">
-      <div className="flex items-center justify-between">
-        <Link to={`/profile/${profile.id}`} className="p-1" aria-label="Back to profile">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Link>
-        <h1 className="font-display text-base font-bold">Settings</h1>
-        <span className="w-6" />
-      </div>
+      <Link to={`/profile/${profile.id}`} className="-ml-1 inline-flex p-1" aria-label="Back to profile">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </Link>
+      <h1 className="mt-1 font-display text-[26px] font-bold leading-tight">Settings</h1>
 
       <SectionLabel>Account</SectionLabel>
 
@@ -127,20 +124,20 @@ export default function Settings() {
 
       <Link
         to={`/profile/${profile.id}`}
-        className="card mt-3 flex items-center justify-between gap-3 p-4 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+        className="grouped-list mt-3"
       >
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
+        <span className="grouped-row">
+          <span className="squircle-icon bg-sun/20 text-amber">
             <Pencil size={17} aria-hidden />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[15px] font-semibold">Profile details</p>
-            <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-semibold">Profile details</span>
+            <span className="mt-0.5 block text-[13px] leading-relaxed text-muted">
               Name, bio, area and interests — edit on your profile
-            </p>
-          </div>
-        </div>
-        <ChevronRight size={18} className="mt-0.5 shrink-0 text-muted" aria-hidden />
+            </span>
+          </span>
+          <ChevronRight size={18} className="mt-0.5 shrink-0 text-muted" aria-hidden />
+        </span>
       </Link>
 
       <SectionLabel className="mt-5">Notifications</SectionLabel>
@@ -251,16 +248,16 @@ export default function Settings() {
           </Link>
         </div>
 
-        <div className="card divide-y divide-line overflow-hidden p-0" role="list">
+        <div className="grouped-list" role="list">
           {SUPPORT_LINKS.map(({ to, icon: Icon, title, note }) => (
             <Link
               key={to}
               to={to}
               role="listitem"
-              className="flex items-start gap-3 px-4 py-3 transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:-outline-offset-2"
+              className="grouped-row focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:-outline-offset-2"
             >
-              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber" aria-hidden>
-                <Icon size={16} />
+              <span className="squircle-icon bg-sun/20 text-amber" aria-hidden>
+                <Icon size={17} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] font-semibold text-ink">{title}</span>
@@ -272,23 +269,32 @@ export default function Settings() {
         </div>
 
         <SectionLabel className="mt-8">Danger zone</SectionLabel>
-        <div className="card mt-2 border-alert/20 p-4">
-          <p className="text-[15px] font-semibold text-alert">Delete your account</p>
-          <p className="mt-1 text-[14px] leading-relaxed text-muted">
-            Erase your profile, photos, activities, messages, trust score and verification — forever. There is no recovery.
-          </p>
-          <button
-            type="button"
-            className="btn-ghost mt-3 inline-flex w-full items-center justify-center gap-2 border-alert/40 text-alert hover:bg-alert/5"
-            onClick={() => {
-              setConfirmText('')
-              setDeleteError(null)
-              setDeleteOpen(true)
-            }}
-          >
-            <Trash2 size={15} aria-hidden />
-            Delete account
-          </button>
+        <div className="grouped-list mt-2">
+          <div className="grouped-row !cursor-default hover:bg-transparent active:bg-transparent">
+            <span className="squircle-icon bg-alert/10 text-alert" aria-hidden>
+              <Trash2 size={17} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-semibold text-alert">Delete your account</span>
+              <span className="mt-0.5 block text-[13px] leading-relaxed text-muted">
+                Erase your profile, photos, activities, messages, trust score and verification — forever. There is no recovery.
+              </span>
+            </span>
+          </div>
+          <div className="p-2">
+            <button
+              type="button"
+              className="btn-ghost inline-flex w-full items-center justify-center gap-2 border-alert/40 text-alert hover:bg-alert/5"
+              onClick={() => {
+                setConfirmText('')
+                setDeleteError(null)
+                setDeleteOpen(true)
+              }}
+            >
+              <Trash2 size={15} aria-hidden />
+              Delete account
+            </button>
+          </div>
         </div>
 
         <button
