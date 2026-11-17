@@ -74,49 +74,57 @@ export default function BottomNav() {
       onMouseEnter={prefetcher}
       onPointerDown={prefetcher}
       onFocus={prefetcher}
-      className={({ isActive }) =>
-        `flex flex-1 items-center justify-center py-1 transition-colors duration-200 ${
-          isActive ? 'text-amber' : 'text-muted hover:text-ink'
-        }`
-      }
+      className="group flex flex-1 flex-col items-center justify-center gap-[5px] pt-2 transition-opacity active:opacity-60"
     >
       {({ isActive }) => (
-        <span
-          className={`relative flex h-[52px] w-[60px] flex-col items-center justify-center gap-0 rounded-[16px] transition-all duration-300 ease-out ${
-            isActive
-              ? 'scale-105 bg-sun/30 text-amber shadow-[0_0_0_4px_rgb(var(--color-sun)/0.22)]'
-              : 'text-muted'
-          }`}
-        >
-          {icon(isActive)}
-          <span className="mt-0.5 text-[11px] font-bold leading-none tracking-tight">{label}</span>
-          {badgeCount > 0 && (
+        <>
+          {/* Badge sits on the icon itself, like an iOS tab item. */}
+          <span className="relative flex h-[22px] w-[26px] items-center justify-center">
             <span
-              aria-hidden="true"
-              className="absolute right-0.5 top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-[#e53935] px-1 text-[8px] font-bold leading-none text-white shadow-sm"
+              className={`transition-colors duration-150 ${
+                isActive ? 'text-amber' : 'text-muted group-hover:text-ink/70'
+              }`}
             >
-              {badgeCount > 99 ? '99+' : badgeCount}
+              {icon(isActive)}
             </span>
-          )}
-        </span>
+            {badgeCount > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute -right-2 -top-1.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[#FF3B30] px-1 text-[9px] font-bold leading-none tabular-nums text-white ring-2 ring-[rgb(var(--color-surface))]"
+              >
+                {badgeCount > 99 ? '99+' : badgeCount}
+              </span>
+            )}
+          </span>
+          <span
+            className={`text-[10.5px] leading-none tracking-[0.005em] transition-colors duration-150 ${
+              isActive ? 'font-bold text-ink' : 'font-semibold text-muted group-hover:text-ink/70'
+            }`}
+          >
+            {label}
+          </span>
+        </>
       )}
     </NavLink>
   )
 
   return (
     <>
-      <nav aria-label="Main navigation" className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 rounded-t-[26px] border-t border-line bg-white/95 shadow-[0_-8px_24px_rgba(59,47,24,0.06)] backdrop-blur">
-        <div className="flex items-stretch px-2 pb-[env(safe-area-inset-bottom)] pt-1.5">
+      <nav
+        aria-label="Main navigation"
+        className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t border-line/80 bg-white/95 backdrop-blur-xl"
+      >
+        <div className="flex items-stretch px-1.5 pb-[max(env(safe-area-inset-bottom),6px)] pt-1">
           {item('/', 'Discover', (a) => <IconDiscover active={a} />, 0, 'unread', () => { void prefetchDiscoverFeed() })}
           {item('/activities', 'Activities', (a) => <IconMyTasks active={a} />, pendingApplications, 'pending applications', () => { if (myId) void prefetchMyTasks(myId) })}
           <div className="flex flex-1 justify-center">
             <button
               onClick={() => (session ? navigate('/post') : navigate('/login'))}
-              className="-mt-3.5 flex h-[64px] w-[64px] items-center justify-center rounded-full text-[#0B0B0F] shadow-lift transition-transform duration-200 ease-out hover:scale-105 active:scale-95"
+              className="-mt-4 flex h-[60px] w-[60px] items-center justify-center rounded-full text-[#0B0B0F] shadow-[0_10px_24px_-8px_rgba(238,123,30,0.65)] transition-transform duration-150 ease-out active:scale-95"
               style={{ backgroundImage: 'linear-gradient(180deg,#f7a233,#ee7b1e)' }}
               aria-label="Post an activity"
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
               </svg>
             </button>
