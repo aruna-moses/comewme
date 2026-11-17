@@ -73,6 +73,33 @@
   }
 }
 
+/* Icon "pop" when a tab becomes active, styled fast like an iOS symbol transition. */
+@keyframes tab-pop {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.55;
+  }
+  55% {
+    transform: scale(1.16);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.tab-icon-pop {
+  transform-origin: 50% 55%;
+  animation: tab-pop 320ms cubic-bezier(0.3, 1.35, 0.4, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-icon-pop {
+    animation: none;
+  }
+}
+
 @layer components {
   .app-shell {
     @apply mx-auto w-full max-w-[480px] min-h-full bg-canvas pb-24;
@@ -443,7 +470,11 @@
 }
 
 [data-theme='dark'] .bg-white\/70 {
-  background-color: rgb(var(--color-surface) / 0.75) !important;
+  background-color: rgb(var(--color-surface) / 0.68) !important;
+}
+
+[data-theme='dark'] .bg-white\/90 {
+  background-color: rgb(var(--color-surface) / 0.82) !important;
 }
 
 [data-theme='dark'] .bg-white\/80 {
