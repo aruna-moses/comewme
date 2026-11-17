@@ -104,13 +104,13 @@ export default function BottomNav() {
       onMouseEnter={prefetcher}
       onPointerDown={prefetcher}
       onFocus={prefetcher}
-      className="group flex flex-1 flex-col items-center justify-center py-1 transition-opacity active:opacity-70"
+      className="group flex min-w-0 flex-1 flex-col items-center justify-center py-1 transition-opacity active:opacity-70"
     >
       {({ isActive }) => (
         <>
           {/* Soft translucent selection pill wraps icon + label, like iOS 26. */}
           <span
-            className={`flex flex-col items-center gap-[3px] rounded-[18px] px-3 py-1.5 transition-all duration-200 ease-out active:scale-[0.94] ${
+            className={`flex w-full flex-col items-center gap-[3px] whitespace-nowrap rounded-[18px] px-1 py-1.5 transition-all duration-200 ease-out active:scale-[0.94] ${
               isActive ? 'bg-amber/[0.15]' : 'bg-transparent group-hover:bg-ink/[0.045]'
             }`}
           >
@@ -154,23 +154,23 @@ export default function BottomNav() {
             aria-label="Main navigation"
             className="pointer-events-auto flex w-full items-stretch rounded-[26px] border border-line bg-white/90 px-1.5 shadow-[0_16px_40px_-18px_rgba(11,11,15,0.5)] backdrop-blur-2xl saturate-150"
           >
-            <div className="flex min-h-[56px] flex-1 items-stretch">
+            <div className="flex min-h-[56px] min-w-0 flex-1 items-stretch">
               {item('/', 'Discover', (a) => <IconDiscover active={a} />, 0, 'unread', () => { void prefetchDiscoverFeed() })}
               {item('/activities', 'Activities', (a) => <IconMyTasks active={a} />, pendingApplications, 'pending applications', () => { if (myId) void prefetchMyTasks(myId) })}
             </div>
-            <div className="flex flex-1 justify-center">
+            <div className="flex min-w-0 flex-1 justify-center">
               <button
                 onClick={() => (session ? navigate('/post') : navigate('/login'))}
-                className="-mt-5 flex h-[60px] w-[60px] items-center justify-center rounded-full text-[#0B0B0F] shadow-[0_12px_26px_-10px_rgba(238,123,30,0.7)] transition-transform duration-150 ease-out active:scale-95"
+                className="-mt-6 flex h-[68px] w-[68px] items-center justify-center rounded-full text-[#0B0B0F] shadow-[0_12px_28px_-10px_rgba(238,123,30,0.7)] transition-transform duration-150 ease-out active:scale-95"
                 style={{ backgroundImage: 'linear-gradient(180deg,#f7a233,#ee7b1e)' }}
                 aria-label="Post an activity"
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
                 </svg>
               </button>
             </div>
-            <div className="flex min-h-[56px] flex-1 items-stretch">
+            <div className="flex min-h-[56px] min-w-0 flex-1 items-stretch">
               {item('/chats', 'Chats', (a) => <IconChat active={a} />, unreadMessages, 'unread messages', () => { if (myId) void prefetchChats(myId) })}
               {item(
                 profileTo,
