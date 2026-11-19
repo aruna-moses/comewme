@@ -177,7 +177,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/onboarding?returnTo=${encodeURIComponent(returnTo)}`,
+            // Land on the origin root. Client auth handles the code exchange, then
+            // Onboarding runs for new users and the home screen for returning ones.
+            // This keeps the redirect inside the scope Supabase allows for the app.
+            redirectTo: window.location.origin,
             // Picking a saved account should be a single tap: login_hint lets Google sign straight
             // through. A fresh user gets the account chooser, which lists the accounts already on
             // their phone. access_type keeps repeat sign-ins seamless.
