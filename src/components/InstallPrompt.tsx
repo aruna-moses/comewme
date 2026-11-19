@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bell, Share2, Smartphone, X } from 'lucide-react'
+import { Bell, Share, Smartphone, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 
@@ -98,8 +98,8 @@ export default function InstallPrompt() {
               <div className="absolute -right-7 -top-8 h-36 w-36 rounded-full bg-sun/20 blur-2xl" />
               <div className="absolute -left-5 bottom-2 h-28 w-28 rounded-full bg-amber/10 blur-2xl" />
               <div className="relative flex aspect-[16/10] items-center justify-center gap-5 px-8">
-                {/* Stylised phone home screen with the app icon */}
-                <svg viewBox="0 0 140 190" className="h-44 w-32 shrink-0 drop-shadow-lg" role="img" aria-label="Come w' me on your home screen">
+                {/* Stylised phone home screen — loops a gentle float up & down */}
+                <svg viewBox="0 0 140 190" className="float-y h-44 w-32 shrink-0 drop-shadow-lg" role="img" aria-label="Come w' me on your home screen">
                   <rect x="4" y="2" width="132" height="186" rx="26" fill="#0b0b0f" />
                   <rect x="10" y="8" width="120" height="174" rx="20" fill="url(#screenGrad)" />
                   <defs>
@@ -107,16 +107,14 @@ export default function InstallPrompt() {
                       <stop offset="0" stopColor="#FFD93D" />
                       <stop offset="1" stopColor="#FF9F1C" />
                     </linearGradient>
+                    <clipPath id="appIconClip">
+                      <rect x="35" y="96" width="70" height="70" rx="17" />
+                    </clipPath>
                   </defs>
                   <rect x="58" y="15" width="24" height="8" rx="4" fill="#0b0b0f" />
                   <rect x="16" y="26" width="14" height="4" rx="1.5" fill="#0b0b0f" opacity="0.65" />
                   <rect x="104" y="26" width="18" height="4" rx="1.5" fill="#0b0b0f" opacity="0.65" />
-                  <g transform="translate(35, 96)">
-                    <rect width="70" height="70" rx="17" fill="#0b0b0f" />
-                    <path d="M22 36c4-6 11-9 18-7 4 2 6 5 11 4 3-1 5-4 10-1" stroke="#FFD93D" strokeWidth="4.4" strokeLinecap="round" fill="none" />
-                    <circle cx="24" cy="46" r="3.3" fill="#FFD93D" />
-                    <circle cx="46" cy="47" r="3.3" fill="#FFD93D" />
-                  </g>
+                  <image href="/logo.png" x="35" y="96" width="70" height="70" preserveAspectRatio="xMidYMid slice" clipPath="url(#appIconClip)" />
                 </svg>
               </div>
             </div>
@@ -134,7 +132,9 @@ export default function InstallPrompt() {
                 <ol className="mt-4 space-y-2 rounded-[18px] border border-line bg-canvas p-3.5 text-left">
                   <li className="flex items-center gap-2.5 text-[14px] font-semibold text-ink">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-[13px] font-bold text-canvas">1</span>
-                    <span>Tap the <Share2 size={14} className="-mt-0.5 inline text-amber" aria-hidden /> Share button at the bottom of Safari</span>
+                    <span className="flex items-center gap-1.5">
+                      Tap the <Share className="h-4 w-4 text-ink" strokeWidth={2.1} aria-hidden /> Share icon {isIOS ? 'at the bottom of your screen' : 'at the top-right of Chrome'}
+                    </span>
                   </li>
                   <li className="flex items-center gap-2.5 text-[14px] font-semibold text-ink">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-[13px] font-bold text-canvas">2</span>

@@ -478,6 +478,14 @@
   50% { transform: translateY(-4px); }
 }
 
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.float-y {
+  animation: float-y 3.2s ease-in-out infinite;
+}
+
 @keyframes milestone-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
