@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 
 const DISMISSED_KEY = 'comewme:install-prompt-dismissed'
+const DISMISSED_USER_KEY = 'comewme:install-prompt-dismissed-user'
 
 /**
  * Bold on-screen nudge shown on sign-in: if the app isn't on the phone yet,
@@ -20,6 +21,23 @@ export default function InstallPrompt() {
       return false
     }
   })
+  // A fresh account (e.g. after a delete + sign-up cycle) gets the prompt again,
+  // even inside a browser tab that already dismissed it for another account.
+  useEffect(() => {
+    const uid = session?.user?.id
+    if (!uid) return
+    try {
+      const shownFor = window.localStorage.getItem(DISMISSED_USER_KEY)
+      if (shownFor !== uid) {
+        window.sessionStorage.removeItem(DISMISSED_KEY)
+        window.localStorage.setItem(DISMISSED_USER_KEY, uid)
+        setDismissed(false)
+      }
+    } catch {
+      // Private mode etc. — leave state alone.
+    }
+  }, [session?.user?.id])
+
   const deferredPrompt = useRef<{ prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> } | null>(null)
 
   useEffect(() => {
