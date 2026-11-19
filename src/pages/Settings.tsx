@@ -29,6 +29,7 @@ export default function Settings() {
   const [deleting, setDeleting] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [deleteErrorDetail, setDeleteErrorDetail] = useState<string | null>(null)
   const { moderation } = useNotifications()
 
   if (!profile || !session) return null
@@ -67,7 +68,16 @@ export default function Settings() {
       }
       window.location.replace('/')
     } catch (e) {
-      setDeleteError(friendlyError(e, 'Could not delete your account. Please try again or email comewme.app@gmail.com.'))
+      const raw = e instanceof Error ? e.message : String(e ?? '')
+      const lower = raw.toLowerCase()
+      // A stale/expired session can make every call look fine while the backend
+      // sees nobody — point the user at re-sign-in instead of a generic red line.
+      setDeleteError(
+        lower.includes('not signed in')
+          ? 'This device looks signed out. Sign out, sign back in with Google, then try again.'
+          : friendlyError(e, 'Could not delete your account. Please try again or email comewme.app@gmail.com.'),
+      )
+      setDeleteErrorDetail(raw.trim() ? raw : null)
       setDeleting(false)
     }
   }
@@ -288,6 +298,7 @@ export default function Settings() {
               onClick={() => {
                 setConfirmText('')
                 setDeleteError(null)
+                setDeleteErrorDetail(null)
                 setDeleteOpen(true)
               }}
             >
@@ -354,6 +365,17 @@ export default function Settings() {
             </div>
             {deleteError && (
               <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[14px] font-medium text-alert">{deleteError}</p>
+            )}
+            {deleteErrorDetail && (
+              <p className="select-text break-words text-[11px] leading-snug text-muted">
+                Detail: {deleteErrorDetail}{' '}
+                <a
+                  className="whitespace-nowrap font-semibold text-amber underline"
+                  href={`mailto:comewme.app@gmail.com?subject=${encodeURIComponent('Could not delete my account')}&body=${encodeURIComponent(`Deletion failed.\n\nDetail: ${deleteErrorDetail}`)}`}
+                >
+                  Email this to support
+                </a>
+              </p>
             )}
             <button
               type="button"
