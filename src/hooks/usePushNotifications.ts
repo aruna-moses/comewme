@@ -40,6 +40,17 @@ function detectDeviceType(): string {
   return 'desktop'
 }
 
+const PUSH_STATUS_EVENT = 'comewme:push-status'
+
+function broadcastPushStatus(status: PushStatus) {
+  if (typeof window === 'undefined') return
+  try {
+    window.dispatchEvent(new CustomEvent(PUSH_STATUS_EVENT, { detail: { status } }))
+  } catch {
+    // Older engines without CustomEvent — component stays consistent on reload anyway.
+  }
+}
+
 export function usePushNotifications(): PushNotificationsState {
   const [status, setStatus] = useState<PushStatus>('default')
   const [busy, setBusy] = useState(false)
@@ -51,23 +62,35 @@ export function usePushNotifications(): PushNotificationsState {
 
     async function resolveStatus() {
       if (!isFirebaseConfigured()) {
-        if (alive) setStatus('not-configured')
+        if (alive) {
+          setStatus('not-configured')
+          broadcastPushStatus('not-configured')
+        }
         return
       }
       const ua = navigator.userAgent.toLowerCase()
       const isIOS = /iphone|ipad|ipod/.test(ua)
       const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true
       if (isIOS && !standalone) {
-        if (alive) setStatus('needs-install')
+        if (alive) {
+          setStatus('needs-install')
+          broadcastPushStatus('needs-install')
+        }
         return
       }
       const pushApis = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window
       if (!pushApis) {
-        if (alive) setStatus('unsupported')
-        return
+        if (alive) {
+          setStatus('unsupported')
+          broadcastPushStatus('unsupported')
+          return
+        }
       }
       if (Notification.permission === 'denied') {
-        if (alive) setStatus('denied')
+        if (alive) {
+          setStatus('denied')
+          broadcastPushStatus('denied')
+        }
         return
       }
       const saved = (() => {
@@ -91,18 +114,38 @@ export function usePushNotifications(): PushNotificationsState {
           } catch {
             // ignore
           }
-          if (alive) setStatus('default')
+          if (alive) {
+            setStatus('default')
+            broadcastPushStatus('default')
+          }
           return
         }
-        if (alive) setStatus('enabled')
+        if (alive) {
+          setStatus('enabled')
+          broadcastPushStatus('enabled')
+        }
         return
       }
-      if (alive) setStatus('default')
+      if (alive) {
+        setStatus('default')
+        broadcastPushStatus('default')
+      }
     }
 
     void resolveStatus()
+
+    // When another component (Settings card, install popup) turns push on/off,
+    // pick the change up immediately instead of waiting for a remount.
+    const onPushStatusChanged = (event: Event) => {
+      if (!alive) return
+      const detail = (event as CustomEvent<{ status?: PushStatus }>).detail
+      if (detail?.status) setStatus(detail.status)
+    }
+    window.addEventListener(PUSH_STATUS_EVENT, onPushStatusChanged)
+
     return () => {
       alive = false
+      window.removeEventListener(PUSH_STATUS_EVENT, onPushStatusChanged)
     }
   }, [])
 
@@ -115,11 +158,13 @@ export function usePushNotifications(): PushNotificationsState {
       const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true
       if (isIOS && !standalone) {
         setStatus('needs-install')
+        broadcastPushStatus('needs-install')
         setBusy(false)
         return false
       }
       if (!isFirebaseConfigured()) {
         setStatus('not-configured')
+        broadcastPushStatus('not-configured')
         setBusy(false)
         return false
       }
@@ -136,10 +181,16 @@ export function usePushNotifications(): PushNotificationsState {
       )
 
       if (!result.token) {
-        if (result.step === 'unsupported') setStatus('unsupported')
-        else if (result.step === 'not-configured') setStatus('not-configured')
-        else if (result.error === 'Permission was not granted') setStatus('denied')
-        else setError(PUSH_ERROR_COPY)
+        if (result.step === 'unsupported') {
+          setStatus('unsupported')
+          broadcastPushStatus('unsupported')
+        } else if (result.step === 'not-configured') {
+          setStatus('not-configured')
+          broadcastPushStatus('not-configured')
+        } else if (result.error === 'Permission was not granted') {
+          setStatus('denied')
+          broadcastPushStatus('denied')
+        } else setError(PUSH_ERROR_COPY)
         setPhase('idle')
         setBusy(false)
         return false
@@ -161,6 +212,7 @@ export function usePushNotifications(): PushNotificationsState {
         // best effort — token is in the DB anyway
       }
       setStatus('enabled')
+      broadcastPushStatus('enabled')
       setBusy(false)
       return true
     } catch {
@@ -192,6 +244,7 @@ export function usePushNotifications(): PushNotificationsState {
         // ignore
       }
       setStatus('default')
+      broadcastPushStatus('default')
       setBusy(false)
       return true
     } catch {
