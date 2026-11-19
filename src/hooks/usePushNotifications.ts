@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { isFirebaseConfigured } from '../lib/firebaseConfig'
+import { fetchTokenIfAlreadyGranted } from '../lib/firebase'
 import { supabase } from '../lib/supabase'
 
 /** The one calm message shown on any failure to turn push on — never raw engine noise. */
@@ -93,20 +94,39 @@ export function usePushNotifications(): PushNotificationsState {
         }
         return
       }
-      const saved = (() => {
+      // Permission already granted — silently refresh the FCM token. iOS rotates
+      // web push tokens without telling anyone, and the enable flow only runs once.
+      const savedRaw = (() => {
         try {
           return window.localStorage.getItem('comewme-fcm-token')
         } catch {
           return null
         }
       })()
-      if (Notification.permission === 'granted' && saved) {
+      let effective = savedRaw
+      const fresh = await fetchTokenIfAlreadyGranted(import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined).catch(() => null)
+      if (fresh && fresh !== savedRaw) {
+        try {
+          window.localStorage.setItem('comewme-fcm-token', fresh)
+        } catch {
+          // ignore
+        }
+        const { data: userData } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
+        const userId = userData?.user?.id
+        if (userId) {
+          await supabase
+            .from('user_push_tokens')
+            .upsert({ user_id: userId, token: fresh, device_type: detectDeviceType(), updated_at: new Date().toISOString() }, { onConflict: 'token' })
+        }
+        effective = fresh
+      }
+      if (effective) {
         // The server prunes dead tokens (FCM UNREGISTERED). If ours is gone
         // there, "Enabled" would be a lie — ask the user to re-enable.
         const { data: still, error: checkError } = await supabase
           .from('user_push_tokens')
           .select('token')
-          .eq('token', saved)
+          .eq('token', effective)
           .maybeSingle()
         if (!checkError && !(still as { token?: string } | null)?.token) {
           try {

@@ -30,6 +30,27 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, step: string): Pr
   ])
 }
 
+/** Silent token refresh for sessions where permission is already granted.
+ * FCM tokens rotate on iOS (web push subscriptions especially), and the
+ * enable flow only runs once — a device can go stale for weeks while the app
+ * still believes push is on. Cheap call; returns null on any failure. */
+export async function fetchTokenIfAlreadyGranted(vapidKey?: string): Promise<string | null> {
+  if (typeof window === 'undefined') return null
+  if (!('Notification' in window) || Notification.permission !== 'granted') return null
+  const messaging = messagingOrNullSafe()
+  if (!messaging) return null
+  try {
+    let registration = await navigator.serviceWorker.getRegistration('/')
+    if (!registration) {
+      registration = await withTimeout(navigator.serviceWorker.register(PUSH_SW, { scope: '/' }), 15000, 'registering the push service worker')
+      await withTimeout(navigator.serviceWorker.ready, 10000, 'waiting for the service worker to activate')
+    }
+    return await withTimeout(getToken(messaging, { vapidKey, serviceWorkerRegistration: registration }), 15000, 'refreshing the push token')
+  } catch {
+    return null
+  }
+}
+
 /** The exact script path push relies on — used to drop stale copies before reinstalling. */
 const PUSH_SW = '/firebase-messaging-sw.js'
 
