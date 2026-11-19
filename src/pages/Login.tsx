@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, AlertTriangle, Smartphone } from 'lucide-react'
+import { Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Sheet from '../components/Sheet'
 import { readSavedGoogleEmails, saveGoogleEmail } from '../lib/googleAccounts'
@@ -31,23 +31,8 @@ export default function Login() {
     : '/'
 
   const [mode, setMode] = useState<'in' | 'up' | 'forgot'>('in')
-  // Inside an installed home-screen PWA, the email-code path is the fastest
-  // option: it stays entirely within the web view, so no Safari in-app sheet
-  // loses the Google session. Detect standalone mode to order the page accordingly.
-  const isStandalone = (() => {
-    try {
-      return window.matchMedia('(display-mode: standalone)').matches ||
-        Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
-    } catch {
-      return false
-    }
-  })()
-  const isIOSDevice = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())
-  const codeFirst = isStandalone && isIOSDevice
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [code, setCode] = useState('')
-  const [codeStage, setCodeStage] = useState<'email' | 'verify'>('email')
   const [showPassword, setShowPassword] = useState(false)
   const [guidelinesChecked, setGuidelinesChecked] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -93,13 +78,10 @@ export default function Login() {
   // already signed in on this device: one tap on Google's chip and the user is
   // in, with no redirect. If Google's script cannot render the prompt (blocked
   // script, in-app webview, unsupported browser) the button below still works.
-  //
-  // Inside an installed home-screen PWA on iOS, arm One Tap immediately — the
-  // installed app has its own storage container separate from Safari, so being
-  // "logged in on the browser tab" means nothing in here. One tap is the
-  // closest we can get to the browser experience: zero passwords, zero redirects.
+  // Inside an installed home-screen PWA, One Tap is the closest we can get to
+  // the browser experience: the user taps the same Google chip, no password.
   useEffect(() => {
-    if (!guidelinesChecked && !codeFirst) return
+    if (!guidelinesChecked) return
     let active = true
     void showGoogleOneTap((credential) => {
       if (active) void completeGoogleCredential(credential)
@@ -110,7 +92,7 @@ export default function Login() {
       active = false
       hideGoogleOneTap()
     }
-  }, [guidelinesChecked, codeFirst])
+  }, [guidelinesChecked])
 
   const flashGuidelinesNotice = (message: string, target: 'email' | 'google' = 'email') => {
     if (target === 'google') setGoogleError(message)
@@ -118,67 +100,6 @@ export default function Login() {
     guidelinesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     setGuidelinesFlash(true)
     window.setTimeout(() => setGuidelinesFlash(false), 2500)
-  }
-
-  // Passwordless path: send a 6-digit code to the inbox, sign in by typing it.
-  // Works identically inside an installed home-screen PWA — no redirect, no password.
-  async function handleSendCode(e?: React.FormEvent) {
-    e?.preventDefault()
-    setError(null)
-    setNotice(null)
-
-    if (!guidelinesChecked) {
-      flashGuidelinesNotice('Please tick the guidelines first — it takes two seconds.')
-      return
-    }
-    if (!email.trim()) return
-
-    setBusy(true)
-    try {
-      const { error: sendError } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: {
-          shouldCreateUser: true,
-          data: {
-            guidelines_accepted_version: '1.0',
-            guidelines_user_agent: navigator.userAgent,
-          },
-        },
-      })
-      if (sendError) throw sendError
-      setNotice(`We sent a 6-digit code to ${email.trim()} — check your inbox and spam folder.`)
-      setCodeStage('verify')
-    } catch (err) {
-      setError(friendlyError(err, 'Could not send the code. Try again in a minute.'))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function handleVerifyCode(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setNotice(null)
-
-    if (code.trim().length < 6) {
-      setError('Enter the 6-digit code from your email.')
-      return
-    }
-
-    setBusy(true)
-    try {
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: code.trim(),
-        type: 'email',
-      })
-      if (verifyError) throw verifyError
-      navigate(returnTo, { replace: true })
-    } catch (err) {
-      setError(friendlyError(err, 'That code did not work. Check it and try again.'))
-    } finally {
-      setBusy(false)
-    }
   }
 
   async function handleEmailSubmit(e: React.FormEvent) {
@@ -335,70 +256,6 @@ export default function Login() {
                 Back to sign in
               </button>
             </>
-          ) : codeStage === 'verify' ? (
-            <>
-              <h1 className="mt-7 font-display text-[28px] font-bold leading-tight tracking-tight">Check your inbox</h1>
-              <p className="mt-1.5 text-[15px] leading-relaxed text-muted">
-                We sent a 6-digit code to <span className="font-semibold text-ink">{email}</span>.<br />
-                It expires in 5 minutes.
-              </p>
-              <form onSubmit={handleVerifyCode} className="mt-6 space-y-3">
-                <div>
-                  <label className="label" htmlFor="code-input">Your code</label>
-                  <input
-                    id="code-input"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={6}
-                    className="field text-center text-[22px] font-semibold tracking-[0.45em]"
-                    placeholder="000000"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  />
-                </div>
-                {error && (
-                  <p role="alert" className="flex items-start gap-2 rounded-xl bg-alert/10 p-3 text-[15px] font-medium text-alert">
-                    <AlertTriangle size={17} className="mt-0.5 shrink-0" aria-hidden />
-                    <span>{error}</span>
-                  </p>
-                )}
-                {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[15px] font-medium text-verified">{notice}</p>}
-                <button type="submit" className="btn-primary w-full" disabled={busy || code.trim().length < 6}>
-                  {busy ? 'Checking…' : 'Sign in'}
-                </button>
-                <div className="flex items-center justify-between gap-2 pt-1">
-                  <button
-                    type="button"
-                    className="inline-flex min-h-10 items-center text-[14px] font-semibold text-amber"
-                    onClick={() => {
-                      setCodeStage('email')
-                      setMode('in')
-                      setCode('')
-                      setError(null)
-                      setNotice(null)
-                    }}
-                  >
-                    Use a different email
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex min-h-10 items-center text-[14px] font-semibold text-muted transition hover:text-ink disabled:opacity-50"
-                    onClick={() => void handleSendCode()}
-                    disabled={busy}
-                  >
-                    Resend code
-                  </button>
-                </div>
-              </form>
-              <button
-                type="button"
-                onClick={() => { setMode('in'); setError(null); setNotice(null); setCodeStage('email'); setCode('') }}
-                className="mt-5 w-full py-2 text-[15px] font-semibold text-amber"
-              >
-                Back to sign in
-              </button>
-            </>
           ) : (
             <>
               <h1 className="mt-6 font-display text-[28px] font-bold leading-tight tracking-tight">Come w&apos; me</h1>
@@ -448,70 +305,27 @@ export default function Login() {
                   <span>{googleError}</span>
                 </p>
               )}
-              <div className="mt-3 flex flex-col gap-3">
-                {/* Inside an installed PWA on iOS, codes are the fast path — put code first */}
-                <div className={codeFirst ? 'order-3' : 'order-1'}>
-                  <button
-                    type="button"
-                    onClick={handleGoogleTap}
-                    className="flex w-full items-center justify-center gap-3 rounded-[16px] bg-ink py-3.5 text-[15px] font-bold text-canvas shadow-card transition enabled:hover:brightness-110 disabled:opacity-50"
-                    disabled={busy}
-                    aria-label="Continue with Google"
-                  >
-                    <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
-                      <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.36-2.17 3.56-5.4 3.56-8.82z" />
-                      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z" />
-                      <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z" />
-                      <path fill="#EA4335" d="M12 4.77c1.76 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.77 12 4.77z" />
-                    </svg>
-                    {busy ? 'One moment…' : 'Continue with Google'}
-                  </button>
-                  <p className="mt-1.5 text-center text-[12px] leading-relaxed text-muted">
-                    {googleAccounts.length > 0
-                      ? 'Your saved Google accounts are one tap away.'
-                      : 'You’ll pick from the Google accounts already on this device.'}
-                  </p>
-                </div>
-
-                <div className="order-2 flex items-center gap-3" aria-hidden="true">
-                  <div className="h-px flex-1 bg-line" />
-                  <span className="text-[12px] font-semibold uppercase tracking-wide text-muted">
-                    {codeFirst ? 'or continue with Google' : 'or continue with email code'}
-                  </span>
-                  <div className="h-px flex-1 bg-line" />
-                </div>
-
-                <div className={codeFirst ? 'order-1' : 'order-3'}>
-                  {codeFirst && (
-                    <p className="flex w-fit items-center gap-1.5 rounded-full bg-sun/20 px-2.5 py-1 text-[11px] font-semibold text-amber">
-                      <Smartphone size={13} aria-hidden /> Quick 6-digit code — no browser redirect needed
-                    </p>
-                  )}
-                  <form id="email-code-form" onSubmit={handleSendCode} className="mt-2 space-y-2.5">
-                    <label className="label" htmlFor="email-code">Your email</label>
-                    <input
-                      id="email-code"
-                      type="email"
-                      autoComplete="email"
-                      className="field"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      aria-describedby="email-code-hint"
-                    />
-                    <button
-                      type="submit"
-                      className="btn-primary w-full"
-                      disabled={busy || !email.trim()}
-                    >
-                      {busy ? 'Sending…' : 'Email me a code'}
-                    </button>
-                    <p id="email-code-hint" className="text-[13px] leading-relaxed text-muted">
-                      We&apos;ll send a 6-digit code. No password, no browser redirect — signed in in seconds.
-                    </p>
-                  </form>
-                </div>
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={handleGoogleTap}
+                  className="flex w-full items-center justify-center gap-3 rounded-[16px] bg-ink py-3.5 text-[15px] font-bold text-canvas shadow-card transition enabled:hover:brightness-110 disabled:opacity-50"
+                  disabled={busy}
+                  aria-label="Continue with Google"
+                >
+                  <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+                    <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.36-2.17 3.56-5.4 3.56-8.82z" />
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z" />
+                    <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z" />
+                    <path fill="#EA4335" d="M12 4.77c1.76 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.77 12 4.77z" />
+                  </svg>
+                  {busy ? 'One moment…' : 'Continue with Google'}
+                </button>
+                <p className="mt-1.5 text-center text-[13px] leading-relaxed text-muted">
+                  {googleAccounts.length > 0
+                    ? 'Your saved Google accounts are one tap away.'
+                    : 'You’ll pick from the Google accounts already on this device.'}
+                </p>
               </div>
               <div className="my-3 flex items-center gap-3" aria-hidden="true">
                 <div className="h-px flex-1 bg-line" />
