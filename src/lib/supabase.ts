@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 
 const url = import.meta.env.VITE_SUPABASE_URL
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -10,8 +10,12 @@ export const isSupabaseConfigured = Boolean(url && anonKey)
  * The browser client. Runs as the signed-in user, so every row-level security
  * policy in supabase/schema.sql applies. Never create a second client with the
  * service role key in here.
+ *
+ * Session is persisted in first-party cookies (not localStorage) so the
+ * installed home-screen app — which on iOS shares first-party cookies with
+ * Safari — opens already signed in.
  */
-export const supabase = createClient(
+export const supabase = createBrowserClient(
   url || 'https://placeholder.supabase.co',
   anonKey || 'placeholder-anon-key',
   {
