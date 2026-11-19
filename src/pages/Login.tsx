@@ -22,6 +22,7 @@ export default function Login() {
     signInWithGoogleCredential,
     session,
     profile,
+    guidelineAccepted,
   } = useAuth()
   const navigate = useNavigate()
   const location = useLocation() as { state?: { from?: string } }
@@ -57,6 +58,12 @@ export default function Login() {
   const [googleError, setGoogleError] = useState<string | null>(null)
   const [googleAccounts, setGoogleAccounts] = useState<string[]>([])
   const [googlePickerOpen, setGooglePickerOpen] = useState(false)
+
+  // Returning user who accepted guidelines already — remember it, don't make
+  // them tick the box again. One Tap can fire immediately.
+  useEffect(() => {
+    if (guidelineAccepted) setGuidelinesChecked(true)
+  }, [guidelineAccepted])
 
   useEffect(() => {
     if (session && profile) navigate(location.state?.from ?? '/', { replace: true })
