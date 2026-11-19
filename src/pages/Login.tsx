@@ -86,8 +86,13 @@ export default function Login() {
   // already signed in on this device: one tap on Google's chip and the user is
   // in, with no redirect. If Google's script cannot render the prompt (blocked
   // script, in-app webview, unsupported browser) the button below still works.
+  //
+  // Inside an installed home-screen PWA on iOS, arm One Tap immediately — the
+  // installed app has its own storage container separate from Safari, so being
+  // "logged in on the browser tab" means nothing in here. One tap is the
+  // closest we can get to the browser experience: zero passwords, zero redirects.
   useEffect(() => {
-    if (!guidelinesChecked) return
+    if (!guidelinesChecked && !codeFirst) return
     let active = true
     void showGoogleOneTap((credential) => {
       if (active) void completeGoogleCredential(credential)
@@ -98,7 +103,7 @@ export default function Login() {
       active = false
       hideGoogleOneTap()
     }
-  }, [guidelinesChecked])
+  }, [guidelinesChecked, codeFirst])
 
   const flashGuidelinesNotice = (message: string, target: 'email' | 'google' = 'email') => {
     if (target === 'google') setGoogleError(message)
