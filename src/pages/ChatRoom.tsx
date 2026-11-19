@@ -20,6 +20,7 @@ import {
   fetchParticipants,
   fetchTask,
   markChatRead,
+  fetchChatReadAt,
   resolveChatMedia,
   sendMessage,
   pinMessage,
@@ -85,6 +86,8 @@ export default function ChatRoom() {
 const [flashMessageId, setFlashMessageId] = useState<string | null>(null)
 const [isNearBottom, setIsNearBottom] = useState(true)
 const [newSinceScroll, setNewSinceScroll] = useState(0)
+const [unreadAnchorId, setUnreadAnchorId] = useState<string | null>(null)
+const readMarkedRef = useRef(false)
 const [typingOthers, setTypingOthers] = useState<Array<{ id: string; name: string }>>([])
 const joinGateRef = useRef<number | null>(null)
 const containerRef = useRef<HTMLDivElement | null>(null)
@@ -110,6 +113,12 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       if (!id || !profile) return
       setLoading(true)
       setError(null)
+      setUnreadAnchorId(null)
+      setNewSinceScroll(0)
+      readMarkedRef.current = false
+      isNearBottomRef.current = true
+      setIsNearBottom(true)
+      anchorJumpedRef.current = null
       try {
         const currentTask = await fetchTask(id)
         if (!currentTask) throw new Error('This group chat could not be found.')
@@ -216,6 +225,16 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
         if (!active) return
         const gate = joinGateRef.current
         const visibleRows = gate ? rows.filter((row) => Date.parse(row.created_at) >= gate) : rows
+        // Read the last-read gate before we bump it: this is where the chat resumes.
+        const readAtRaw = await fetchChatReadAt(task.id).catch(() => null)
+        const readAt = readAtRaw ? Date.parse(readAtRaw) : 0
+        const anchor = readAt > 0 ? visibleRows.find((row) => Date.parse(row.created_at) > readAt) : undefined
+        if (anchor) {
+          isNearBottomRef.current = false
+          setIsNearBottom(false)
+          setUnreadAnchorId(anchor.id)
+        }
+        readMarkedRef.current = !anchor
         const views = await fetchMessageViews(visibleRows.map((r) => r.id)).catch(() => [])
         if (!active) return
         const viewedByMe = new Set(views.filter((v) => v.user_id === profile?.id).map((v) => v.message_id))
@@ -245,7 +264,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             setReactions(map)
           })
           .catch(() => undefined)
-        if (document.visibilityState === 'visible') {
+        if (!anchor && document.visibilityState === 'visible') {
           try {
             await markChatRead(task.id)
             await refreshNotifications()
@@ -277,7 +296,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
               })
             })
             .catch(() => undefined)
-          if (document.visibilityState === 'visible') {
+          if (document.visibilityState === 'visible' && isNearBottomRef.current) {
             void markChatRead(task.id)
               .then(refreshNotifications)
               .catch((e: unknown) => {
@@ -302,6 +321,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
     })
     const onVisibilityChange = () => {
       if (document.visibilityState !== 'visible') return
+      if (!isNearBottomRef.current) return
       void markChatRead(task.id)
         .then(refreshNotifications)
         .catch((e: unknown) => {
@@ -339,6 +359,44 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
     }
   }, [actionMessageId])
 
+  const anchorJumpedRef = useRef<string | null>(null)
+  // WhatsApp-style read receipt: the moment the person actually sees the
+  // conversation end (it scrolls into view — all unread visible on screen, or
+  // they reached the bottom/news button), everything is considered read.
+  useEffect(() => {
+    if (!unreadAnchorId) return
+    const sentinel = chatEnd.current
+    const root = containerRef.current
+    if (!sentinel || !root) return
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries[0]?.isIntersecting ?? false
+      if (!visible || readMarkedRef.current) return
+      // The empty container at mount reports its zero-height sentinel as visible —
+      // that is not "they read it". Only count once real content is on screen.
+      if (messages.length === 0) return
+      readMarkedRef.current = true
+      setUnreadAnchorId(null)
+      setIsNearBottom(true)
+      isNearBottomRef.current = true
+      void markChatRead(task?.id ?? id ?? '').then(refreshNotifications).catch(() => undefined)
+    }, { root, threshold: 0.1 })
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [unreadAnchorId, messages.length, id, task?.id, refreshNotifications])
+
+  // Jump to where the person stopped — never to the bottom — when a read gate is active.
+  useEffect(() => {
+    if (!unreadAnchorId || anchorJumpedRef.current === unreadAnchorId || messages.length === 0) return
+    const timer = window.setTimeout(() => {
+      const container = containerRef.current
+      const el = container?.querySelector(`[data-message-id="${unreadAnchorId}"]`)
+      if (!container || !el) return
+      container.scrollTop = Math.max(0, (el as HTMLElement).offsetTop - 12)
+      anchorJumpedRef.current = unreadAnchorId
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [unreadAnchorId, messages.length])
+
   useEffect(() => {
     if (forceScrollRef.current || isNearBottomRef.current) {
       forceScrollRef.current = false
@@ -373,7 +431,9 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
     const near = distanceFromBottom < 120
     isNearBottomRef.current = near
     setIsNearBottom(near)
-    if (near) setNewSinceScroll(0)
+    if (near) {
+      setNewSinceScroll(0)
+    }
   }
   const scrollToBottom = () => {
     const element = containerRef.current
@@ -1143,6 +1203,13 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             const senderColor = senderColorHex(message.sender_id)
             return (
               <div key={message.id} data-message-id={message.id}>
+                {unreadAnchorId === message.id && (
+                  <div className="mb-2 flex items-center gap-3 pt-1" role="separator" aria-label="New messages">
+                    <div className="h-px flex-1 bg-amber/40" />
+                    <span className="rounded-full bg-sun/25 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber">New messages</span>
+                    <div className="h-px flex-1 bg-amber/40" />
+                  </div>
+                )}
                 {showDateSeparator && (
                   <p className="my-3 text-center text-[12px] font-semibold uppercase tracking-wide text-muted">
                     {new Date(message.created_at).toLocaleDateString()}

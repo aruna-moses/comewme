@@ -296,6 +296,25 @@ export async function markChatRead(taskId: string): Promise<void> {
   if (error) throw toError(error)
 }
 
+/**
+ * When this user last read the chat. The unread row (migration 040) is the same
+ * gate the badge counters use — we fetch it BEFORE marking as read so the chat
+ * can resume exactly where the person stopped instead of jumping to the end.
+ */
+export async function fetchChatReadAt(taskId: string): Promise<string | null> {
+  const { data: userData } = await supabase.auth.getUser()
+  const uid = userData.user?.id
+  if (!uid) return null
+  const { data, error } = await supabase
+    .from('chat_read_states')
+    .select('last_read_at')
+    .eq('task_id', taskId)
+    .eq('user_id', uid)
+    .maybeSingle()
+  if (error) return null
+  return (data as { last_read_at?: string } | null)?.last_read_at ?? null
+}
+
 /** Resolve stored private object paths to fresh URLs, retaining support for older URL rows. */
 export async function resolveChatMedia(messages: Message[]): Promise<Message[]> {
   const mediaPaths = [...new Set(
