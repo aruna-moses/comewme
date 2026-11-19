@@ -29,9 +29,11 @@ export default function Login() {
     ? location.state.from
     : '/'
 
-  const [mode, setMode] = useState<'in' | 'up' | 'forgot'>('in')
+  const [mode, setMode] = useState<'in' | 'up' | 'forgot' | 'code'>('in')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [code, setCode] = useState('')
+  const [codeStage, setCodeStage] = useState<'email' | 'verify'>('email')
   const [showPassword, setShowPassword] = useState(false)
   const [guidelinesChecked, setGuidelinesChecked] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -91,6 +93,67 @@ export default function Login() {
     guidelinesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     setGuidelinesFlash(true)
     window.setTimeout(() => setGuidelinesFlash(false), 2500)
+  }
+
+  // Passwordless path: send a 6-digit code to the inbox, sign in by typing it.
+  // Works identically inside an installed home-screen PWA — no redirect, no password.
+  async function handleSendCode(e?: React.FormEvent) {
+    e?.preventDefault()
+    setError(null)
+    setNotice(null)
+
+    if (!guidelinesChecked) {
+      flashGuidelinesNotice('Please tick the guidelines first — it takes two seconds.')
+      return
+    }
+    if (!email.trim()) return
+
+    setBusy(true)
+    try {
+      const { error: sendError } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          shouldCreateUser: true,
+          data: {
+            guidelines_accepted_version: '1.0',
+            guidelines_user_agent: navigator.userAgent,
+          },
+        },
+      })
+      if (sendError) throw sendError
+      setNotice(`We sent a 6-digit code to ${email.trim()} — check your inbox and spam folder.`)
+      setCodeStage('verify')
+    } catch (err) {
+      setError(friendlyError(err, 'Could not send the code. Try again in a minute.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleVerifyCode(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setNotice(null)
+
+    if (code.trim().length < 6) {
+      setError('Enter the 6-digit code from your email.')
+      return
+    }
+
+    setBusy(true)
+    try {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: code.trim(),
+        type: 'email',
+      })
+      if (verifyError) throw verifyError
+      navigate(returnTo, { replace: true })
+    } catch (err) {
+      setError(friendlyError(err, 'That code did not work. Check it and try again.'))
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function handleEmailSubmit(e: React.FormEvent) {
@@ -247,6 +310,134 @@ export default function Login() {
                 Back to sign in
               </button>
             </>
+          ) : mode === 'code' ? (
+            <>
+              {codeStage === 'email' ? (
+                <>
+                  <h1 className="mt-7 font-display text-[28px] font-bold leading-tight tracking-tight">Email me a login code</h1>
+                  <p className="mt-1.5 text-[15px] leading-relaxed text-muted">
+                    No password needed. We&apos;ll send a 6-digit code to your inbox — works perfectly in the installed app too.
+                  </p>
+                  <label
+                    ref={guidelinesRef}
+                    className={`mt-5 flex cursor-pointer items-start gap-2.5 rounded-[16px] border p-3 text-[14px] leading-relaxed transition ${
+                      guidelinesFlash
+                        ? 'border-alert bg-alert/10 text-alert ring-4 ring-alert/20'
+                        : 'border-line bg-white text-muted'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#ff9f1c]"
+                      checked={guidelinesChecked}
+                      onChange={(event) => {
+                        setGuidelinesChecked(event.target.checked)
+                        if (event.target.checked) {
+                          setGuidelinesFlash(false)
+                          setError(null)
+                        }
+                      }}
+                      aria-describedby="guidelines-label-code"
+                    />
+                    <span id="guidelines-label-code">
+                      I agree to follow the{' '}
+                      <Link to="/community-guidelines" onClick={(event) => event.stopPropagation()} className="font-semibold text-amber underline underline-offset-2">
+                        Community Guidelines
+                      </Link>{' '}
+                      and understand that violations may lead to a warning, temporary suspension, or permanent ban.
+                    </span>
+                    {guidelinesFlash && <AlertTriangle size={20} className="ml-auto shrink-0 text-alert" aria-hidden />}
+                  </label>
+                  <form onSubmit={handleSendCode} className="mt-6 space-y-3">
+                    <div>
+                      <label className="label" htmlFor="code-email">Email</label>
+                      <input
+                        id="code-email"
+                        type="email"
+                        autoComplete="email"
+                        className="field"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    {error && (
+                      <p role="alert" className="flex items-start gap-2 rounded-xl bg-alert/10 p-3 text-[15px] font-medium text-alert">
+                        <AlertTriangle size={17} className="mt-0.5 shrink-0" aria-hidden />
+                        <span>{error}</span>
+                      </p>
+                    )}
+                    <button type="submit" className="btn-primary w-full" disabled={busy || !email.trim()}>
+                      {busy ? 'Sending…' : 'Send the code'}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <h1 className="mt-7 font-display text-[28px] font-bold leading-tight tracking-tight">Check your inbox</h1>
+                  <p className="mt-1.5 text-[15px] leading-relaxed text-muted">
+                    We sent a 6-digit code to <span className="font-semibold text-ink">{email}</span>.<br />
+                    It expires in 5 minutes.
+                  </p>
+                  <form onSubmit={handleVerifyCode} className="mt-6 space-y-3">
+                    <div>
+                      <label className="label" htmlFor="code-input">Your code</label>
+                      <input
+                        id="code-input"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        className="field text-center text-[22px] font-semibold tracking-[0.45em]"
+                        placeholder="000000"
+                        value={code}
+                        onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      />
+                    </div>
+                    {error && (
+                      <p role="alert" className="flex items-start gap-2 rounded-xl bg-alert/10 p-3 text-[15px] font-medium text-alert">
+                        <AlertTriangle size={17} className="mt-0.5 shrink-0" aria-hidden />
+                        <span>{error}</span>
+                      </p>
+                    )}
+                    {notice && <p role="status" className="rounded-xl bg-verified/10 p-3 text-[15px] font-medium text-verified">{notice}</p>}
+                    <button type="submit" className="btn-primary w-full" disabled={busy || code.trim().length < 6}>
+                      {busy ? 'Checking…' : 'Sign in'}
+                    </button>
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <button
+                        type="button"
+                        className="inline-flex min-h-10 items-center text-[14px] font-semibold text-amber"
+                        onClick={() => {
+                          setCodeStage('email')
+                          setCode('')
+                          setError(null)
+                          setNotice(null)
+                        }}
+                      >
+                        Use a different email
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex min-h-10 items-center text-[14px] font-semibold text-muted transition hover:text-ink disabled:opacity-50"
+                        onClick={() => void handleSendCode()}
+                        disabled={busy}
+                      >
+                        Resend code
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => { setMode('in'); setError(null); setNotice(null); setCodeStage('email'); setCode('') }}
+                className="mt-5 w-full py-2 text-[15px] font-semibold text-amber"
+              >
+                Back to sign in
+              </button>
+            </>
           ) : (
             <>
               <h1 className="mt-6 font-display text-[28px] font-bold leading-tight tracking-tight">Come w&apos; me</h1>
@@ -315,6 +506,21 @@ export default function Login() {
                 {googleAccounts.length > 0
                   ? 'Your saved Google accounts are one tap away.'
                   : 'You’ll pick from the Google accounts already on this device.'}
+              </p>
+              <p className="mt-3 text-center text-[13px] leading-relaxed text-muted">
+                <button
+                  type="button"
+                  className="font-semibold text-amber underline underline-offset-4"
+                  onClick={() => {
+                    setMode('code')
+                    setCodeStage('email')
+                    setCode('')
+                    setError(null)
+                    setNotice(null)
+                  }}
+                >
+                  Prefer a code? Get one by email
+                </button>
               </p>
               <div className="my-4 flex items-center gap-3" aria-hidden="true">
                 <div className="h-px flex-1 bg-line" />

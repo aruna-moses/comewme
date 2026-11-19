@@ -3,6 +3,7 @@
   "short_name": "Come w' me",
   "description": "Post an activity, find people to do it with. Lagos.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
