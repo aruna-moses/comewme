@@ -10,6 +10,7 @@ import WarningModal, { activeRestriction, unacknowledgedWarning } from './compon
 import ModerationAlert from './components/ModerationAlert'
 import InAppToast from './components/InAppToast'
 import WelcomeCelebration from './components/WelcomeCelebration'
+import InstallPrompt from './components/InstallPrompt'
 import { unlockAudio } from './lib/sounds'
 import { useForegroundPush } from './hooks/useForegroundPush'
 import { friendlyError } from './lib/errors'
@@ -221,6 +222,7 @@ export default function App() {
       </Suspense>
       <ModerationAlert />
       <InAppToast />
+      <InstallPrompt />
       <WelcomeCelebration />
       <AudioUnlock />
       <BottomNav />
