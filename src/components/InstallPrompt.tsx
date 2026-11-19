@@ -133,7 +133,11 @@ export default function InstallPrompt() {
                   <li className="flex items-center gap-2.5 text-[14px] font-semibold text-ink">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-[13px] font-bold text-canvas">1</span>
                     <span className="flex items-center gap-1.5">
-                      Tap the <Share className="h-4 w-4 text-ink" strokeWidth={2.1} aria-hidden /> Share icon {isIOS ? 'at the bottom of your screen' : 'at the top-right of Chrome'}
+                      Tap the{' '}
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-sun/25 ring-1 ring-amber/60">
+                        <Share className="h-4 w-4 text-amber" strokeWidth={2.1} aria-hidden />
+                      </span>{' '}
+                      Share icon at the top or bottom of your screen
                     </span>
                   </li>
                   <li className="flex items-center gap-2.5 text-[14px] font-semibold text-ink">
