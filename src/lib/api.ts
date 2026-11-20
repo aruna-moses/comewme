@@ -19,7 +19,7 @@ import { toError } from './errors'
 /* ------------------------------------------------------------------ */
 
 const TASK_COLUMNS = `
-  id, host_id, host_name, host_avatar_url, title, description, category,
+  id, host_id, host_name, host_avatar_url, image_url, title, description, category,
   area, city, meeting_point, date_time, spots_needed, spots_filled, status,
   fill_mode, is_sponsored, sponsor_name, sponsored_until, created_at
 `
@@ -136,6 +136,12 @@ export async function editOwnTask(input: {
   if (error) throw toError(error)
 }
 
+/** Replace/remove the activity flier within the 30-minute edit window. */
+export async function setTaskImage(taskId: string, imageUrl: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_task_image', { p_task_id: taskId, p_image_url: imageUrl })
+  if (error) throw toError(error)
+}
+
 /** Latest edit timestamp, shown as a small "Edited" marker on the activity. */
 export async function fetchTaskLastEdited(taskId: string): Promise<string | null> {
   const { data, error } = await supabase
@@ -159,6 +165,7 @@ export async function createTask(
     date_time: string
     spots_needed: number
     fill_mode: 'review'
+    image_url?: string | null
   },
   profile: Profile,
 ): Promise<Task> {

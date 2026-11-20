@@ -271,10 +271,10 @@ export default function ChatList() {
           className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 flex-1 min-w-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
         >
           <div
-            className={`flex h-14 w-14 items-center justify-center rounded-full text-[26px] shadow-sm ring-1 ring-black/5 ${categoryTileBg(c.task.category)}`}
+            className={`flex h-14 w-14 items-center justify-center overflow-hidden rounded-full text-[26px] shadow-sm ring-1 ring-black/5 ${categoryTileBg(c.task.category)}`}
             aria-hidden="true"
           >
-            {taskEmoji(c.task.category)}
+            {c.task.image_url ? <img src={c.task.image_url} alt="" className="h-full w-full object-cover" /> : taskEmoji(c.task.category)}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">

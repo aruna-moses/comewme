@@ -112,6 +112,7 @@ export interface Task {
   host_id: string
   host_name: string
   host_avatar_url: string | null
+  image_url: string | null
   title: string
   description: string | null
   category: Category

@@ -125,8 +125,10 @@ export default function TaskCard({
       )}
       <Link to={`/task/${task.id}`} className="block rounded-[18px] active:scale-[0.995]" aria-label={task.title}>
         <div className="flex items-start gap-3">
-          <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] text-[30px] ${tileStyles[task.category]}`}>
-            {emoji}
+          <div className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[20px] text-[30px] ${tileStyles[task.category]}`}>
+            {task.image_url ? (
+              <img src={task.image_url} alt="" className="h-full w-full object-cover" />
+            ) : emoji}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { createTask } from '../lib/api'
+import { uploadActivityImage } from '../lib/activityImage'
 import { supabase } from '../lib/supabase'
 import { detectCategory } from '../lib/categoryDetector'
 import { clearDraftGroup, usePersistedState } from '../lib/drafts'
@@ -26,6 +27,9 @@ export default function PostTask() {
   const [date, setDate] = usePersistedState(`${DRAFT}:date`, '')
   const [time, setTime] = usePersistedState(`${DRAFT}:time`, '')
   const [spots, setSpots] = usePersistedState(`${DRAFT}:spots`, '2')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [busy, setBusy] = useState(false)
   const [postingControlLoading, setPostingControlLoading] = useState(true)
   const [postingControlReady, setPostingControlReady] = useState(false)
@@ -81,6 +85,8 @@ export default function PostTask() {
     setArea(profile?.area || 'Yaba')
     setManualCategory(null)
     setStep('form')
+    setImageFile(null)
+    setImagePreview(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -117,6 +123,15 @@ export default function PostTask() {
     // step === 'confirm': actually post
     setBusy(true)
     try {
+      let imageUrl: string | null = null
+      if (imageFile) {
+        setUploadingImage(true)
+        try {
+          imageUrl = await uploadActivityImage(imageFile)
+        } finally {
+          setUploadingImage(false)
+        }
+      }
       const task = await createTask(
         {
           title: title.trim(),
@@ -127,6 +142,7 @@ export default function PostTask() {
           date_time: when.toISOString(),
           spots_needed: Math.max(1, Math.min(2147483647, parseInt(spots, 10) || 1)),
           fill_mode: 'review',
+          image_url: imageUrl,
         },
         profile,
       )
@@ -173,6 +189,37 @@ export default function PostTask() {
                 maxLength={120}
                 required
               />
+            </div>
+
+            <div>
+              <label className="label" htmlFor="activity-photo">Activity photo <span className="font-normal text-muted">(optional)</span></label>
+              <div className="flex items-center gap-3">
+                <label
+                  htmlFor="activity-photo"
+                  className="flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-[18px] border border-dashed border-line bg-white text-[26px] text-muted"
+                >
+                  {imagePreview ? <img src={imagePreview} alt="Activity photo preview" className="h-full w-full object-cover" /> : <span aria-hidden>＋</span>}
+                </label>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold">Give your activity a face</p>
+                  <p className="mt-0.5 text-[13px] leading-snug text-muted">
+                    Square photo, cropped to 1080×1080. Shows on the card, in the chat and in shared links.
+                  </p>
+                  <input
+                    id="activity-photo"
+                    type="file"
+                    accept="image/*"
+                    className="mt-2 block w-full text-[12px] text-muted file:mr-2 file:rounded-full file:border-0 file:bg-sun/30 file:px-3 file:py-1.5 file:text-[12px] file:font-bold file:text-ink"
+                    onChange={(e) => {
+                      const next = e.target.files?.[0] ?? null
+                      if (imagePreview) URL.revokeObjectURL(imagePreview)
+                      setImageFile(next)
+                      setImagePreview(next ? URL.createObjectURL(next) : null)
+                    }}
+                  />
+                </div>
+              </div>
+              {uploadingImage && <p className="mt-1 text-[12px] font-semibold text-amber">Uploading photo…</p>}
             </div>
 
             <div>

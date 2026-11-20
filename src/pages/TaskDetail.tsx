@@ -13,6 +13,7 @@ import {
   fetchTask,
   fetchTaskLastEdited,
   markTaskDone,
+  setTaskImage,
   reopenTask,
   requestJoin,
   setJoinStatus,
@@ -22,6 +23,7 @@ import {
 import type { Category, JoinRequest, Profile, ReportCategory, Task } from '../types'
 import { AREAS, CATEGORIES, REPORT_CATEGORIES, categoryLabel, trustLevel } from '../types'
 import { formatDateTime } from '../lib/format'
+import { uploadActivityImage } from '../lib/activityImage'
 import Avatar from '../components/Avatar'
 import Sheet from '../components/Sheet'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -90,6 +92,9 @@ export default function TaskDetail() {
     title: string; description: string; category: Category; area: string
     meetingPoint: string; date: string; time: string; spots: string
   }>({ title: '', description: '', category: 'market_run', area: 'Yaba', meetingPoint: '', date: '', time: '', spots: '2' })
+  const [editImageFile, setEditImageFile] = useState<File | null>(null)
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null)
+  const [removeImage, setRemoveImage] = useState(false)
 
   const [rateOpen, setRateOpen] = useState(false)
   const [rating, setRating] = useState<Record<string, number>>({})
@@ -138,6 +143,9 @@ export default function TaskDetail() {
       spots: String(task.spots_needed),
     })
     setEditError(null)
+    setEditImageFile(null)
+    setEditImagePreview(null)
+    setRemoveImage(false)
     setGroupInfoOpen(false)
     setEditOpen(true)
   }
@@ -166,6 +174,11 @@ export default function TaskDetail() {
         dateTime: when.toISOString(),
         spotsNeeded: Math.max(1, parseInt(editForm.spots, 10) || 1),
       })
+      if (editImageFile) {
+        await setTaskImage(task.id, await uploadActivityImage(editImageFile))
+      } else if (removeImage && task.image_url) {
+        await setTaskImage(task.id, null)
+      }
       setEditOpen(false)
       await load(true)
       setLastEdited(await fetchTaskLastEdited(task.id))
@@ -456,6 +469,9 @@ export default function TaskDetail() {
           </div>
         )}
         <h1 className="font-display text-[23px] font-bold leading-tight">{task.title}</h1>
+        {task.image_url && (
+          <img src={task.image_url} alt={task.title} className="mt-3 h-56 w-full rounded-[20px] object-cover shadow-card" />
+        )}
         {lastEdited && (
           <p className="mt-0.5 text-[12px] font-semibold text-muted">
             Edited {formatDateTime(lastEdited)}
@@ -885,6 +901,36 @@ export default function TaskDetail() {
                 <label className="label" htmlFor="edit-description">About</label>
                 <textarea id="edit-description" className="field min-h-[80px]" value={editForm.description}
                   onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label" htmlFor="edit-photo">Activity photo</label>
+                <div className="flex items-center gap-3">
+                  <label htmlFor="edit-photo" className="flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-[18px] border border-dashed border-line bg-canvas text-2xl text-muted">
+                    {editImagePreview ?? (removeImage ? null : task.image_url) ? (
+                      <img src={editImagePreview ?? task.image_url ?? ''} alt="New activity photo preview" className="h-full w-full object-cover" />
+                    ) : <span aria-hidden>＋</span>}
+                  </label>
+                  <div className="min-w-0 flex-1">
+                    <input
+                      id="edit-photo"
+                      type="file"
+                      accept="image/*"
+                      className="block w-full text-[12px] text-muted file:mr-2 file:rounded-full file:border-0 file:bg-sun/30 file:px-3 file:py-1.5 file:text-[12px] file:font-bold file:text-ink"
+                      onChange={(e) => {
+                        const next = e.target.files?.[0] ?? null
+                        if (editImagePreview) URL.revokeObjectURL(editImagePreview)
+                        setEditImageFile(next)
+                        setEditImagePreview(next ? URL.createObjectURL(next) : null)
+                        if (next) setRemoveImage(false)
+                      }}
+                    />
+                    {task.image_url && !editImageFile && (
+                      <button type="button" onClick={() => setRemoveImage((v) => !v)} className="mt-1 text-[12px] font-semibold text-alert underline">
+                        {removeImage ? 'Keep current photo' : 'Remove photo'}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

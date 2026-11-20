@@ -1056,8 +1056,12 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           className="flex min-w-0 flex-1 items-center gap-3 rounded-xl py-1 text-left transition hover:bg-canvas"
           aria-label="Open group and activity information"
         >
-          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4d1] text-amber">
-            <span className="text-sm font-bold" aria-hidden>G</span>
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fff4d1] text-amber">
+            {task.image_url ? (
+              <img src={task.image_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-sm font-bold" aria-hidden>G</span>
+            )}
             {happeningToday && (
               <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 animate-[pulseSoft_1.6s_ease-in-out_infinite] rounded-full border-2 border-white bg-amber" aria-hidden />
             )}

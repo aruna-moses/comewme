@@ -79,10 +79,10 @@ function PostsHistory({ userId }: { userId: string }) {
               className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-canvas"
             >
               <span
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-[22px] ${categoryTileBg(task.category)}`}
+                className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[14px] text-[22px] ${categoryTileBg(task.category)}`}
                 aria-hidden="true"
               >
-                {taskEmoji(task.category)}
+                {task.image_url ? <img src={task.image_url} alt="" className="h-full w-full object-cover" /> : taskEmoji(task.category)}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-semibold text-ink">{task.title}</span>

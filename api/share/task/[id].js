@@ -58,7 +58,7 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;')
 }
 
-function htmlPage({ title, description, taskUrl, shareUrl, siteUrl, statusCode = 200 }) {
+function htmlPage({ title, description, taskUrl, shareUrl, siteUrl, statusCode = 200, flierUrl = null }) {
   const safeTitle = escapeHtml(title)
   const safeDescription = escapeHtml(description)
   const safeTaskUrl = escapeHtml(taskUrl)
@@ -67,9 +67,14 @@ function htmlPage({ title, description, taskUrl, shareUrl, siteUrl, statusCode =
   // looks distinct instead of one banner for every activity.
   const sharePath = safeShareUrl.split('?')[0].split('/').filter(Boolean)
   const taskId = sharePath[sharePath.length - 1] ?? ''
-  const imageUrl = taskId
-    ? `${siteUrl}/share/task/${taskId}/card.svg?v=1`
-    : `${siteUrl}/signin-banner.png?v=2`
+  const hasFlier = typeof flierUrl === 'string' && /^https:\/\//i.test(flierUrl)
+  const imageUrl = hasFlier
+    ? escapeHtml(flierUrl)
+    : (taskId
+      ? `${siteUrl}/share/task/${taskId}/card.svg?v=1`
+      : `${siteUrl}/signin-banner.png?v=2`)
+  const imageType = hasFlier ? 'image/jpeg' : (taskId ? 'image/svg+xml' : 'image/png')
+  const imageSize = hasFlier ? 1080 : 1200
 
   return {
     statusCode,
@@ -87,9 +92,9 @@ function htmlPage({ title, description, taskUrl, shareUrl, siteUrl, statusCode =
     <meta property="og:description" content="${safeDescription}">
     <meta property="og:url" content="${safeShareUrl}">
     <meta property="og:image" content="${imageUrl}">
-    <meta property="og:image:type" content="image/svg+xml">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="${imageType}">
+    <meta property="og:image:width" content="${imageSize}">
+    <meta property="og:image:height" content="${imageSize}">
     <meta property="og:image:alt" content="Come w' me — ${safeTitle}">
     <meta property="og:locale" content="en_NG">
     <meta name="twitter:card" content="summary_large_image">
@@ -153,7 +158,7 @@ export default async function handler(request, response) {
   try {
     const query = new URLSearchParams({
       id: `eq.${taskId}`,
-      select: 'title,description,area,date_time,category,spots_needed,spots_filled',
+      select: 'title,description,area,date_time,category,spots_needed,spots_filled,image_url',
       limit: '1',
     })
     const result = await fetch(`${supabaseUrl}/rest/v1/tasks?${query}`, {
@@ -193,6 +198,7 @@ export default async function handler(request, response) {
       taskUrl,
       shareUrl,
       siteUrl,
+      flierUrl: task.image_url ?? null,
     })
     return response.status(page.statusCode).setHeader('Content-Type', 'text/html; charset=utf-8').send(page.body)
   } catch (error) {
