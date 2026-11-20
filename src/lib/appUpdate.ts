@@ -48,17 +48,23 @@ export function isChunkLoadError(value: unknown): boolean {
       : typeof value === 'string'
         ? value
         : String((value as { message?: unknown } | null)?.message ?? '')
-  return /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|chunkloaderror|loading chunk \S+ failed|unable to preload (?:css|module)/i.test(raw)
+  return /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|chunkloaderror|loading chunk \S+ failed|unable to preload (?:css|module)|does not provide an export named|unexpected token ['"]<['"]|is not valid (?:JSON|json)|expected expression|failed to load resource.*assets\//i.test(raw)
 }
 
-/** Pick up the current deploy with a single reload. */
+function isStaleAssetElement(value: unknown): boolean {
+  return value instanceof HTMLScriptElement && /(?:^|\/)assets\//.test(value.src)
+}
+
+/** Pick up the current deploy with a single reload, bypassing any cached HTML. */
 export function applyUpdate(): void {
   try {
     sessionStorage.removeItem(RECOVERY_KEY)
   } catch {
     // storage blocked — reloading still works
   }
-  window.location.reload()
+  const target = new URL(window.location.href)
+  target.searchParams.set('__v', String(Date.now()))
+  window.location.replace(target.toString())
 }
 
 /**
@@ -174,7 +180,7 @@ export function installUpdateRecovery(): void {
   window.addEventListener(
     'error',
     (event) => {
-      if (handle(event.error ?? event.message)) event.preventDefault()
+      if (isStaleAssetElement(event.target) || handle(event.error ?? event.message)) event.preventDefault()
     },
     true,
   )

@@ -3,7 +3,7 @@
   "rewrites": [
     { "source": "/share/task/:id", "destination": "/api/share/task/:id" },
     { "source": "/share/task/:id/card.svg", "destination": "/api/share/task/card/:id" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
