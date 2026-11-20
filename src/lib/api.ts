@@ -212,6 +212,29 @@ export async function restoreTask(taskId: string): Promise<void> {
 
 /** Removes activities whose delete grace period expired (chat + media + links included). */
 export async function cleanupExpiredTasks(): Promise<void> {
+  const cutoff = new Date(Date.now() - 30 * 60_000).toISOString()
+  const { data: expired } = await supabase
+    .from('tasks')
+    .select('id, image_url')
+    .eq('status', 'cancelled')
+    .lt('cancelled_at', cutoff)
+  for (const task of expired ?? []) {
+    // storage.objects cannot be deleted from SQL — use the Storage API.
+    if (task.image_url) {
+      const path = String(task.image_url).split('/activity-media/')[1]
+      if (path) await supabase.storage.from('activity-media').remove([path])
+    }
+    try {
+      const { data: objects } = await supabase.storage
+        .from('chat-media')
+        .list(task.id, { limit: 100 })
+      const paths = (objects ?? []).map((o) => `${task.id}/${o.name}`)
+      if (paths.length) await supabase.storage.from('chat-media').remove(paths)
+    } catch {
+      // media owned by other members is left for their own account cleanup —
+      // it stays private and unreachable once the task is gone.
+    }
+  }
   const { error } = await supabase.rpc('cleanup_expired_cancellations')
   if (error) throw toError(error)
 }
