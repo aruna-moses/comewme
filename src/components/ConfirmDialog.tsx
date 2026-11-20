@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { Sparkles } from 'lucide-react'
 
 export default function ConfirmDialog({
   open,
@@ -59,9 +58,6 @@ export default function ConfirmDialog({
         className="w-full max-w-[360px] overflow-hidden rounded-[26px] bg-white shadow-lift"
       >
         <div className={`px-6 pb-5 pt-6 text-center ${destructive ? 'bg-alert/10' : 'bg-sun/20'}`}>
-          <span className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${destructive ? 'bg-alert/10 text-alert' : 'bg-sun/20 text-amber'}`}>
-            <Sparkles size={25} aria-hidden />
-          </span>
           <h2 id="confirm-dialog-title" className="mt-3 font-display text-[20px] font-bold">{title}</h2>
           <p id="confirm-dialog-message" className="mt-1.5 text-[15px] leading-relaxed text-muted">{message}</p>
         </div>

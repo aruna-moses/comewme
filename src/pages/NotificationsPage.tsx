@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Sparkles, CheckCheck } from 'lucide-react'
+import { ArrowLeft, CheckCheck } from 'lucide-react'
 import { useNotifications } from '../context/NotificationContext'
 import NotificationRow from '../components/NotificationRow'
 import type { InAppNotification } from '../lib/notifications'
@@ -71,9 +71,6 @@ export default function NotificationsPage() {
       <main className="mx-auto w-full max-w-[640px] px-5 pt-7">
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center py-16 text-center">
-            <span className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-sun/25 text-amber">
-              <Sparkles size={34} aria-hidden />
-            </span>
             <h2 className="mt-5 font-display text-[22px] font-bold text-ink">All caught up</h2>
             <p className="mt-2 max-w-xs text-[15px] leading-relaxed text-muted">
               Nothing new here yet. When someone accepts your request, or we review something you submitted, it lands on this page.

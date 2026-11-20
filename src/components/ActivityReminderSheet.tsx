@@ -1,4 +1,4 @@
-import { Clock3, MapPin, Sparkles, X } from 'lucide-react'
+import { Clock3, MapPin, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import Sheet from './Sheet'
 import { CATEGORIES, categoryLabel } from '../types'
@@ -18,8 +18,7 @@ export default function ActivityReminderSheet({
   return (
     <Sheet open onClose={onClose} title={count === 1 ? 'Tomorrow, you have something to do' : `${count} things on tomorrow`}>
       <div className="px-1 pb-4 pt-1">
-        <p className="flex items-center gap-1.5 text-[14px] font-semibold text-amber">
-          <Sparkles size={14} aria-hidden />
+        <p className="text-[14px] font-semibold text-amber">
           Friendly reminder
         </p>
         <p className="mt-1 text-[15px] text-muted">

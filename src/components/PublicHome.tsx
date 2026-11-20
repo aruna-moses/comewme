@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, MapPin, ShieldCheck, Sparkles } from 'lucide-react'
+import { ArrowRight, MapPin, ShieldCheck } from 'lucide-react'
 import { fetchFeed, fetchVerificationStatuses } from '../lib/api'
 import type { Task } from '../types'
 import TaskCard from './TaskCard'
@@ -9,7 +9,7 @@ import Spinner from './Spinner'
 const VALUE_PROPS = [
   { icon: MapPin, text: 'Around Lagos, by area' },
   { icon: ShieldCheck, text: 'Meet in public. Stay private.' },
-  { icon: Sparkles, text: 'No drama, no forced small talk' },
+  { icon: undefined, text: 'No drama, no forced small talk' },
 ]
 
 export default function PublicHome() {
@@ -65,7 +65,7 @@ export default function PublicHome() {
         <div className="mt-4 space-y-2">
           {VALUE_PROPS.map(({ icon: Icon, text }) => (
             <p key={text} className="flex items-center gap-2 text-[14px] text-ink/80">
-              <Icon size={15} className="text-amber" aria-hidden />
+              {Icon && <Icon size={15} className="text-amber" aria-hidden />}
               {text}
             </p>
           ))}

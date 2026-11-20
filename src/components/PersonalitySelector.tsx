@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp } from 'lucide-react'
 import { updateProfile } from '../lib/api'
 import { personaImageSrc } from '../lib/personas'
 import type { CharacterPersona, Profile } from '../types'
@@ -160,8 +160,7 @@ export default function PersonalitySelector({
   return (
     <section className="card mt-4 overflow-hidden" aria-labelledby="personality-title">
       <div className="p-4">
-        <p className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[.15em] text-amber">
-          <Sparkles size={13} aria-hidden />
+        <p className="text-[12px] font-bold uppercase tracking-[.15em] text-amber">
           Your community vibe
         </p>
         <h2 id="personality-title" className="mt-1 font-display text-[19px] font-bold leading-tight">

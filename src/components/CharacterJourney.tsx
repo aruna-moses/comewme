@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { ChevronRight, Sparkles, Users, X } from 'lucide-react'
+import { ChevronRight, Users, X } from 'lucide-react'
 import { MILESTONES } from '../lib/journey'
 import { personaDisplayName, personaImageSrc } from '../lib/personas'
 import type { Profile } from '../types'
@@ -108,8 +108,8 @@ export default function CharacterJourney({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1 text-[12px] font-bold uppercase tracking-[.15em] text-amber">
-                <Sparkles size={13} aria-hidden /> Your social journey
+              <p className="text-[12px] font-bold uppercase tracking-[.15em] text-amber">
+                Your social journey
               </p>
               <h2 id="journey-title" className="mt-1 font-display text-[20px] font-bold leading-tight text-ink">
                 {currentTitle}
@@ -202,9 +202,6 @@ export default function CharacterJourney({
             })}
           </ol>
           <div className="mt-3 flex items-center gap-2 rounded-[13px] bg-canvas px-3 py-2.5">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sun/20 text-amber">
-              <Sparkles size={14} aria-hidden />
-            </span>
             <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-muted">
               Each 10 completed activities unlocks a new chapter in your journey.
             </p>
