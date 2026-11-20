@@ -8,7 +8,13 @@ import { ThemeProvider } from './context/ThemeContext'
 import SetupNotice from './components/SetupNotice'
 import SentryErrorBoundary from './components/SentryErrorBoundary'
 import { isSupabaseConfigured } from './lib/supabase'
+import { installUpdateRecovery, startUpdateWatcher } from './lib/appUpdate'
 import './index.css'
+
+// Recover from stale hashed chunks (a deploy landed while this tab was open)
+// before React has a chance to surface a crash.
+installUpdateRecovery()
+startUpdateWatcher()
 
 // Lazy-load the Sentry SDK only in production with a DSN configured.
 // Saves ~100KB from the entry chunk for every regular screen.

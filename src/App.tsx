@@ -9,6 +9,7 @@ import GuidelinesModal from './components/GuidelinesModal'
 import WarningModal, { activeRestriction, unacknowledgedWarning } from './components/WarningModal'
 import ModerationAlert from './components/ModerationAlert'
 import InAppToast from './components/InAppToast'
+import UpdateNotice from './components/UpdateNotice'
 import WelcomeCelebration from './components/WelcomeCelebration'
 import InstallPrompt from './components/InstallPrompt'
 import { unlockAudio } from './lib/sounds'
@@ -222,6 +223,7 @@ export default function App() {
       </Suspense>
       <ModerationAlert />
       <InAppToast />
+      <UpdateNotice />
       <InstallPrompt />
       <WelcomeCelebration />
       <AudioUnlock />
