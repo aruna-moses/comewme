@@ -227,8 +227,8 @@ export async function cleanupExpiredTasks(): Promise<void> {
     try {
       const { data: objects } = await supabase.storage
         .from('chat-media')
-        .list(task.id, { limit: 100 })
-      const paths = (objects ?? []).map((o) => `${task.id}/${o.name}`)
+        .list(`tasks/${task.id}`, { limit: 200 })
+      const paths = (objects ?? []).map((o) => `tasks/${task.id}/${o.name}`)
       if (paths.length) await supabase.storage.from('chat-media').remove(paths)
     } catch {
       // media owned by other members is left for their own account cleanup —
@@ -237,6 +237,34 @@ export async function cleanupExpiredTasks(): Promise<void> {
   }
   const { error } = await supabase.rpc('cleanup_expired_cancellations')
   if (error) throw toError(error)
+}
+
+/** Best-effort removal of the current user's uploaded media before account deletion. */
+export async function removeMyStorageObjects(): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser()
+  const uid = userData.user?.id
+  if (!uid) return
+  for (const bucket of ['avatars', 'activity-media', 'ad-media', 'profile-media']) {
+    try {
+      const { data: items } = await supabase.storage.from(bucket).list(uid, { limit: 200 })
+      const paths = (items ?? []).map((item) => `${uid}/${item.name}`)
+      if (paths.length) await supabase.storage.from(bucket).remove(paths)
+    } catch {
+      // never block account deletion on a media cleanup failure
+    }
+  }
+  try {
+    const { data: mine } = await supabase
+      .from('messages')
+      .select('url')
+      .eq('sender_id', uid)
+    const paths = (mine ?? [])
+      .map((row) => row.url)
+      .filter((url): url is string => typeof url === 'string' && url.startsWith('tasks/'))
+    if (paths.length) await supabase.storage.from('chat-media').remove([...new Set(paths)])
+  } catch {
+    // best effort
+  }
 }
 
 export async function cancelTask(taskId: string) {

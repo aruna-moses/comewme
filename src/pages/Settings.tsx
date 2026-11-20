@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext'
 import PushNotificationCard from '../components/PushNotificationCard'
 import ConfirmDialog from '../components/ConfirmDialog'
 import Sheet from '../components/Sheet'
-import { updateProfile, deleteOwnAccount } from '../lib/api'
+import { updateProfile, deleteOwnAccount, removeMyStorageObjects } from '../lib/api'
 import { useNotifications } from '../context/NotificationContext'
 import { supabase } from '../lib/supabase'
 import { toError, friendlyError } from '../lib/errors'
@@ -59,6 +59,8 @@ export default function Settings() {
     setDeleting(true)
     setDeleteError(null)
     try {
+      // SQL cannot delete storage.objects on this project — use the Storage API first.
+      await removeMyStorageObjects().catch(() => undefined)
       await deleteOwnAccount()
       // The session references a user that no longer exists — clear it locally.
       try {
