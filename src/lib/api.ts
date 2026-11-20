@@ -112,6 +112,43 @@ export async function fetchUpcomingForUser(userId: string): Promise<Task[]> {
   return (data ?? []) as unknown as Task[]
 }
 
+/** Edit an activity within its 30-minute window. The DB keeps an audit trail. */
+export async function editOwnTask(input: {
+  id: string
+  title: string
+  description: string
+  category: Category
+  area: string
+  meetingPoint: string
+  dateTime: string
+  spotsNeeded: number
+}): Promise<void> {
+  const { error } = await supabase.rpc('edit_own_task', {
+    p_task_id: input.id,
+    p_title: input.title,
+    p_description: input.description,
+    p_category: input.category,
+    p_area: input.area,
+    p_meeting_point: input.meetingPoint,
+    p_date_time: input.dateTime,
+    p_spots_needed: input.spotsNeeded,
+  })
+  if (error) throw toError(error)
+}
+
+/** Latest edit timestamp, shown as a small "Edited" marker on the activity. */
+export async function fetchTaskLastEdited(taskId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('task_edit_log')
+    .select('edited_at')
+    .eq('task_id', taskId)
+    .order('edited_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) return null
+  return (data as { edited_at?: string } | null)?.edited_at ?? null
+}
+
 export async function createTask(
   input: {
     title: string

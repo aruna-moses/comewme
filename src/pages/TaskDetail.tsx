@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { CheckCircle2, Ban, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react'
+import { CheckCircle2, Ban, RotateCcw, ChevronDown, ChevronRight, Pencil } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import {
   cancelTask,
   createReview,
+  editOwnTask,
   fetchMyJoinRequest,
   fetchParticipants,
   fetchJoinRequests,
   fetchTask,
+  fetchTaskLastEdited,
   markTaskDone,
   reopenTask,
   requestJoin,
@@ -17,8 +19,8 @@ import {
   submitReport,
   withdrawJoin,
 } from '../lib/api'
-import type { JoinRequest, Profile, ReportCategory, Task } from '../types'
-import { REPORT_CATEGORIES, categoryLabel, trustLevel } from '../types'
+import type { Category, JoinRequest, Profile, ReportCategory, Task } from '../types'
+import { AREAS, CATEGORIES, REPORT_CATEGORIES, categoryLabel, trustLevel } from '../types'
 import { formatDateTime } from '../lib/format'
 import Avatar from '../components/Avatar'
 import Sheet from '../components/Sheet'
@@ -78,6 +80,17 @@ export default function TaskDetail() {
   const [groupInfoOpen, setGroupInfoOpen] = useState(false)
   const [membersOpen, setMembersOpen] = useState(false)
 
+  // Time-boxed editing: a typo is fixable, but the DB keeps every before/after.
+  const [editOpen, setEditOpen] = useState(false)
+  const [editBusy, setEditBusy] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+  const [editNotice, setEditNotice] = useState<string | null>(null)
+  const [lastEdited, setLastEdited] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<{
+    title: string; description: string; category: Category; area: string
+    meetingPoint: string; date: string; time: string; spots: string
+  }>({ title: '', description: '', category: 'market_run', area: 'Yaba', meetingPoint: '', date: '', time: '', spots: '2' })
+
   const [rateOpen, setRateOpen] = useState(false)
   const [rating, setRating] = useState<Record<string, number>>({})
   const [rated, setRated] = useState<Record<string, boolean>>({})
@@ -96,6 +109,74 @@ export default function TaskDetail() {
   const isParticipant = Boolean(isHost || isAccepted)
   const isFull = Boolean(task && task.spots_filled >= task.spots_needed)
   const communityCheckPassed = Boolean(profile?.community_check_passed_at)
+  const minutesSincePosting = task ? (Date.now() - Date.parse(task.created_at)) / 60_000 : Infinity
+  const canEdit = Boolean(
+    isHost && task && ['open', 'full'].includes(task.status) && minutesSincePosting < 30,
+  )
+
+  useEffect(() => {
+    let active = true
+    setLastEdited(null)
+    if (task?.id) {
+      void fetchTaskLastEdited(task.id).then((at) => { if (active) setLastEdited(at) })
+    }
+    return () => { active = false }
+  }, [task?.id])
+
+  function openEdit() {
+    if (!task) return
+    const d = new Date(task.date_time)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    setEditForm({
+      title: task.title,
+      description: task.description ?? '',
+      category: task.category,
+      area: task.area,
+      meetingPoint: task.meeting_point,
+      date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+      time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+      spots: String(task.spots_needed),
+    })
+    setEditError(null)
+    setGroupInfoOpen(false)
+    setEditOpen(true)
+  }
+
+  async function saveEdit() {
+    if (!task) return
+    setEditError(null)
+    const when = new Date(`${editForm.date}T${editForm.time}`)
+    if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now()) {
+      setEditError('Pick a date and time in the future.')
+      return
+    }
+    if (editForm.title.trim().length < 4) {
+      setEditError('Give the activity a slightly longer title.')
+      return
+    }
+    setEditBusy(true)
+    try {
+      await editOwnTask({
+        id: task.id,
+        title: editForm.title.trim(),
+        description: editForm.description.trim(),
+        category: editForm.category,
+        area: editForm.area,
+        meetingPoint: editForm.meetingPoint.trim(),
+        dateTime: when.toISOString(),
+        spotsNeeded: Math.max(1, parseInt(editForm.spots, 10) || 1),
+      })
+      setEditOpen(false)
+      await load(true)
+      setLastEdited(await fetchTaskLastEdited(task.id))
+      setEditNotice('Activity updated — everyone who joined was told.')
+      window.setTimeout(() => setEditNotice(null), 5000)
+    } catch (e) {
+      setEditError(friendlyError(e, 'Could not save the changes. Try again.'))
+    } finally {
+      setEditBusy(false)
+    }
+  }
 
   // Anyone who took part (host or accepted member) sees the celebration once per device.
   useEffect(() => {
@@ -375,6 +456,16 @@ export default function TaskDetail() {
           </div>
         )}
         <h1 className="font-display text-[23px] font-bold leading-tight">{task.title}</h1>
+        {lastEdited && (
+          <p className="mt-0.5 text-[12px] font-semibold text-muted">
+            Edited {formatDateTime(lastEdited)}
+          </p>
+        )}
+        {editNotice && (
+          <p role="status" className="mt-2 rounded-xl bg-verified/10 px-3 py-2 text-[13px] font-semibold text-verified">
+            {editNotice}
+          </p>
+        )}
         <p className="mt-1.5 text-[15px] font-bold text-ink">
           {task.area} · {formatDateTime(task.date_time)}
         </p>
@@ -696,6 +787,18 @@ export default function TaskDetail() {
                 </p>
                 {['open', 'full'].includes(task.status) && (
                   <>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={openEdit}
+                        disabled={busy}
+                        className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[15px] font-semibold transition hover:bg-canvas disabled:opacity-50"
+                      >
+                        <Pencil size={17} className="shrink-0 text-amber" aria-hidden />
+                        Edit details
+                        <span className="ml-auto text-[11px] font-semibold text-muted">first 30 min</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
@@ -765,6 +868,74 @@ export default function TaskDetail() {
             </div>
           </div>
         </Sheet>
+
+        {/* Time-boxed edit sheet — the DB keeps the original values for evidence */}
+        {editOpen && (
+          <Sheet open={editOpen} onClose={() => { if (!editBusy) setEditOpen(false) }} title="Edit activity">
+            <div className="space-y-3 pb-2">
+              <p className="rounded-xl bg-sun/20 px-3 py-2 text-[13px] leading-relaxed text-ink/80">
+                You can fix details for the first 30 minutes. Everyone who already joined gets told, and a record of the change is kept.
+              </p>
+              <div>
+                <label className="label" htmlFor="edit-title">Title</label>
+                <input id="edit-title" className="field" maxLength={120} value={editForm.title}
+                  onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label" htmlFor="edit-description">About</label>
+                <textarea id="edit-description" className="field min-h-[80px]" value={editForm.description}
+                  onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label" htmlFor="edit-category">Category</label>
+                  <select id="edit-category" className="field" value={editForm.category}
+                    onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value as Category }))}>
+                    {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label" htmlFor="edit-area">Area</label>
+                  <select id="edit-area" className="field" value={editForm.area}
+                    onChange={(e) => setEditForm((f) => ({ ...f, area: e.target.value }))}>
+                    {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="label" htmlFor="edit-meeting">Meeting point</label>
+                <input id="edit-meeting" className="field" value={editForm.meetingPoint}
+                  onChange={(e) => setEditForm((f) => ({ ...f, meetingPoint: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="label" htmlFor="edit-date">Date</label>
+                  <input id="edit-date" type="date" className="field" value={editForm.date}
+                    onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label" htmlFor="edit-time">Time</label>
+                  <input id="edit-time" type="time" className="field" value={editForm.time}
+                    onChange={(e) => setEditForm((f) => ({ ...f, time: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label" htmlFor="edit-spots">Spots</label>
+                  <input id="edit-spots" type="number" min={1} className="field" value={editForm.spots}
+                    onChange={(e) => setEditForm((f) => ({ ...f, spots: e.target.value }))} />
+                </div>
+              </div>
+              {editError && <p role="alert" className="rounded-xl bg-alert/10 p-3 text-[14px] font-medium text-alert">{editError}</p>}
+              <div className="flex gap-3 pt-1">
+                <button type="button" className="btn-ghost flex-1" onClick={() => setEditOpen(false)} disabled={editBusy}>
+                  Keep as is
+                </button>
+                <button type="button" className="btn-primary flex-1" onClick={() => void saveEdit()} disabled={editBusy}>
+                  {editBusy ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+            </div>
+          </Sheet>
+        )}
 
         {/* Cancel confirm dialog */}
         {cancelConfirmOpen && (
