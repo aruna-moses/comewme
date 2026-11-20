@@ -50,6 +50,23 @@
     font: inherit;
   }
 
+  /* CTA labels are always one line. If a label ever gets too long for a narrow
+     phone, it must be shortened or sized down — never wrapped into 2 lines. */
+  button,
+  .btn,
+  .join-task-pill,
+  .pill,
+  .chip,
+  .segmented-item {
+    white-space: nowrap;
+  }
+
+  .btn,
+  .join-task-pill {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
   button:focus-visible,
   a:focus-visible,
   input:focus-visible,
