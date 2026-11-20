@@ -8,6 +8,7 @@ import SkeletonCard from '../components/SkeletonCard'
 import TaskCard from '../components/TaskCard'
 import { cacheKeys, readCache, writeCache } from '../lib/dataCache'
 import { loadMyTasksForUser, type MyTasksBundle } from '../lib/myTasksData'
+import { restoreTask } from '../lib/api'
 import { friendlyError } from '../lib/errors'
 
 export default function MyTasks() {
@@ -87,7 +88,7 @@ export default function MyTasks() {
   }, [hosted, joined, nowMs])
 
   const hostedActive = useMemo(() => hosted.filter((t) => !isDone(t)), [hosted, nowMs]) // eslint-disable-line react-hooks/exhaustive-deps
-  const joinedActive = useMemo(() => joined.filter((t) => !isDone(t)), [joined, nowMs]) // eslint-disable-line react-hooks/exhaustive-deps
+  const joinedActive = useMemo(() => joined.filter((t) => !isDone(t) && t.status !== 'cancelled'), [joined, nowMs]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (loading || !targetTaskId) return
@@ -189,6 +190,24 @@ export default function MyTasks() {
               id={`task-${t.id}`}
               className={targetTaskId === t.id ? 'task-reminder-highlight rounded-[22px]' : ''}
             >
+              {t.status === 'cancelled' && (
+                <div className="mb-2 flex items-center gap-2 rounded-xl border border-amber/40 bg-sun/15 px-3 py-2">
+                  <p className="min-w-0 flex-1 text-[13px] font-semibold leading-snug text-ink">
+                    Deleted everywhere. Bring it back within 30 minutes.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-ghost btn-sm shrink-0"
+                    onClick={() => {
+                      void restoreTask(t.id)
+                        .then(() => setRefreshKey((key) => key + 1))
+                        .catch((e) => alert(friendlyError(e, 'Could not restore this activity')))
+                    }}
+                  >
+                    Restore
+                  </button>
+                </div>
+              )}
               <TaskCard task={t} verified={verifiedMap[t.host_id] === 'verified'} applicationStatus={tab === 'going' ? applicationStatus : undefined} reviewBadge={tab === 'hosting' ? pendingApplicants[t.id] ?? 0 : 0} />
             </div>
           )})}

@@ -13,6 +13,7 @@ import {
   fetchTask,
   fetchTaskLastEdited,
   markTaskDone,
+  restoreTask,
   setTaskImage,
   reopenTask,
   requestJoin,
@@ -358,7 +359,20 @@ export default function TaskDetail() {
       await cancelTask(task.id)
       await load()
     } catch (e) {
-      alert(friendlyError(e, 'Could not cancel'))
+      alert(friendlyError(e, 'Could not delete this activity'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleRestore() {
+    if (!task) return
+    setBusy(true)
+    try {
+      await restoreTask(task.id)
+      await load()
+    } catch (e) {
+      alert(friendlyError(e, 'Could not restore this activity'))
     } finally {
       setBusy(false)
     }
@@ -476,6 +490,16 @@ export default function TaskDetail() {
           <p className="mt-0.5 text-[12px] font-semibold text-muted">
             Edited {formatDateTime(lastEdited)}
           </p>
+        )}
+        {task.status === 'cancelled' && (
+          <div role="status" className="mt-3 rounded-2xl border border-amber/40 bg-sun/15 p-3">
+            <p className="text-[14px] font-semibold leading-snug text-ink">
+              This activity is deleted everywhere. You have 30 minutes to bring it back.
+            </p>
+            <button type="button" className="btn-ghost btn-sm mt-2" disabled={busy} onClick={() => void handleRestore()}>
+              <RotateCcw size={15} aria-hidden /> Undo — restore activity
+            </button>
+          </div>
         )}
         {editNotice && (
           <p role="status" className="mt-2 rounded-xl bg-verified/10 px-3 py-2 text-[13px] font-semibold text-verified">
@@ -837,7 +861,7 @@ export default function TaskDetail() {
                       className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[15px] font-semibold text-alert transition hover:bg-alert/5 disabled:opacity-50"
                     >
                       <Ban size={17} className="shrink-0" aria-hidden />
-                      Cancel activity
+                      Delete activity
                     </button>
                   </>
                 )}
@@ -983,40 +1007,6 @@ export default function TaskDetail() {
           </Sheet>
         )}
 
-        {/* Cancel confirm dialog */}
-        {cancelConfirmOpen && (
-          <Sheet open={cancelConfirmOpen} onClose={() => setCancelConfirmOpen(false)} title="Cancel activity?">
-            <p className="text-[15px] text-muted">
-              Cancelling will remove this activity from the feed. People who already joined will be notified.
-            </p>
-            <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                className="btn-ghost flex-1"
-                onClick={() => setCancelConfirmOpen(false)}
-              >
-                Keep activity
-              </button>
-              <button
-                type="button"
-                className="btn-alert flex-1"
-                disabled={busy}
-                onClick={async () => {
-                  setCancelConfirmOpen(false)
-                  try {
-                    await cancelTask(task.id)
-                    setBusy(false)
-                  } catch (e) {
-                    alert(friendlyError(e, 'Could not cancel'))
-                    setBusy(false)
-                  }
-                }}
-              >
-                {busy ? 'Cancelling…' : 'Cancel activity'}
-              </button>
-            </div>
-          </Sheet>
-        )}
         {/* report */}
         <button onClick={() => setReportOpen(true)} className="mt-6 w-full py-3 text-[14px] font-semibold text-muted underline underline-offset-4">Report this activity</button>
 
@@ -1085,10 +1075,10 @@ export default function TaskDetail() {
 
         <ConfirmDialog
           open={cancelConfirmOpen}
-          title="Calling it off?"
-          message="This activity will disappear from Discover, and people won’t be able to join. You can’t undo this."
-          cancelLabel="Keep it going"
-          confirmLabel="Cancel activity"
+          title="Delete this activity?"
+          message="It disappears from Discover and everyone's chat list right away, chat included. You have 30 minutes to bring it back from My activities if you change your mind."
+          cancelLabel="Keep activity"
+          confirmLabel="Delete activity"
           destructive
           busy={busy}
           onCancel={() => setCancelConfirmOpen(false)}

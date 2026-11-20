@@ -13,6 +13,7 @@ import UpdateNotice from './components/UpdateNotice'
 import WelcomeCelebration from './components/WelcomeCelebration'
 import InstallPrompt from './components/InstallPrompt'
 import { unlockAudio } from './lib/sounds'
+import { cleanupExpiredTasks } from './lib/api'
 import { useForegroundPush } from './hooks/useForegroundPush'
 import { friendlyError } from './lib/errors'
 
@@ -97,6 +98,16 @@ export default function App() {
     signOut,
   } = useAuth()
   const location = useLocation()
+  // removed activities are cleaned up on launch and whenever the app returns
+  useEffect(() => {
+    if (!session) return
+    const tidy = () => { void cleanupExpiredTasks().catch(() => undefined) }
+    tidy()
+    const onVisible = () => { if (document.visibilityState === 'visible') tidy() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [Boolean(session)])
+
   // iOS/web foreground banners — mirrors the SW so pushes show even mid-app
   useForegroundPush()
 

@@ -47,7 +47,7 @@ export async function loadChatsForUser(profileId: string): Promise<ChatEntry[]> 
   const unique = all.filter((t) => {
     if (seen.has(t.id)) return false
     seen.add(t.id)
-    return true
+    return t.status !== 'cancelled'  // deleted activities leave chat lists immediately
   })
 
   const acceptedAtByTaskId = new Map<string, string | null>()

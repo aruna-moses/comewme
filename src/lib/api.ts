@@ -19,7 +19,7 @@ import { toError } from './errors'
 /* ------------------------------------------------------------------ */
 
 const TASK_COLUMNS = `
-  id, host_id, host_name, host_avatar_url, image_url, title, description, category,
+  id, host_id, host_name, host_avatar_url, image_url, cancelled_at, title, description, category,
   area, city, meeting_point, date_time, spots_needed, spots_filled, status,
   fill_mode, is_sponsored, sponsor_name, sponsored_until, created_at
 `
@@ -201,6 +201,18 @@ export async function changeUsername(newUsername: string): Promise<void> {
 
 export async function deleteOwnAccount(): Promise<void> {
   const { error } = await supabase.rpc('delete_own_account')
+  if (error) throw toError(error)
+}
+
+/** Bring a deleted activity back within its 30-minute grace period. */
+export async function restoreTask(taskId: string): Promise<void> {
+  const { error } = await supabase.rpc('restore_own_task', { p_task_id: taskId })
+  if (error) throw toError(error)
+}
+
+/** Removes activities whose delete grace period expired (chat + media + links included). */
+export async function cleanupExpiredTasks(): Promise<void> {
+  const { error } = await supabase.rpc('cleanup_expired_cancellations')
   if (error) throw toError(error)
 }
 
