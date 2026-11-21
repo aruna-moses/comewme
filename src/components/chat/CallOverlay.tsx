@@ -13,6 +13,7 @@ interface Props {
   onAccept: () => void
   onDecline: () => void
   onLeave: () => void
+  onDismissError: () => void
 }
 
 /** Purely presentational. Daily's prebuilt UI lives inside frameContainerRef,
@@ -28,6 +29,7 @@ export default function CallOverlay({
   onAccept,
   onDecline,
   onLeave,
+  onDismissError,
 }: Props) {
   return (
     <>
@@ -85,12 +87,14 @@ export default function CallOverlay({
       )}
 
       {error && (
-        <p
-          role="status"
-          className="fixed left-1/2 top-3 z-[9999] w-[92%] max-w-sm -translate-x-1/2 rounded-2xl bg-[#1A1A1A] px-4 py-3 text-center text-[14px] font-semibold text-white shadow-lg"
+        <button
+          type="button"
+          onClick={onDismissError}
+          className="fixed left-1/2 top-3 z-[9999] w-[92%] max-w-sm -translate-x-1/2 rounded-2xl bg-[#1A1A1A] px-4 py-3 text-center text-[13px] font-semibold leading-snug text-white shadow-lg"
         >
           {error}
-        </p>
+          <span className="mt-1 block text-[11px] font-normal text-white/60">Tap to dismiss</span>
+        </button>
       )}
     </>
   )

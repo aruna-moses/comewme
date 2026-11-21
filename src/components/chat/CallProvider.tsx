@@ -2,7 +2,6 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { ReactNode, RefObject } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-import { friendlyError } from '../../lib/errors'
 import { startRinging, stopRinging } from '../../lib/callRing'
 import {
   createDailyRoom,
@@ -106,6 +105,15 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     }
   }, [incoming?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const describeError = (e: unknown) => e instanceof Error ? e.message : String(e ?? '')
+
+  // The call error banner auto-dismisses — it must never sit over the app forever.
+  useEffect(() => {
+    if (!error) return
+    const timer = window.setTimeout(() => setError(null), 8000)
+    return () => window.clearTimeout(timer)
+  }, [error])
+
   const finishCall = useCallback(async (sessionId?: string) => {
     if (finishingRef.current) return
     finishingRef.current = true
@@ -143,6 +151,11 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     })
     frameRef.current = frame
     frame.on('left-meeting', () => { void finishCall(session.id) })
+    frame.on('error', (event) => {
+      const detail = event.errorMsg || event.error?.type || 'Unknown call error'
+      setError(`Could not join the call: ${detail}`)
+      void finishCall(session.id)
+    })
     await frame.join({ url: session.room_url, token: session.room_token })
     try {
       wakeRef.current = await wakeLockOf()?.request('screen') ?? null
@@ -192,7 +205,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
       primed?.getTracks().forEach((track) => track.stop())
     } catch (e) {
       primed?.getTracks().forEach((track) => track.stop())
-      setError(friendlyError(e, 'Could not start the call. Please try again.'))
+      setError(`Could not start the call: ${describeError(e).slice(0, 160)}`)
     } finally {
       setJoining(false)
     }
@@ -257,7 +270,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     // join starts in the Accept tap — iOS keeps the media permission gesture.
     void joinSession(session)
       .then(() => { setActive(session); clearJoinParam() })
-      .catch((e) => setError(friendlyError(e, 'Could not join the call.')))
+      .catch((e) => setError(`Could not join the call: ${describeError(e).slice(0, 160)}`))
   }, [incoming, joinSession, clearJoinParam])
 
   const decline = useCallback(() => {
@@ -287,6 +300,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
         onAccept={accept}
         onDecline={decline}
         onLeave={() => { void finishCall() }}
+        onDismissError={() => setError(null)}
       />
     </Context.Provider>
   )
