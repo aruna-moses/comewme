@@ -183,7 +183,7 @@ export interface Review {
 export interface ChatSystemEvent {
   id: string
   task_id: string
-  event_type: 'joined' | 'left' | 'on_my_way' | 'arrived' | 'completed' | 'recap'
+  event_type: 'joined' | 'left' | 'on_my_way' | 'arrived' | 'completed' | 'recap' | 'call_started' | 'call_ended'
   actor_id: string | null
   actor_name: string
   body: string | null

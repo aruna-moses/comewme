@@ -7,6 +7,7 @@ import {
   createCallRoom,
   fetchCallSession,
   insertCallSession,
+  insertCallEvent,
   notifyMembersOfCall,
   updateCallSession,
   type CallSession,
@@ -14,7 +15,10 @@ import {
 } from '../../lib/calls'
 import CallOverlay from './CallOverlay'
 
-type CallsContext = { startCall: (chatId: string, callType: CallType) => Promise<void> }
+type CallsContext = {
+  startCall: (chatId: string, callType: CallType) => Promise<void>
+  joinById: (sessionId: string) => void
+}
 const Context = createContext<CallsContext | null>(null)
 
 export function useCalls(): CallsContext {
@@ -108,13 +112,27 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     try { await wakeRef.current?.release() } catch { /* released by system */ }
     wakeRef.current = null
     const id = sessionId ?? activeRef.current?.id
+    const ended = activeRef.current
+    if (ended) {
+      const seconds = Math.max(0, Math.round((Date.now() - Date.parse(ended.created_at)) / 1000))
+      const duration = seconds >= 60
+        ? `${Math.floor(seconds / 60)}m ${String(seconds % 60).padStart(2, '0')}s`
+        : `${seconds}s`
+      void insertCallEvent({
+        taskId: ended.chat_id,
+        actorId: profile?.id ?? ended.caller_id,
+        actorName: profile?.display_name ?? 'Someone',
+        eventType: 'call_ended',
+        body: duration,
+      }).catch(() => undefined)
+    }
     if (id) updateCallSession(id, 'ended').catch(() => undefined)
     setActive(null)
     setIncoming(null)
     persistIncoming(null)
     clearJoinParam()
     finishingRef.current = false
-  }, [clearJoinParam])
+  }, [clearJoinParam, profile?.id, profile?.display_name])
 
   // Mounting the iframe is instantaneous — no server call, no room key, no payment method.
   const joinSession = useCallback(async (session: CallSession) => {
@@ -153,6 +171,12 @@ export default function CallProvider({ children }: { children: ReactNode }) {
         sessionId: session.id,
         callType,
       })
+      void insertCallEvent({
+        taskId: chatId,
+        actorId: profile.id,
+        actorName: profile.display_name ?? 'Someone',
+        eventType: 'call_started',
+      }).catch(() => undefined)
       await joinSession(session)
       primed?.getTracks().forEach((track) => track.stop())
     } catch (e) {
@@ -223,12 +247,19 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     clearJoinParam()
   }, [incoming, clearJoinParam])
 
+  const joinById = useCallback((sessionId: string) => {
+    void fetchCallSession(sessionId).then((session) => {
+      if (!session || session.caller_id === profile?.id || active || incoming) return
+      if (['ringing', 'active'].includes(session.status)) showIncoming(session)
+    })
+  }, [showIncoming, profile?.id, active, incoming])
+
   useEffect(() => () => {
     wakeRef.current?.release().catch(() => undefined)
   }, [])
 
   return (
-    <Context.Provider value={{ startCall }}>
+    <Context.Provider value={{ startCall, joinById }}>
       {children}
       <CallOverlay
         incoming={incoming}

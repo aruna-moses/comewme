@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { toError } from './errors'
 
 export type CallType = 'audio' | 'video'
 export type CallStatus = 'ringing' | 'active' | 'ended' | 'missed'
@@ -22,6 +23,24 @@ export interface CallSession {
  */
 export function createCallRoom(): { roomName: string } {
   return { roomName: `comewme-${crypto.randomUUID().replace(/-/g, '').slice(0, 20)}` }
+}
+
+/** Call milestones appear in the activity chat timeline for everyone to see. */
+export async function insertCallEvent(input: {
+  taskId: string
+  actorId: string
+  actorName: string
+  eventType: 'call_started' | 'call_ended'
+  body?: string | null
+}): Promise<void> {
+  const { error } = await supabase.from('activity_system_events').insert({
+    task_id: input.taskId,
+    actor_id: input.actorId,
+    actor_name: input.actorName,
+    event_type: input.eventType,
+    body: input.body ?? null,
+  })
+  if (error) throw toError(error)
 }
 
 /** Server-minted, membership-checked participant token. */

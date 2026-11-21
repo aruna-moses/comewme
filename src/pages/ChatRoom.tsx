@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Camera, ChevronDown, Copy, Mic, MoreVertical, Pause, Phone, Pin, Play, Plus, Reply, Send, Trash2, X, Clock3, MapPin, Volume2, VolumeX, Video, Image as ImageIcon, File as FileIcon } from 'lucide-react'
+import { ArrowLeft, Camera, ChevronDown, ChevronRight, Copy, Mic, MoreVertical, Pause, Phone, Pin, Play, Plus, Reply, Send, Trash2, X, Clock3, MapPin, Volume2, VolumeX, Image as ImageIcon, File as FileIcon } from 'lucide-react'
 import { playSend } from '../lib/sounds'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
@@ -40,7 +40,6 @@ import type { JoinRequest, Message, Task, ChatSystemEvent } from '../types'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
-import Sheet from '../components/Sheet'
 import VoiceNotePlayer from '../components/VoiceNotePlayer'
 import ChatPhotoEditor from '../components/ChatPhotoEditor'
 import ViewOnceCard from '../components/ViewOnceCard'
@@ -48,13 +47,14 @@ import ViewOnceViewer from '../components/ViewOnceViewer'
 import PhotoLightbox from '../components/PhotoLightbox'
 import { friendlyError } from '../lib/errors'
 import { useCalls } from '../components/chat/CallProvider'
+import type { CallSession } from '../lib/calls'
 
 const REACTIONS = ['👍', '❤️', '😂', '😎']
 
 export default function ChatRoom() {
   const { id } = useParams<{ id: string }>()
   const { profile } = useAuth()
-  const { startCall } = useCalls()
+  const { startCall, joinById } = useCalls()
   const { refresh: refreshNotifications } = useNotifications()
   const navigate = useNavigate()
   const [task, setTask] = useState<Task | null>(null)
@@ -63,6 +63,7 @@ export default function ChatRoom() {
   const [loading, setLoading] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
   const [systemEvents, setSystemEvents] = useState<ChatSystemEvent[]>([])
+  const [liveCall, setLiveCall] = useState<CallSession | null>(null)
   const [recapText, setRecapText] = useState('')
   const [recapPosted, setRecapPosted] = useState(false)
   const { isMuted, toggleMute } = useMutedChats()
@@ -86,7 +87,6 @@ export default function ChatRoom() {
   const [progressMessageId, setProgressMessageId] = useState<string | null>(null)
   const [audioProgress, setAudioProgress] = useState(0)
   const [pinnedMessage, setPinnedMessage] = useState<Message | null>(null)
-const [callMenuOpen, setCallMenuOpen] = useState(false)
 const [flashMessageId, setFlashMessageId] = useState<string | null>(null)
 const [isNearBottom, setIsNearBottom] = useState(true)
 const [newSinceScroll, setNewSinceScroll] = useState(0)
@@ -179,6 +179,28 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
       active = false
       void supabase.removeChannel(eventsChannel)
     }
+  }, [task?.id])
+
+  // An active call is visible right inside the chat, so everyone knows it's happening.
+  useEffect(() => {
+    if (!task?.id) return
+    let active = true
+    const refresh = async () => {
+      const { data } = await supabase
+        .from('call_sessions')
+        .select('*')
+        .eq('chat_id', task.id)
+        .in('status', ['ringing', 'active'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (active) setLiveCall((data?.[0] as CallSession | undefined) ?? null)
+    }
+    void refresh()
+    const channel = supabase
+      .channel(`chat-call:${task.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'call_sessions', filter: `chat_id=eq.${task.id}` }, () => { void refresh() })
+      .subscribe()
+    return () => { active = false; void supabase.removeChannel(channel) }
   }, [task?.id])
 
   // Pinned message: host pin/unpin, everyone sees it live.
@@ -1095,7 +1117,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
         </button>
         <button
           type="button"
-          onClick={() => setCallMenuOpen(true)}
+          onClick={() => void startCall(task.id, 'audio')}
           className="shrink-0 rounded-full p-2 text-muted transition hover:bg-canvas hover:text-amber"
           aria-label="Start a call with this group"
           title="Start a call"
@@ -1160,6 +1182,23 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           </span>
         </div>
 
+        {liveCall && (
+          <button
+            type="button"
+            onClick={() => joinById(liveCall.id)}
+            className="mt-2 flex w-full items-center gap-2.5 rounded-[14px] border border-amber/40 bg-sun/20 px-3 py-2 text-left transition hover:bg-sun/30"
+          >
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F58220] text-white">
+              <Phone size={15} aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13px] font-bold text-ink">Group call in progress</span>
+              <span className="block text-[12px] text-muted">Tap to join · {liveCall.call_type === 'video' ? 'Video' : 'Audio'}</span>
+            </span>
+            <ChevronRight size={16} className="shrink-0 text-amber" aria-hidden />
+          </button>
+        )}
+
         <div ref={containerRef} onScroll={handleMessagesScroll} className="relative min-h-0 flex-1 space-y-4 overflow-y-auto py-4">
           {timelineItems.length === 0 && (
             <p className="py-10 text-center text-[15px] text-muted">No messages yet. Say hello to your group.</p>
@@ -1199,6 +1238,8 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
                       {event.event_type === 'arrived' && 'checked in'}
                       {event.event_type === 'completed' && '— activity completed'}
                       {event.event_type === 'recap' && 'wrote a recap'}
+                      {event.event_type === 'call_started' && 'started a group call'}
+                      {event.event_type === 'call_ended' && `— group call ended${event.body ? ` after ${event.body}` : ''}`}
                     </p>
                   )}
                 </div>
@@ -1751,47 +1792,6 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           senderName={lightboxPhoto.sender_id === profile?.id ? 'You' : lightboxPhoto.sender_name}
           onClose={() => setLightboxPhoto(null)}
         />
-      )}
-      {callMenuOpen && (
-        <Sheet open={callMenuOpen} onClose={() => setCallMenuOpen(false)} title="Start a call">
-          <p className="pb-3 text-[14px] leading-relaxed text-muted">
-            Everyone in this activity chat will get a call notification they can answer.
-          </p>
-          <div className="space-y-2 pb-2">
-            <button
-              type="button"
-              className="flex w-full items-center gap-3 rounded-2xl border border-line bg-white p-3.5 text-left transition hover:bg-canvas"
-              onClick={() => {
-                setCallMenuOpen(false)
-                void startCall(task.id, 'audio')
-              }}
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sun/25 text-amber">
-                <Phone size={19} aria-hidden />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[15px] font-bold">Audio call</span>
-                <span className="block text-[13px] text-muted">Just talk — camera off</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              className="flex w-full items-center gap-3 rounded-2xl border border-line bg-white p-3.5 text-left transition hover:bg-canvas"
-              onClick={() => {
-                setCallMenuOpen(false)
-                void startCall(task.id, 'video')
-              }}
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sun/25 text-amber">
-                <Video size={19} aria-hidden />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[15px] font-bold">Video call</span>
-                <span className="block text-[13px] text-muted">See each other face to face</span>
-              </span>
-            </button>
-          </div>
-        </Sheet>
       )}
       {pendingPhoto && (
         <ChatPhotoEditor

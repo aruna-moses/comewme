@@ -276,9 +276,7 @@ export default function LiveCall({ sessionId, chatId, callType, onLeave }: Props
 
       <div className="flex items-start justify-center gap-3 pb-9 pt-2">
         <Control label={micOn ? 'Mute' : 'Unmute'} active={!micOn} onClick={() => void toggleMic()} icon={micOn ? Mic : MicOff} />
-        {callType === 'video' && (
-          <Control label={camOn ? 'Camera off' : 'Camera on'} active={!camOn} onClick={() => void toggleCam()} icon={camOn ? Video : VideoOff} />
-        )}
+        <Control label={camOn ? 'Camera off' : 'Camera on'} active={!camOn} onClick={() => void toggleCam()} icon={camOn ? Video : VideoOff} />
         <Control label="Speaker" onClick={() => void cycleSpeaker()} icon={Speaker} hidden={speakers.length < 2} />
         <Control label="People" active={showPeople} onClick={() => setShowPeople((v) => !v)} icon={Users} />
       </div>
