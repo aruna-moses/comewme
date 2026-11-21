@@ -15,17 +15,19 @@ export interface CallSession {
   ended_at: string | null
 }
 
-/** Ask the Edge Function for a private Daily room + short-lived meeting token. */
-export async function createDailyRoom(
-  chatId: string,
-  callType: CallType,
-): Promise<{ url: string; token: string; roomName: string }> {
-  const { data, error } = await supabase.functions.invoke('create-daily-room', {
-    body: { chatId, callType },
+/**
+ * Free public Jitsi room. The random name is the only access control — never
+ * expose it outside call_sessions (RLS limits reads to activity members).
+ * Audio calls start with the camera muted, exactly like the Daily flow did.
+ */
+export function createCallRoom(callType: CallType): { url: string; token: string } {
+  const room = `Comewme-${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`
+  const hash = new URLSearchParams({
+    'config.startWithVideoMuted': callType === 'audio' ? 'true' : 'false',
+    'config.startWithAudioMuted': 'false',
+    'interfaceConfig.SHOW_JITSI_WATERMARK': 'false',
   })
-  if (error) throw error
-  if (!data?.url || !data?.token) throw new Error('The call room was not created')
-  return data as { url: string; token: string; roomName: string }
+  return { url: `https://meet.jit.si/${room}#${hash.toString()}`, token: '' }
 }
 
 /** Signal a call to the activity's members. RLS restricts this to participants. */

@@ -1,4 +1,3 @@
-import type { RefObject } from 'react'
 import { PhoneOff, Video, Phone } from 'lucide-react'
 import type { CallSession } from '../../lib/calls'
 
@@ -9,15 +8,14 @@ interface Props {
   active: CallSession | null
   error: string | null
   joining: boolean
-  frameContainerRef: RefObject<HTMLDivElement>
   onAccept: () => void
   onDecline: () => void
   onLeave: () => void
   onDismissError: () => void
 }
 
-/** Purely presentational. Daily's prebuilt UI lives inside frameContainerRef,
- *  which is mounted outside the app layout so no CSS can leak in or out. */
+/** Purely presentational. The call provider owns the iframe URL; everything
+ *  inside the iframe is Jitsi's own UI, isolated from the app's CSS. */
 export default function CallOverlay({
   incoming,
   callerName,
@@ -25,7 +23,6 @@ export default function CallOverlay({
   active,
   error,
   joining,
-  frameContainerRef,
   onAccept,
   onDecline,
   onLeave,
@@ -33,11 +30,15 @@ export default function CallOverlay({
 }: Props) {
   return (
     <>
-      <div
-        ref={frameContainerRef}
-        className={active ? 'fixed inset-0 z-[9998] bg-[#0B0B0F]' : 'pointer-events-none hidden'}
-        aria-hidden={!active}
-      />
+      {active && (
+        <iframe
+          src={active.room_url}
+          title="Activity call"
+          allow="camera; microphone; autoplay; fullscreen; display-capture"
+          referrerPolicy="no-referrer"
+          className="fixed inset-0 z-[9998] h-full w-full border-0 bg-[#0B0B0F]"
+        />
+      )}
 
       {active && (
         <button
