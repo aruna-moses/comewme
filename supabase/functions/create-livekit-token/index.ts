@@ -79,7 +79,7 @@ serve(async (req) => {
   const token = await signJwt({
     exp: now + 3600,
     iss: apiKey,
-    sub: apiKey,
+    sub: `comewme-${uid}`, // participant identity must be unique per member
     name: profile?.display_name || 'Come w’ me member',
     video: {
       room: roomName,
