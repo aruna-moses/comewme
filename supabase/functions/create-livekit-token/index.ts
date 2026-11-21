@@ -77,7 +77,7 @@ serve(async (req) => {
   const { data: profile } = await userClient.from('profiles').select('display_name').eq('id', uid).maybeSingle()
   const now = Math.floor(Date.now() / 1000)
   const token = await signJwt({
-    exp: now + 3600,
+    exp: now + 4 * 3600, // 4h — long calls and reconnects stay valid without re-minting
     iss: apiKey,
     sub: `comewme-${uid}`, // participant identity must be unique per member
     name: profile?.display_name || 'Come w’ me member',
