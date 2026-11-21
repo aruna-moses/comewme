@@ -71,7 +71,7 @@ export default function LiveCall({ sessionId, chatId, callType, onLeave }: Props
         name: isLocal ? 'You' : (p.name || 'Member'),
         isLocal,
         micOn: p.isMicrophoneEnabled,
-        camOn: [...p.videoTrackPublications.values()].some((t) => t.videoTrack && t.isSubscribed),
+        camOn: [...p.videoTrackPublications.values()].some((t) => t.videoTrack && (isLocal || t.isSubscribed)),
         speaking: activeSpeakers.current.has(p.identity),
         quality: qualityLabel(p.connectionQuality),
       })
