@@ -40,6 +40,7 @@ import type { JoinRequest, Message, Task, ChatSystemEvent } from '../types'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
+import Sheet from '../components/Sheet'
 import VoiceNotePlayer from '../components/VoiceNotePlayer'
 import ChatPhotoEditor from '../components/ChatPhotoEditor'
 import ViewOnceCard from '../components/ViewOnceCard'
@@ -85,6 +86,7 @@ export default function ChatRoom() {
   const [progressMessageId, setProgressMessageId] = useState<string | null>(null)
   const [audioProgress, setAudioProgress] = useState(0)
   const [pinnedMessage, setPinnedMessage] = useState<Message | null>(null)
+const [callMenuOpen, setCallMenuOpen] = useState(false)
 const [flashMessageId, setFlashMessageId] = useState<string | null>(null)
 const [isNearBottom, setIsNearBottom] = useState(true)
 const [newSinceScroll, setNewSinceScroll] = useState(0)
@@ -1093,21 +1095,12 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
         </button>
         <button
           type="button"
-          onClick={() => void startCall(task.id, 'audio')}
+          onClick={() => setCallMenuOpen(true)}
           className="shrink-0 rounded-full p-2 text-muted transition hover:bg-canvas hover:text-amber"
-          aria-label="Start audio call with this group"
-          title="Audio call"
+          aria-label="Start a call with this group"
+          title="Start a call"
         >
           <Phone size={18} aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={() => void startCall(task.id, 'video')}
-          className="shrink-0 rounded-full p-2 text-muted transition hover:bg-canvas hover:text-amber"
-          aria-label="Start video call with this group"
-          title="Video call"
-        >
-          <Video size={18} aria-hidden />
         </button>
       </header>
 
@@ -1758,6 +1751,47 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
           senderName={lightboxPhoto.sender_id === profile?.id ? 'You' : lightboxPhoto.sender_name}
           onClose={() => setLightboxPhoto(null)}
         />
+      )}
+      {callMenuOpen && (
+        <Sheet open={callMenuOpen} onClose={() => setCallMenuOpen(false)} title="Start a call">
+          <p className="pb-3 text-[14px] leading-relaxed text-muted">
+            Everyone in this activity chat will get a call notification they can answer.
+          </p>
+          <div className="space-y-2 pb-2">
+            <button
+              type="button"
+              className="flex w-full items-center gap-3 rounded-2xl border border-line bg-white p-3.5 text-left transition hover:bg-canvas"
+              onClick={() => {
+                setCallMenuOpen(false)
+                void startCall(task.id, 'audio')
+              }}
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sun/25 text-amber">
+                <Phone size={19} aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-bold">Audio call</span>
+                <span className="block text-[13px] text-muted">Just talk — camera off</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center gap-3 rounded-2xl border border-line bg-white p-3.5 text-left transition hover:bg-canvas"
+              onClick={() => {
+                setCallMenuOpen(false)
+                void startCall(task.id, 'video')
+              }}
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sun/25 text-amber">
+                <Video size={19} aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-bold">Video call</span>
+                <span className="block text-[13px] text-muted">See each other face to face</span>
+              </span>
+            </button>
+          </div>
+        </Sheet>
       )}
       {pendingPhoto && (
         <ChatPhotoEditor

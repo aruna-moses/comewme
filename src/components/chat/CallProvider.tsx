@@ -3,6 +3,7 @@ import type { ReactNode, RefObject } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { friendlyError } from '../../lib/errors'
+import { startRinging, stopRinging } from '../../lib/callRing'
 import {
   createDailyRoom,
   fetchCallSession,
@@ -30,11 +31,21 @@ type WakeLockLike = { release: () => Promise<void> }
 const wakeLockOf = () =>
   (navigator as Navigator & { wakeLock?: { request: (type: 'screen') => Promise<WakeLockLike> } }).wakeLock
 
+const RING_SECONDS = 60
+const INCOMING_KEY = 'comewme:incoming-call'
+const persistIncoming = (session: CallSession | null) => {
+  try {
+    if (session) sessionStorage.setItem(INCOMING_KEY, JSON.stringify({ id: session.id, at: Date.now() }))
+    else sessionStorage.removeItem(INCOMING_KEY)
+  } catch { /* storage blocked — banner still works while mounted */ }
+}
+
 export default function CallProvider({ children }: { children: ReactNode }) {
   const { profile } = useAuth()
   const [incoming, setIncoming] = useState<CallSession | null>(null)
   const [active, setActive] = useState<CallSession | null>(null)
   const [callerName, setCallerName] = useState('Someone')
+  const [ringSeconds, setRingSeconds] = useState(RING_SECONDS)
   const [joining, setJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const frameContainerRef: RefObject<HTMLDivElement> = useRef<HTMLDivElement>(null)
@@ -60,6 +71,41 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const showIncoming = useCallback((session: CallSession) => {
+    setIncoming(session)
+    persistIncoming(session)
+    void supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('id', session.caller_id)
+      .maybeSingle()
+      .then(({ data }) => setCallerName(data?.display_name ?? 'Someone'))
+  }, [])
+
+  // A call keeps ringing until answered/declined or the 60s timeout expires.
+  useEffect(() => {
+    if (!incoming) {
+      stopRinging()
+      return
+    }
+    startRinging()
+    const started = Date.now()
+    setRingSeconds(RING_SECONDS)
+    const tick = window.setInterval(() => {
+      setRingSeconds(Math.max(0, RING_SECONDS - Math.floor((Date.now() - started) / 1000)))
+    }, 1000)
+    const timeout = window.setTimeout(() => {
+      updateCallSession(incoming.id, 'missed').catch(() => undefined)
+      setIncoming(null)
+      persistIncoming(null)
+    }, RING_SECONDS * 1000)
+    return () => {
+      window.clearInterval(tick)
+      window.clearTimeout(timeout)
+      stopRinging()
+    }
+  }, [incoming?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const finishCall = useCallback(async (sessionId?: string) => {
     if (finishingRef.current) return
     finishingRef.current = true
@@ -72,6 +118,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     if (id) updateCallSession(id, 'ended').catch(() => undefined)
     setActive(null)
     setIncoming(null)
+    persistIncoming(null)
     clearJoinParam()
     finishingRef.current = false
   }, [clearJoinParam])
@@ -167,23 +214,31 @@ export default function CallProvider({ children }: { children: ReactNode }) {
             updateCallSession(session.id, 'missed').catch(() => undefined)
             return
           }
-          setIncoming(session)
-          void supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('id', session.caller_id)
-            .maybeSingle()
-            .then(({ data }) => { if (alive) setCallerName(data?.display_name ?? 'Someone') })
+          showIncoming(session)
         },
       )
       .subscribe()
+
+    // restore a ring that was live before a reload / push-tap remount
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(INCOMING_KEY) ?? 'null') as { id?: string; at?: number } | null
+      if (saved?.id && saved.at && Date.now() - saved.at < RING_SECONDS * 1000) {
+        void fetchCallSession(saved.id).then((session) => {
+          if (alive && session && session.caller_id !== profile.id && ['ringing', 'active'].includes(session.status)) {
+            showIncoming(session)
+          } else if (alive) persistIncoming(null)
+        })
+      }
+    } catch {
+      // ignore malformed storage
+    }
 
     // opened from a call push notification
     const sessionId = new URL(window.location.href).searchParams.get('joinCall')
     if (sessionId) {
       void fetchCallSession(sessionId).then((session) => {
         if (alive && session && session.caller_id !== profile.id && ['ringing', 'active'].includes(session.status)) {
-          setIncoming(session)
+          showIncoming(session)
         }
       })
     }
@@ -198,6 +253,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     if (!incoming) return
     const session = incoming
     setIncoming(null)
+    persistIncoming(null)
     // join starts in the Accept tap — iOS keeps the media permission gesture.
     void joinSession(session)
       .then(() => { setActive(session); clearJoinParam() })
@@ -208,6 +264,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     if (!incoming) return
     updateCallSession(incoming.id, 'missed').catch(() => undefined)
     setIncoming(null)
+    persistIncoming(null)
     clearJoinParam()
   }, [incoming, clearJoinParam])
 
@@ -222,6 +279,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
       <CallOverlay
         incoming={incoming}
         callerName={callerName}
+        ringSeconds={ringSeconds}
         active={active}
         error={error}
         joining={joining}

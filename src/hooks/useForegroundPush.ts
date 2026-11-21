@@ -50,7 +50,8 @@ export function useForegroundPush() {
                 data: { url },
                 tag: url, // one slot per conversation — replaces, never piles up
                 renotify: true, // and still re-alerts every message
-              } as NotificationOptions & { renotify: boolean }),
+                sound: 'default',
+              } as NotificationOptions & { renotify: boolean; sound: string }),
             )
             .catch(() => {
               // platform refused the banner — nothing else to surface

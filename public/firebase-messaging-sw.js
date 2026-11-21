@@ -48,6 +48,7 @@ if (FIREBASE_CONFIG.apiKey.startsWith('REPLACE_WITH')) {
       data: { url },
       tag: url,
       renotify: true,
+      sound: 'default',
     })
   })
 

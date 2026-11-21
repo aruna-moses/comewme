@@ -5,6 +5,7 @@ import type { CallSession } from '../../lib/calls'
 interface Props {
   incoming: CallSession | null
   callerName: string
+  ringSeconds: number
   active: CallSession | null
   error: string | null
   joining: boolean
@@ -19,6 +20,7 @@ interface Props {
 export default function CallOverlay({
   incoming,
   callerName,
+  ringSeconds,
   active,
   error,
   joining,
@@ -55,9 +57,10 @@ export default function CallOverlay({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/60">
-                  Incoming {incoming.call_type} call
+                  Incoming {incoming.call_type} call · 0:{String(ringSeconds).padStart(2, '0')}
                 </p>
                 <p className="mt-0.5 truncate text-[17px] font-bold">{callerName}</p>
+                <p className="mt-0.5 text-[13px] text-white/60">Answer before it rings out</p>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2">
