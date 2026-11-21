@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Camera, ChevronDown, Copy, Mic, MoreVertical, Pause, Pin, Play, Plus, Reply, Send, Trash2, X, Clock3, MapPin, Volume2, VolumeX, Image as ImageIcon, File as FileIcon } from 'lucide-react'
+import { ArrowLeft, Camera, ChevronDown, Copy, Mic, MoreVertical, Pause, Phone, Pin, Play, Plus, Reply, Send, Trash2, X, Clock3, MapPin, Volume2, VolumeX, Video, Image as ImageIcon, File as FileIcon } from 'lucide-react'
 import { playSend } from '../lib/sounds'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
@@ -46,12 +46,14 @@ import ViewOnceCard from '../components/ViewOnceCard'
 import ViewOnceViewer from '../components/ViewOnceViewer'
 import PhotoLightbox from '../components/PhotoLightbox'
 import { friendlyError } from '../lib/errors'
+import { useCalls } from '../components/chat/CallProvider'
 
 const REACTIONS = ['👍', '❤️', '😂', '😎']
 
 export default function ChatRoom() {
   const { id } = useParams<{ id: string }>()
   const { profile } = useAuth()
+  const { startCall } = useCalls()
   const { refresh: refreshNotifications } = useNotifications()
   const navigate = useNavigate()
   const [task, setTask] = useState<Task | null>(null)
@@ -1088,6 +1090,24 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             {muteThisChat ? <VolumeX size={19} aria-hidden /> : <Volume2 size={19} aria-hidden />}
           </button>
           <MoreVertical size={19} className="shrink-0 text-muted" aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => void startCall(task.id, 'audio')}
+          className="shrink-0 rounded-full p-2 text-muted transition hover:bg-canvas hover:text-amber"
+          aria-label="Start audio call with this group"
+          title="Audio call"
+        >
+          <Phone size={18} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => void startCall(task.id, 'video')}
+          className="shrink-0 rounded-full p-2 text-muted transition hover:bg-canvas hover:text-amber"
+          aria-label="Start video call with this group"
+          title="Video call"
+        >
+          <Video size={18} aria-hidden />
         </button>
       </header>
 

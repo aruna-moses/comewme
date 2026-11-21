@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { HeartHandshake, ShieldCheck, Flag, Info, CalendarDays, MessageCircle } from 'lucide-react'
+import { HeartHandshake, ShieldCheck, Flag, Info, CalendarDays, MessageCircle, Phone } from 'lucide-react'
 import type { InAppNotification, NotificationType } from '../lib/notifications'
 
 const TYPE_CONFIG: Record<NotificationType, { icon: typeof HeartHandshake; tile: string; label: string }> = {
@@ -10,6 +10,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof HeartHandshake; tile:
   chat:         { icon: MessageCircle,  tile: 'bg-sun/20 text-amber',        label: 'Chat' },
   info:         { icon: Info,           tile: 'bg-line text-muted',          label: 'Note' },
   reminder:     { icon: CalendarDays,   tile: 'bg-sun/20 text-amber',        label: 'Reminder' },
+  incoming_call:{ icon: Phone,          tile: 'bg-sun/25 text-amber',        label: 'Call' },
 }
 
 function timeAgo(iso: string) {

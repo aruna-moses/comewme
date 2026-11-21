@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { toError } from './errors'
 
-export type NotificationType = 'join_request' | 'selfie' | 'appeal' | 'violation' | 'chat' | 'info' | 'reminder'
+export type NotificationType = 'join_request' | 'selfie' | 'appeal' | 'violation' | 'chat' | 'info' | 'reminder' | 'incoming_call'
 
 export interface InAppNotification {
   id: string

@@ -1,0 +1,94 @@
+import type { RefObject } from 'react'
+import { PhoneOff, Video, Phone } from 'lucide-react'
+import type { CallSession } from '../../lib/calls'
+
+interface Props {
+  incoming: CallSession | null
+  callerName: string
+  active: CallSession | null
+  error: string | null
+  joining: boolean
+  frameContainerRef: RefObject<HTMLDivElement>
+  onAccept: () => void
+  onDecline: () => void
+  onLeave: () => void
+}
+
+/** Purely presentational. Daily's prebuilt UI lives inside frameContainerRef,
+ *  which is mounted outside the app layout so no CSS can leak in or out. */
+export default function CallOverlay({
+  incoming,
+  callerName,
+  active,
+  error,
+  joining,
+  frameContainerRef,
+  onAccept,
+  onDecline,
+  onLeave,
+}: Props) {
+  return (
+    <>
+      <div
+        ref={frameContainerRef}
+        className={active ? 'fixed inset-0 z-[9998] bg-[#0B0B0F]' : 'pointer-events-none hidden'}
+        aria-hidden={!active}
+      />
+
+      {active && (
+        <button
+          type="button"
+          onClick={onLeave}
+          className="fixed right-4 top-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-[#FF3B30] text-white shadow-lg"
+          aria-label="End call"
+        >
+          <PhoneOff size={20} aria-hidden />
+        </button>
+      )}
+
+      {incoming && !active && (
+        <div className="fixed inset-x-0 bottom-4 z-[9997] mx-auto w-[94%] max-w-sm">
+          <div className="rounded-[24px] bg-[#1A1A1A] p-4 text-white shadow-2xl ring-1 ring-white/10">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F58220]">
+                {incoming.call_type === 'video' ? <Video size={20} aria-hidden /> : <Phone size={20} aria-hidden />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/60">
+                  Incoming {incoming.call_type} call
+                </p>
+                <p className="mt-0.5 truncate text-[17px] font-bold">{callerName}</p>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={onDecline}
+                className="flex h-12 items-center justify-center rounded-full bg-[#FF3B30] text-[15px] font-bold text-white active:scale-[0.98]"
+              >
+                Decline
+              </button>
+              <button
+                type="button"
+                onClick={onAccept}
+                disabled={joining}
+                className="flex h-12 items-center justify-center rounded-full bg-[#F58220] text-[15px] font-bold text-white active:scale-[0.98] disabled:opacity-60"
+              >
+                {joining ? 'Joining…' : 'Accept'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <p
+          role="status"
+          className="fixed left-1/2 top-3 z-[9999] w-[92%] max-w-sm -translate-x-1/2 rounded-2xl bg-[#1A1A1A] px-4 py-3 text-center text-[14px] font-semibold text-white shadow-lg"
+        >
+          {error}
+        </p>
+      )}
+    </>
+  )
+}

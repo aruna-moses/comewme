@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
 import { ThemeProvider } from './context/ThemeContext'
 import SetupNotice from './components/SetupNotice'
+import CallProvider from './components/chat/CallProvider'
 import SentryErrorBoundary from './components/SentryErrorBoundary'
 import { isSupabaseConfigured } from './lib/supabase'
 import { installUpdateRecovery, startUpdateWatcher } from './lib/appUpdate'
@@ -29,9 +30,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         {isSupabaseConfigured ? (
           <AuthProvider>
             <NotificationProvider>
-              <SentryErrorBoundary>
-                <App />
-              </SentryErrorBoundary>
+              <CallProvider>
+                <SentryErrorBoundary>
+                  <App />
+                </SentryErrorBoundary>
+              </CallProvider>
             </NotificationProvider>
           </AuthProvider>
         ) : (
