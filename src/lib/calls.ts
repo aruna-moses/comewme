@@ -16,21 +16,25 @@ export interface CallSession {
 }
 
 /**
- * Free public Jitsi room. The random name is the only access control — never
- * expose it outside call_sessions (RLS limits reads to activity members).
- * Audio calls start with the camera muted, exactly like the Daily flow did.
+ * Room identity only — the LiveKit websocket URL and participant token come
+ * from the create-livekit-token Edge Function at join time. Stored in
+ * call_sessions.room_url for lack of a dedicated column; never exposed in URLs.
  */
-export function createCallRoom(callType: CallType): { url: string; token: string } {
-  const room = `Comewme-${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`
-  const hash = new URLSearchParams({
-    'config.startWithVideoMuted': callType === 'audio' ? 'true' : 'false',
-    'config.startWithAudioMuted': 'false',
-    'config.disableDeepLinking': 'true',     // no "Join in app / download the app" interstitial
-    'config.prejoinPageEnabled': 'false',   // no prejoin / dial-in PIN screen — go straight in
-    'config.prejoinConfig.enabled': 'false', // skip the device-check "Join meeting" gate too
-    'interfaceConfig.SHOW_JITSI_WATERMARK': 'false',
+export function createCallRoom(): { roomName: string } {
+  return { roomName: `comewme-${crypto.randomUUID().replace(/-/g, '').slice(0, 20)}` }
+}
+
+/** Server-minted, membership-checked participant token. */
+export async function fetchLiveKitToken(input: {
+  chatId: string
+  roomName: string
+}): Promise<{ url: string; token: string }> {
+  const { data, error } = await supabase.functions.invoke('create-livekit-token', {
+    body: input,
   })
-  return { url: `https://meet.jit.si/${room}#${hash.toString()}`, token: '' }
+  if (error) throw error
+  if (!data?.url || !data?.token) throw new Error('The call token was not created')
+  return data as { url: string; token: string }
 }
 
 /** Signal a call to the activity's members. RLS restricts this to participants. */

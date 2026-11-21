@@ -60,6 +60,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const showIncoming = useCallback((session: CallSession) => {
+    void import('./LiveCall') // warm the call chunk so Accept feels instant
     setIncoming(session)
     persistIncoming(session)
     void supabase
@@ -141,9 +142,9 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     }
     setJoining(true)
     try {
-      const room = createCallRoom(callType)
+      const room = createCallRoom()
       const session = await insertCallSession({
-        chatId, callerId: profile.id, callType, url: room.url, token: room.token,
+        chatId, callerId: profile.id, callType, url: room.roomName, token: '',
       })
       await notifyMembersOfCall({
         chatId,

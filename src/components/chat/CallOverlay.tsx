@@ -1,5 +1,8 @@
-import { PhoneOff, Video, Phone } from 'lucide-react'
+import { lazy, Suspense } from 'react'
+import { Video, Phone } from 'lucide-react'
 import type { CallSession } from '../../lib/calls'
+
+const LiveCall = lazy(() => import('./LiveCall'))
 
 interface Props {
   incoming: CallSession | null
@@ -31,24 +34,14 @@ export default function CallOverlay({
   return (
     <>
       {active && (
-        <iframe
-          src={active.room_url}
-          title="Activity call"
-          allow="camera; microphone; autoplay; fullscreen; display-capture"
-          referrerPolicy="no-referrer"
-          className="fixed inset-0 z-[9998] h-full w-full border-0 bg-[#0B0B0F]"
-        />
-      )}
-
-      {active && (
-        <button
-          type="button"
-          onClick={onLeave}
-          className="fixed right-4 top-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-[#FF3B30] text-white shadow-lg"
-          aria-label="End call"
-        >
-          <PhoneOff size={20} aria-hidden />
-        </button>
+        <Suspense fallback={<div className="fixed inset-0 z-[9998] flex items-center justify-center bg-[#0B0B0F] text-[14px] font-semibold text-white/70">Starting call…</div>}>
+          <LiveCall
+            sessionId={active.id}
+            chatId={active.chat_id}
+            callType={active.call_type}
+            onLeave={onLeave}
+          />
+        </Suspense>
       )}
 
       {incoming && !active && (
