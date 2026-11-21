@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Video, Phone } from 'lucide-react'
+import { Phone } from 'lucide-react'
 import type { CallSession } from '../../lib/calls'
 
 const LiveCall = lazy(() => import('./LiveCall'))
@@ -51,11 +51,11 @@ export default function CallOverlay({
           <div className="rounded-[24px] bg-[#1A1A1A] p-4 text-white shadow-2xl ring-1 ring-white/10">
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F58220]">
-                {incoming.call_type === 'video' ? <Video size={20} aria-hidden /> : <Phone size={20} aria-hidden />}
+                <Phone size={20} aria-hidden />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/60">
-                  Incoming {incoming.call_type} call · 0:{String(ringSeconds).padStart(2, '0')}
+                  Incoming group call · 0:{String(ringSeconds).padStart(2, '0')}
                 </p>
                 <p className="truncate text-[15px] font-bold text-white">{groupName}</p>
                 <p className="mt-0.5 truncate text-[13px] font-semibold text-white/70">{callerName} is calling</p>

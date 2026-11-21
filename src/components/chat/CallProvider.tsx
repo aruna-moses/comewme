@@ -172,7 +172,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     try {
       const room = createCallRoom()
       const session = await insertCallSession({
-        chatId, callerId: profile.id, callType, url: room.roomName, token: '',
+        chatId, callerId: profile.id, callType, url: room.roomName,
       })
       await notifyMembersOfCall({
         chatId,
@@ -191,7 +191,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
       primed?.getTracks().forEach((track) => track.stop())
     } catch (e) {
       primed?.getTracks().forEach((track) => track.stop())
-      setError(`Could not start the call: ${(e instanceof Error ? e.message : String(e)).slice(0, 160)}`)
+      setError('Could not start the call. Check your connection and try again.')
     } finally {
       setJoining(false)
     }
@@ -252,7 +252,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     const session = incoming
     setIncoming(null)
     persistIncoming(null)
-    void joinSession(session).catch((e) => setError(`Could not join the call: ${(e instanceof Error ? e.message : String(e)).slice(0, 160)}`))
+    void joinSession(session).catch(() => setError('Could not join the call. Check your connection and try again.'))
   }, [incoming, joinSession])
 
   const decline = useCallback(() => {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Mic, MicOff, PhoneOff, Signal, Speaker, Users, Video, VideoOff, X } from 'lucide-react'
+import { Mic, MicOff, PhoneOff, Signal, Users, Video, VideoOff, X } from 'lucide-react'
 import {
   Room,
   RoomEvent,
@@ -56,8 +56,6 @@ export default function LiveCall({ sessionId, chatId, callType, onLeave }: Props
   const [elapsed, setElapsed] = useState(0)
   const [micOn, setMicOn] = useState(true)
   const [camOn, setCamOn] = useState(callType === 'video')
-  const [speakerId, setSpeakerId] = useState('')
-  const [speakers, setSpeakers] = useState<Array<{ id: string; label: string }>>([])
   const [showPeople, setShowPeople] = useState(false)
 
   useEffect(() => {
@@ -151,17 +149,9 @@ export default function LiveCall({ sessionId, chatId, callType, onLeave }: Props
         setCamOn(callType === 'video')
         refresh()
       } catch (e) {
-        setStatus(`Could not connect: ${e instanceof Error ? e.message : String(e)}`)
+        setStatus('Connection failed — check your internet and try again')
       }
     })()
-
-    if (navigator.mediaDevices?.enumerateDevices) {
-      void navigator.mediaDevices.enumerateDevices().then((devices) => {
-        const outs = devices.filter((d) => d.kind === 'audiooutput' && d.deviceId)
-        setSpeakers(outs.map((d) => ({ id: d.deviceId, label: d.label || 'Speaker' })))
-        if (outs[0]) setSpeakerId(outs[0].deviceId)
-      }).catch(() => undefined)
-    }
 
     return () => {
       cancelled = true
@@ -199,17 +189,6 @@ export default function LiveCall({ sessionId, chatId, callType, onLeave }: Props
     await roomRef.current?.localParticipant.setCameraEnabled(next)
     setCamOn(next)
   }
-  const cycleSpeaker = async () => {
-    if (speakers.length < 2) return
-    const index = speakers.findIndex((s) => s.id === speakerId)
-    const next = speakers[(index + 1) % speakers.length]
-    for (const el of audioEls.current.values()) {
-      const sink = el as HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> }
-      if (sink.setSinkId) await sink.setSinkId(next.id).catch(() => undefined)
-    }
-    setSpeakerId(next.id)
-  }
-
   return (
     <div ref={rootRef} className="fixed inset-0 z-[9998] flex flex-col bg-[#0B0B0F] text-white">
       <div className="flex items-start justify-between px-5 pt-7">
@@ -277,7 +256,6 @@ export default function LiveCall({ sessionId, chatId, callType, onLeave }: Props
       <div className="flex items-start justify-center gap-3 pb-9 pt-2">
         <Control label={micOn ? 'Mute' : 'Unmute'} active={!micOn} onClick={() => void toggleMic()} icon={micOn ? Mic : MicOff} />
         <Control label={camOn ? 'Camera off' : 'Camera on'} active={!camOn} onClick={() => void toggleCam()} icon={camOn ? Video : VideoOff} />
-        <Control label="Speaker" onClick={() => void cycleSpeaker()} icon={Speaker} hidden={speakers.length < 2} />
         <Control label="People" active={showPeople} onClick={() => setShowPeople((v) => !v)} icon={Users} />
       </div>
     </div>

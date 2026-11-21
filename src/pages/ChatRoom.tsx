@@ -1193,7 +1193,7 @@ const chatEnd = useRef<HTMLDivElement | null>(null)
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-bold text-ink">Group call in progress</span>
-              <span className="block text-[12px] text-muted">Tap to join · {liveCall.call_type === 'video' ? 'Video' : 'Audio'}</span>
+              <span className="block text-[12px] text-muted">Tap to join the group call</span>
             </span>
             <ChevronRight size={16} className="shrink-0 text-amber" aria-hidden />
           </button>

@@ -62,7 +62,6 @@ export async function insertCallSession(input: {
   callerId: string
   callType: CallType
   url: string
-  token: string
 }): Promise<CallSession> {
   const { data, error } = await supabase
     .from('call_sessions')
@@ -71,7 +70,7 @@ export async function insertCallSession(input: {
       caller_id: input.callerId,
       call_type: input.callType,
       room_url: input.url,
-      room_token: input.token,
+      room_token: '', // LiveKit tokens are minted at join time, never stored
     })
     .select('*')
     .single()
