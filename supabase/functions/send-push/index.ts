@@ -104,7 +104,10 @@ async function sendToToken(
   title: string,
   body: string,
   url: string,
+  type: string,
 ): Promise<{ ok: boolean; unregistered: boolean }> {
+  const isCall = type === 'incoming_call'
+  const callId = new URLSearchParams(url.split('?')[1] ?? '').get('joinCall') ?? ''
   const res = await fetch(
     `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`,
     {
@@ -118,11 +121,10 @@ async function sendToToken(
           token,
           // Data-only message: the service worker renders it, so the browser
           // doesn't also auto-display a duplicate.
-          data: { title, body, url: url ?? '/' },
+          data: { title, body, url: url ?? '/', type, callId },
           webpush: {
-            // Drop stale pushes instead of firehosing a device that was offline —
-            // a 30-minute-old chat nudge helps nobody.
-            headers: { Urgency: 'high', TTL: '1800' },
+            // Calls are stale after a minute; ordinary nudges after 30 minutes.
+            headers: { Urgency: 'high', TTL: isCall ? '90' : '1800' },
             fcmOptions: { link: url ?? '/' },
           },
         },
@@ -162,7 +164,7 @@ serve(async (req) => {
   let payload: {
     type?: string
     table?: string
-    record?: { user_id?: string; title?: string; body?: string; link_path?: string | null }
+    record?: { user_id?: string; title?: string; body?: string; link_path?: string | null; type?: string }
     // Also support invoking the function directly:
     userId?: string
     title?: string
@@ -179,15 +181,19 @@ serve(async (req) => {
   let title = payload.record?.title ?? payload.title ?? "Come w' me"
   let body = payload.record?.body ?? payload.body ?? ''
   let url = payload.record?.link_path ?? payload.url ?? '/'
+  // The webhook's top-level `type` is the DB event ("INSERT"); the notification
+  // kind lives on the record. Direct invocations may pass it at top level.
+  const notificationType = payload.record?.type
+    ?? (payload.type && payload.type !== 'INSERT' ? payload.type : 'info')
 
   if (!userId) {
     return new Response(JSON.stringify({ error: 'No userId in payload' }), { status: 400 })
   }
 
-  // Respect the per-user mute table. Any chat notification pointing at /task/<id> is suppressed.
+  // Respect per-user chat mutes for ordinary notifications. Calls always ring.
   const linkMatch = /\/task\/([0-9a-fA-F-]{36})(?:[/?#]|$)/.exec(url)
   const mutedTaskId = linkMatch ? linkMatch[1] : null
-  if (mutedTaskId) {
+  if (notificationType !== 'incoming_call' && mutedTaskId) {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     if (supabaseKey) {
@@ -243,7 +249,7 @@ serve(async (req) => {
 
   // Fan out in parallel — sequential calls cap throughput at ~1 send/sec/user.
   const results = await Promise.all(
-    tokens.map((token) => sendToToken(sa, accessToken, token, title, body, url ?? '/')),
+    tokens.map((token) => sendToToken(sa, accessToken, token, title, body, url ?? '/', notificationType)),
   )
   let sent = 0
   let pruned = 0

@@ -38,6 +38,28 @@ if (FIREBASE_CONFIG.apiKey.startsWith('REPLACE_WITH')) {
     const title = data.title || "Come w' me"
     const body = data.body || ''
     const url = data.url || '/'
+    const isCall = data.type === 'incoming_call' || /[?&]joinCall=/.test(url)
+
+    // Incoming calls get a persistent, actionable banner where the platform
+    // supports it (Android/Chrome). iOS shows the normal sound+lockscreen alert.
+    if (isCall) {
+      self.registration.showNotification(title, {
+        body,
+        icon: '/logo.png',
+        badge: '/logo.png',
+        data: { url, type: 'incoming_call', callId: data.callId || '' },
+        tag: `call-${data.callId || url}`,
+        renotify: true,
+        requireInteraction: true,
+        sound: 'default',
+        vibrate: [350, 180, 350, 180, 350, 1200],
+        actions: [
+          { action: 'decline', title: 'Decline' },
+          { action: 'accept', title: 'Accept' },
+        ],
+      })
+      return
+    }
 
     // One banner slot per conversation, re-alerted on every message —
     // like WhatsApp. No shared '<app>-push' tag that quietly swallows updates.
@@ -54,7 +76,16 @@ if (FIREBASE_CONFIG.apiKey.startsWith('REPLACE_WITH')) {
 
   self.addEventListener('notificationclick', (event) => {
     event.notification.close()
-    const target = (event.notification.data && event.notification.data.url) || '/'
+    const stored = (event.notification.data && event.notification.data.url) || '/'
+    const action = event.action || ''
+    let target = stored
+    if (action === 'decline') {
+      const u = new URL(stored, self.location.origin)
+      const callId = u.searchParams.get('joinCall')
+      u.searchParams.delete('joinCall')
+      if (callId) u.searchParams.set('declineCall', callId)
+      target = u.pathname + u.search
+    }
 
     event.waitUntil(
       (async () => {

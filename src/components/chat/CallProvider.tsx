@@ -57,10 +57,9 @@ export default function CallProvider({ children }: { children: ReactNode }) {
   const clearJoinParam = useCallback(() => {
     try {
       const url = new URL(window.location.href)
-      if (url.searchParams.has('joinCall')) {
-        url.searchParams.delete('joinCall')
-        window.history.replaceState({}, '', url.toString())
-      }
+      if (url.searchParams.has('joinCall')) url.searchParams.delete('joinCall')
+      if (url.searchParams.has('declineCall')) url.searchParams.delete('declineCall')
+      window.history.replaceState({}, '', url.toString())
     } catch { /* ignore */ }
   }, [])
 
@@ -227,13 +226,19 @@ export default function CallProvider({ children }: { children: ReactNode }) {
       }
     } catch { /* ignore malformed storage */ }
 
-    const sessionId = new URL(window.location.href).searchParams.get('joinCall')
+    const params = new URL(window.location.href).searchParams
+    const sessionId = params.get('joinCall')
     if (sessionId) {
       void fetchCallSession(sessionId).then((session) => {
         if (alive && session && session.caller_id !== profile.id && ['ringing', 'active'].includes(session.status)) {
           showIncoming(session)
         }
       })
+    }
+    const declinedId = params.get('declineCall')
+    if (declinedId) {
+      void updateCallSession(declinedId, 'missed').catch(() => undefined)
+      clearJoinParam()
     }
 
     return () => {
