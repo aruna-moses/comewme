@@ -88,7 +88,7 @@ export async function notifyMembersOfCall(input: {
   callType: CallType
 }): Promise<void> {
   const [{ data: task }, { data: joins }] = await Promise.all([
-    supabase.from('tasks').select('host_id').eq('id', input.chatId).maybeSingle(),
+    supabase.from('tasks').select('host_id, title').eq('id', input.chatId).maybeSingle(),
     supabase
       .from('join_requests')
       .select('requester_id')
@@ -105,8 +105,8 @@ export async function notifyMembersOfCall(input: {
       supabase.rpc('push_notification', {
         p_user_id: userId,
         p_type: 'incoming_call',
-        p_title: `${input.callerName} is calling`,
-        p_body: input.callType === 'video' ? 'Video call in your activity chat' : 'Audio call in your activity chat',
+        p_title: task?.title || 'Group call',
+        p_body: `${input.callerName} is calling — join the group call`,
         p_link_path: `/task/${input.chatId}/chat?joinCall=${input.sessionId}`,
       }),
     ),

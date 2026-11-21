@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { ReactNode } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-import { startRinging, stopRinging } from '../../lib/callRing'
+import { startRinging, stopRinging, unlockRinger } from '../../lib/callRing'
 import {
   createCallRoom,
   fetchCallSession,
@@ -45,6 +45,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
   const [incoming, setIncoming] = useState<CallSession | null>(null)
   const [active, setActive] = useState<CallSession | null>(null)
   const [callerName, setCallerName] = useState('Someone')
+  const [groupName, setGroupName] = useState('your group')
   const [ringSeconds, setRingSeconds] = useState(RING_SECONDS)
   const [joining, setJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -63,6 +64,10 @@ export default function CallProvider({ children }: { children: ReactNode }) {
     } catch { /* ignore */ }
   }, [])
 
+  useEffect(() => {
+    unlockRinger()
+  }, [])
+
   const showIncoming = useCallback((session: CallSession) => {
     void import('./LiveCall') // warm the call chunk so Accept feels instant
     setIncoming(session)
@@ -73,6 +78,12 @@ export default function CallProvider({ children }: { children: ReactNode }) {
       .eq('id', session.caller_id)
       .maybeSingle()
       .then(({ data }) => setCallerName(data?.display_name ?? 'Someone'))
+    void supabase
+      .from('tasks')
+      .select('title')
+      .eq('id', session.chat_id)
+      .maybeSingle()
+      .then(({ data }) => setGroupName(data?.title ?? 'your group'))
   }, [])
 
   // A call keeps ringing until answered/declined or the 60s timeout expires.
@@ -264,6 +275,7 @@ export default function CallProvider({ children }: { children: ReactNode }) {
       <CallOverlay
         incoming={incoming}
         callerName={callerName}
+        groupName={groupName}
         ringSeconds={ringSeconds}
         active={active}
         error={error}

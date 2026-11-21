@@ -7,6 +7,7 @@ const LiveCall = lazy(() => import('./LiveCall'))
 interface Props {
   incoming: CallSession | null
   callerName: string
+  groupName: string
   ringSeconds: number
   active: CallSession | null
   error: string | null
@@ -22,6 +23,7 @@ interface Props {
 export default function CallOverlay({
   incoming,
   callerName,
+  groupName,
   ringSeconds,
   active,
   error,
@@ -55,8 +57,9 @@ export default function CallOverlay({
                 <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/60">
                   Incoming {incoming.call_type} call · 0:{String(ringSeconds).padStart(2, '0')}
                 </p>
-                <p className="mt-0.5 truncate text-[17px] font-bold">{callerName}</p>
-                <p className="mt-0.5 text-[13px] text-white/60">Answer before it rings out</p>
+                <p className="truncate text-[15px] font-bold text-white">{groupName}</p>
+                <p className="mt-0.5 truncate text-[13px] font-semibold text-white/70">{callerName} is calling</p>
+                <p className="mt-1 text-[12px] text-white/60">Answer before it rings out</p>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2">
