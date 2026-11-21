@@ -25,6 +25,9 @@ export function createCallRoom(callType: CallType): { url: string; token: string
   const hash = new URLSearchParams({
     'config.startWithVideoMuted': callType === 'audio' ? 'true' : 'false',
     'config.startWithAudioMuted': 'false',
+    'config.disableDeepLinking': 'true',     // no "Join in app / download the app" interstitial
+    'config.prejoinPageEnabled': 'false',   // no prejoin / dial-in PIN screen — go straight in
+    'config.prejoinConfig.enabled': 'false', // skip the device-check "Join meeting" gate too
     'interfaceConfig.SHOW_JITSI_WATERMARK': 'false',
   })
   return { url: `https://meet.jit.si/${room}#${hash.toString()}`, token: '' }
