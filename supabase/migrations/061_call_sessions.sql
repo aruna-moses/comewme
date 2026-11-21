@@ -7,12 +7,29 @@
 -- untouched.
 -- ============================================================
 
--- allow the new notification kind used for incoming call pushes
-alter table public.notifications
-  drop constraint if exists notifications_type_check;
-alter table public.notifications
-  add constraint notifications_type_check
-  check (type in ('join_request','selfie','appeal','violation','info','reminder','incoming_call'));
+-- allow the new notification kind used for incoming call pushes.
+-- Build the allow-list from every type already in the table (older builds may
+-- have used types no longer in the repo) plus the types the app still writes.
+do $$
+declare
+  v_types text;
+begin
+  select string_agg(quote_literal(kind), ',' order by kind)
+    into v_types
+  from (
+    select unnest(array[
+      'join_request','selfie','appeal','violation','chat','info','reminder','incoming_call'
+    ]) as kind
+    union
+    select distinct type from public.notifications
+  ) all_types;
+
+  alter table public.notifications drop constraint if exists notifications_type_check;
+  execute format(
+    'alter table public.notifications add constraint notifications_type_check check (type in (%s))',
+    v_types
+  );
+end $$;
 
 create table if not exists public.call_sessions (
   id          uuid primary key default gen_random_uuid(),
